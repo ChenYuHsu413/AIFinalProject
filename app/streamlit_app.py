@@ -45,7 +45,10 @@ from src.ui.charts import (
     failure_probability_gauge,
     failure_type_bar,
     input_radar,
+    leaderboard_bar,
     one_d_sweep,
+    probability_histogram,
+    risk_donut,
     risk_landscape,
     shap_bar,
 )
@@ -543,8 +546,6 @@ elif page == "批次 CSV 上傳":
             if missing:
                 style.note(f"CSV 缺少欄位：{missing}", kind="danger")
             else:
-                style.section("輸入預覽")
-                st.dataframe(df.head(), use_container_width=True)
                 results = predict_records(df[REQUIRED_INPUT_COLUMNS])
                 out = df.copy()
                 out["failure_probability"] = [r["failure_probability"] for r in results]
@@ -552,19 +553,67 @@ elif page == "批次 CSV 上傳":
                 out["health_score"] = [r["health_score"] for r in results]
                 out["risk_level"] = [r["risk_level"] for r in results]
 
-                style.section(f"預測結果（{len(results)} 筆）")
                 n_high = sum(r["risk_level"] == "High" for r in results)
                 n_med = sum(r["risk_level"] == "Medium" for r in results)
                 n_low = sum(r["risk_level"] == "Low" for r in results)
+                probs = [r["failure_probability"] for r in results]
+                mean_prob = float(np.mean(probs)) if probs else 0.0
+                max_prob = float(np.max(probs)) if probs else 0.0
+
+                # --- headline summary tiles ---
+                style.section(f"批次摘要（共 {len(results)} 筆）")
                 style.kpi_strip([
-                    {"label": "Low（低風險）", "value": str(n_low),
-                     "sub": "健康作業區"},
-                    {"label": "Medium（中風險）", "value": str(n_med),
-                     "sub": "建議提高巡檢頻率"},
-                    {"label": "High（高風險）", "value": str(n_high),
-                     "sub": "建議立即通報"},
+                    {"label": "Low / Medium / High",
+                     "value": f"{n_low} / {n_med} / {n_high}",
+                     "sub": "風險等級分布"},
+                    {"label": "平均故障機率",
+                     "value": f"{mean_prob*100:.1f}%",
+                     "sub": "所有筆數的算術平均"},
+                    {"label": "最高故障機率",
+                     "value": f"{max_prob*100:.1f}%",
+                     "sub": "整批最危險的單筆"},
+                    {"label": "需立即處理",
+                     "value": str(n_high),
+                     "sub": "風險 ≥ 0.7 的筆數"},
                 ])
-                st.dataframe(out, use_container_width=True)
+
+                # --- visual summary: donut + histogram ---
+                c_l, c_r = st.columns([1, 1.3])
+                with c_l:
+                    st.plotly_chart(
+                        risk_donut(n_low, n_med, n_high),
+                        use_container_width=True,
+                    )
+                with c_r:
+                    st.plotly_chart(
+                        probability_histogram(probs),
+                        use_container_width=True,
+                    )
+
+                # --- top-5 highest-risk rows for quick action ---
+                if n_high or n_med:
+                    style.section("最高風險的 5 筆")
+                    top5 = (
+                        out.sort_values("failure_probability", ascending=False)
+                        .head(5)[
+                            REQUIRED_INPUT_COLUMNS
+                            + ["failure_probability", "risk_level"]
+                        ]
+                        .reset_index(drop=True)
+                    )
+                    st.dataframe(
+                        top5.style.format({"failure_probability": "{:.1%}"})
+                        .background_gradient(
+                            cmap="OrRd", subset=["failure_probability"],
+                            vmin=0, vmax=1,
+                        ),
+                        use_container_width=True,
+                    )
+
+                # --- full result table ---
+                with st.expander(f"完整結果表（{len(results)} 筆）", expanded=False):
+                    st.dataframe(out, use_container_width=True)
+
                 st.download_button(
                     ":inbox_tray: 下載預測結果 CSV",
                     out.to_csv(index=False).encode("utf-8-sig"),
@@ -594,20 +643,64 @@ elif page == "模型評估結果":
         ])
 
         with tabs[0]:
-            style.section("50 筆訓練結果（10 模型 × 5 特徵組合）")
-            st.dataframe(comp, use_container_width=True)
-            top3 = comp.sort_values("f1", ascending=False).head(3)
+            top3 = comp.sort_values("f1", ascending=False).head(3).reset_index(drop=True)
+            style.section("頒獎台 · Top 3 by F1")
             style.kpi_strip([
                 {"label": "🥇 第一名",
                  "value": top3.iloc[0]["model_name"],
-                 "sub": f"F1 = {top3.iloc[0]['f1']:.3f} / {top3.iloc[0]['feature_set']}"},
+                 "sub": (f"F1 {top3.iloc[0]['f1']:.3f} · "
+                         f"Recall {top3.iloc[0]['recall']:.3f} · "
+                         f"{top3.iloc[0]['feature_set']}")},
                 {"label": "🥈 第二名",
                  "value": top3.iloc[1]["model_name"],
-                 "sub": f"F1 = {top3.iloc[1]['f1']:.3f} / {top3.iloc[1]['feature_set']}"},
+                 "sub": (f"F1 {top3.iloc[1]['f1']:.3f} · "
+                         f"Recall {top3.iloc[1]['recall']:.3f} · "
+                         f"{top3.iloc[1]['feature_set']}")},
                 {"label": "🥉 第三名",
                  "value": top3.iloc[2]["model_name"],
-                 "sub": f"F1 = {top3.iloc[2]['f1']:.3f} / {top3.iloc[2]['feature_set']}"},
+                 "sub": (f"F1 {top3.iloc[2]['f1']:.3f} · "
+                         f"Recall {top3.iloc[2]['recall']:.3f} · "
+                         f"{top3.iloc[2]['feature_set']}")},
             ])
+
+            # ----- pick metric & view leaderboard chart -----
+            style.section("依指標排序的視覺化排行榜")
+            metric_choice = st.radio(
+                "排序依據",
+                ["f1", "recall", "precision", "roc_auc", "pr_auc"],
+                horizontal=True, index=0, key="lb-metric",
+            )
+            top_n = st.slider(
+                "顯示前 N 名", min_value=5, max_value=30,
+                value=12, step=1, key="lb-topn",
+            )
+            st.plotly_chart(
+                leaderboard_bar(comp, metric=metric_choice, top_n=top_n),
+                use_container_width=True,
+            )
+
+            # ----- full sortable table tucked behind an expander -----
+            with st.expander("完整 50 筆比較表（可排序、可複製）",
+                             expanded=False):
+                styled = (
+                    comp[
+                        ["model_name", "feature_set", "feature_count",
+                         "accuracy", "precision", "recall",
+                         "f1", "roc_auc", "pr_auc"]
+                    ]
+                    .sort_values(metric_choice, ascending=False)
+                    .style.format({
+                        "accuracy": "{:.3f}", "precision": "{:.3f}",
+                        "recall": "{:.3f}", "f1": "{:.3f}",
+                        "roc_auc": "{:.3f}", "pr_auc": "{:.3f}",
+                    })
+                    .background_gradient(
+                        cmap="Greens",
+                        subset=["recall", "f1", "pr_auc"],
+                        vmin=0, vmax=1,
+                    )
+                )
+                st.dataframe(styled, use_container_width=True)
 
         with tabs[1]:
             preds_path = resolve(cfg["paths"]["outputs_metrics"]) / "test_predictions.csv"

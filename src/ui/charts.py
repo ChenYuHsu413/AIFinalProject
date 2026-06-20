@@ -290,6 +290,125 @@ def input_radar(record: dict, prob: float | None = None) -> go.Figure:
 
 
 # ---------------------------------------------------------------------------
+# Batch summary: risk donut
+# ---------------------------------------------------------------------------
+def risk_donut(n_low: int, n_med: int, n_high: int) -> go.Figure:
+    fig = go.Figure(
+        go.Pie(
+            labels=["Low (低)", "Medium (中)", "High (高)"],
+            values=[n_low, n_med, n_high],
+            hole=0.62,
+            sort=False,
+            direction="clockwise",
+            marker=dict(
+                colors=[SUCCESS, WARNING, DANGER],
+                line=dict(color="white", width=3),
+            ),
+            textinfo="label+percent",
+            textposition="outside",
+            hovertemplate="<b>%{label}</b><br>%{value} 筆<br>"
+                          "%{percent}<extra></extra>",
+        )
+    )
+    total = n_low + n_med + n_high
+    fig.update_layout(
+        annotations=[
+            dict(text=f"<b>{total}</b><br><span style='font-size:11px;color:#64748b;'>批次筆數</span>",
+                 x=0.5, y=0.5, showarrow=False,
+                 font=dict(size=22, color=INK), align="center"),
+        ],
+        showlegend=False,
+        height=340,
+        margin=dict(l=20, r=20, t=30, b=20),
+        paper_bgcolor="white", plot_bgcolor="white",
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Batch summary: probability histogram
+# ---------------------------------------------------------------------------
+def probability_histogram(probs) -> go.Figure:
+    probs = list(probs)
+    # Colour each bar by risk band: use bin edges to assign band
+    fig = go.Figure()
+    fig.add_trace(
+        go.Histogram(
+            x=probs,
+            nbinsx=30,
+            marker=dict(
+                color=probs,
+                colorscale=[
+                    [0.0, SUCCESS],
+                    [0.3, "#bbf7d0"],
+                    [0.5, WARNING],
+                    [0.7, "#fda4af"],
+                    [1.0, DANGER],
+                ],
+                showscale=False,
+                line=dict(color="white", width=1),
+            ),
+            hovertemplate="機率區間 %{x}<br>筆數 %{y}<extra></extra>",
+        )
+    )
+    fig.add_vline(x=0.3, line_dash="dash", line_color=WARNING, line_width=1.5,
+                  annotation_text="中風險 0.3",
+                  annotation_position="top", annotation_font_color=WARNING)
+    fig.add_vline(x=0.7, line_dash="dash", line_color=DANGER, line_width=1.5,
+                  annotation_text="高風險 0.7",
+                  annotation_position="top", annotation_font_color=DANGER)
+    fig = _style(fig, height=340, title="<b>故障機率分布</b>")
+    fig.update_xaxes(title_text="故障機率", range=[0, 1], tickformat=".0%")
+    fig.update_yaxes(title_text="筆數")
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Model leaderboard horizontal bar
+# ---------------------------------------------------------------------------
+def leaderboard_bar(df: pd.DataFrame, metric: str = "f1",
+                    top_n: int = 12) -> go.Figure:
+    """Horizontal bar chart of the top-N (model, feature_set) runs by ``metric``."""
+    d = (
+        df.sort_values(metric, ascending=False)
+        .head(top_n)
+        .iloc[::-1]
+        .reset_index(drop=True)
+    )
+    labels = [
+        f"{r['model_name']}<br><span style='color:#94a3b8;font-size:10px;'>"
+        f"{r['feature_set']}</span>"
+        for _, r in d.iterrows()
+    ]
+    # Highlight top-1 in primary color, rest in muted
+    max_val = d[metric].max()
+    colors = [PRIMARY if v == max_val else "#a7f3d0" for v in d[metric]]
+    fig = go.Figure(
+        go.Bar(
+            x=d[metric], y=labels,
+            orientation="h",
+            marker=dict(color=colors, line=dict(color="white", width=1)),
+            text=[f"{v:.3f}" for v in d[metric]],
+            textposition="outside",
+            textfont=dict(size=11),
+            customdata=d[["recall", "precision", "pr_auc"]].values,
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                f"{metric} = %{{x:.3f}}<br>"
+                "recall = %{customdata[0]:.3f}<br>"
+                "precision = %{customdata[1]:.3f}<br>"
+                "pr_auc = %{customdata[2]:.3f}<extra></extra>"
+            ),
+        )
+    )
+    fig = _style(fig, height=max(360, 32 * len(d) + 80),
+                 title=f"<b>排行榜 · 依 {metric}</b>（前 {len(d)} 名）")
+    fig.update_xaxes(title_text=metric, range=[0, 1.0])
+    fig.update_yaxes(title_text="")
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------
 def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:
