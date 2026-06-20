@@ -61,7 +61,7 @@ from src.utils.paths import load_config, resolve
 # ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="伺服馬達預測性維護原型系統",
-    page_icon=":wrench:",
+    page_icon="🔧",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -94,7 +94,7 @@ PAGES = [
 PAGE_ICONS = ["house-fill", "bullseye", "lightbulb", "inbox", "bar-chart-fill", "info-circle"]
 
 style.sidebar_brand(
-    emoji=":wrench:",
+    emoji="🔧",
     title="Predictive Maintenance",
     subtitle="伺服馬達故障風險預測原型",
 )
@@ -207,13 +207,13 @@ style.hero(
 
 # Action bar — quick links to the API, model card, dataset, etc.
 style.action_bar([
-    {"label": "FastAPI /docs", "icon": ":books:",
+    {"label": "FastAPI /docs", "icon": "📚",
      "url": "http://127.0.0.1:8000/docs", "primary": True},
-    {"label": "GitHub Repo", "icon": ":file_folder:",
+    {"label": "GitHub Repo", "icon": "📁",
      "url": "https://github.com/ChenYuHsu413/AIFinalProject"},
-    {"label": "Model Card", "icon": ":scroll:",
+    {"label": "Model Card", "icon": "📜",
      "url": "https://github.com/ChenYuHsu413/AIFinalProject/blob/main/outputs/models/MODEL_CARD.md"},
-    {"label": "Dataset (UCI)", "icon": ":bar_chart:",
+    {"label": "Dataset (UCI)", "icon": "📊",
      "url": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset"},
 ])
 
@@ -313,16 +313,16 @@ if page == "首頁總覽":
     style.section("快速入口")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        style.dash_tile(":dart:", "手動單筆預測",
+        style.dash_tile("🎯", "手動單筆預測",
                         "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議")
     with c2:
-        style.dash_tile(":bulb:", "What-if 敏感度",
+        style.dash_tile("💡", "What-if 敏感度",
                         "拖動滑桿即時觀察故障機率、1D/2D 風險地景")
     with c3:
-        style.dash_tile(":inbox_tray:", "批次 CSV 上傳",
+        style.dash_tile("📥", "批次 CSV 上傳",
                         "多筆同時推論、風險分布、Top-N 高風險清單")
     with c4:
-        style.dash_tile(":bar_chart:", "模型評估",
+        style.dash_tile("📊", "模型評估",
                         "10×5 比較表、互動門檻、訓練圖表")
 
     st.divider()
@@ -443,7 +443,7 @@ elif page == "手動單筆預測":
                     "Rotational speed [rpm]", 0.0, 5000.0, 1551.0, step=10.0,
                 )
             submitted = st.form_submit_button(
-                ":rocket: 執行預測", type="primary", use_container_width=True,
+                "🚀 執行預測", type="primary", use_container_width=True,
             )
 
     if submitted:
@@ -467,16 +467,16 @@ elif page == "手動單筆預測":
 
         # ----- tabs for the rest -----
         tabs = st.tabs([
-            ":dart: 結果與建議",
-            ":mag: SHAP 解釋",
-            ":wrench: 故障類型",
-            ":bar_chart: 運轉指紋",
+            "🎯 結果與建議",
+            "🔍 SHAP 解釋",
+            "🔧 故障類型",
+            "📊 運轉指紋",
         ])
 
         with tabs[0]:
             render_advice(result)
 
-            with st.expander(":scroll: API 回傳的 JSON（可直接複製到 curl / Postman）"):
+            with st.expander("📜 API 回傳的 JSON（可直接複製到 curl / Postman）"):
                 cjson_l, cjson_r = st.columns([2, 1])
                 with cjson_l:
                     import json as _json
@@ -617,9 +617,9 @@ elif page == "What-if 敏感度分析":
     history = st.session_state.wif_history
 
     tabs = st.tabs([
-        ":dart: 即時預測 + 指紋",
-        ":arrow_right: 1D 掃描",
-        ":world_map: 2D 風險地景",
+        "🎯 即時預測 + 指紋",
+        "➡️ 1D 掃描",
+        "🗺️ 2D 風險地景",
     ])
 
     with tabs[0]:
@@ -827,7 +827,7 @@ elif page == "批次 CSV 上傳":
                     st.dataframe(out, use_container_width=True)
 
                 st.download_button(
-                    ":inbox_tray: 下載預測結果 CSV",
+                    "📥 下載預測結果 CSV",
                     out.to_csv(index=False).encode("utf-8-sig"),
                     file_name="predictions.csv",
                     mime="text/csv",
@@ -849,9 +849,9 @@ elif page == "模型評估結果":
     else:
         comp = pd.read_csv(metrics_csv)
         tabs = st.tabs([
-            ":bar_chart: 跨模型比較",
-            ":level_slider: 互動式門檻",
-            ":frame_with_picture: 訓練 / 評估圖表",
+            "📊 跨模型比較",
+            "🎚️ 互動式門檻",
+            "🖼️ 訓練 / 評估圖表",
         ])
 
         with tabs[0]:
