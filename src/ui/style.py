@@ -6,7 +6,19 @@ once at the top of the script via ``inject()``.
 """
 from __future__ import annotations
 
+import textwrap
+
 import streamlit as st
+
+
+def _render(html: str) -> None:
+    """``st.markdown`` with safe handling of multi-line indented HTML.
+
+    Streamlit's Markdown parser treats lines indented by 4+ spaces as code
+    blocks, so triple-quoted HTML written for code readability gets escaped
+    and shown to the user as literal text.  We dedent and strip first.
+    """
+    st.markdown(textwrap.dedent(html).strip(), unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +301,106 @@ div[role="tabpanel"] {{
     animation: fadeUp 0.35s ease-out;
 }}
 
+/* ---- Sidebar polish ---- */
+section[data-testid="stSidebar"] > div:first-child {{
+    padding-top: 0.5rem;
+}}
+.sidebar-brand {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, {PRIMARY} 0%, {ACCENT} 100%);
+    border-radius: 14px;
+    color: white;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.22);
+}}
+.sidebar-brand .brand-mark {{
+    font-size: 1.7rem;
+    line-height: 1;
+}}
+.sidebar-brand .brand-title {{
+    font-weight: 700;
+    font-size: 0.92rem;
+    line-height: 1.15;
+    letter-spacing: 0.2px;
+}}
+.sidebar-brand .brand-sub {{
+    font-size: 0.74rem;
+    opacity: 0.88;
+    margin-top: 2px;
+}}
+
+.sidebar-card {{
+    background: linear-gradient(180deg, white, #f8fafc);
+    border: 1px solid {BORDER};
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 6px 0;
+    animation: fadeUp 0.4s ease-out;
+}}
+.sidebar-card .sc-eyebrow {{
+    color: {MUTED};
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
+}}
+.sidebar-card .sc-title {{
+    color: {INK};
+    font-weight: 600;
+    font-size: 0.92rem;
+    line-height: 1.2;
+}}
+.sidebar-card .sc-sub {{
+    color: {MUTED};
+    font-size: 0.78rem;
+    margin-top: 2px;
+}}
+.sidebar-card .sc-row {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+}}
+.sidebar-card .sc-row .sc-mini-label {{
+    color: {MUTED};
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}}
+.sidebar-card .sc-row .sc-mini-value {{
+    color: {PRIMARY_DARK};
+    font-weight: 700;
+    font-size: 0.96rem;
+}}
+
+.sidebar-footer {{
+    margin-top: 14px;
+    padding: 10px 12px;
+    color: {MUTED};
+    font-size: 0.72rem;
+    line-height: 1.5;
+    border-top: 1px dashed {BORDER};
+}}
+.sidebar-footer a {{
+    color: {PRIMARY_DARK};
+    text-decoration: none;
+    font-weight: 600;
+}}
+.sidebar-footer a:hover {{ text-decoration: underline; }}
+.sidebar-footer .sf-pill {{
+    display: inline-block;
+    background: #f0fdfa;
+    color: {PRIMARY_DARK};
+    border: 1px solid #99f6e4;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    margin-right: 4px;
+}}
+
 /* ---- KPI strip cards ---- */
 .kpi-strip {{
     display: grid;
@@ -325,17 +437,14 @@ def hero(eyebrow: str, title: str, subtitle: str,
     if chips:
         items = "".join(f"<span>{c}</span>" for c in chips)
         chips_html = f'<div class="hero-chips">{items}</div>'
-    st.markdown(
-        f"""
+    _render(f"""
         <div class="hero-banner">
             <div class="hero-eyebrow">{eyebrow}</div>
             <h1>{title}</h1>
             <p>{subtitle}</p>
             {chips_html}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """)
 
 
 def section(title: str) -> None:
@@ -359,28 +468,52 @@ def note(body: str, kind: str = "info") -> None:
 
 def fallback_metric_card(label: str, value: str, delta: str | None = None) -> None:
     delta_html = f'<div class="delta">{delta}</div>' if delta else ""
-    st.markdown(
-        f"""
+    _render(f"""
         <div class="metric-card">
             <div class="label">{label}</div>
             <div class="value">{value}</div>
             {delta_html}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """)
 
 
 # ---------------------------------------------------------------------------
 # Higher-impact visual primitives
 # ---------------------------------------------------------------------------
-def panel_open(kind: str = "stone") -> None:
-    """Open a coloured zone container. Pair with ``panel_close()``."""
-    st.markdown(f'<div class="zone zone-{kind}">', unsafe_allow_html=True)
+_ZONE_STYLES = {
+    "mint":  "background: linear-gradient(135deg, #ecfdf5, #f0fdfa); border: 1px solid #d1fae5;",
+    "sand":  "background: linear-gradient(135deg, #fffbeb, #fef9c3); border: 1px solid #fde68a;",
+    "sky":   "background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 1px solid #bfdbfe;",
+    "blush": "background: linear-gradient(135deg, #fef2f2, #fff1f2); border: 1px solid #fecaca;",
+    "stone": "background: #f1f5f9; border: 1px solid #e2e8f0;",
+}
 
 
-def panel_close() -> None:
-    st.markdown("</div>", unsafe_allow_html=True)
+def zone(kind: str = "stone", key: str | None = None):
+    """Context manager: render a coloured panel that actually wraps content.
+
+    Uses streamlit-extras ``stylable_container`` (which leverages the CSS
+    ``:has()`` selector) so the panel REALLY contains the Streamlit widgets
+    rendered inside the ``with`` block, instead of leaving stray ``<div>``
+    tags floating in the DOM.
+
+    Usage::
+
+        with style.zone("sky", key="form-zone"):
+            st.form(...)
+    """
+    try:
+        from streamlit_extras.stylable_container import stylable_container
+    except Exception:  # pragma: no cover - if the lib is missing, just no-op
+        from contextlib import nullcontext
+        return nullcontext()
+
+    style_rules = _ZONE_STYLES.get(kind, _ZONE_STYLES["stone"])
+    css = (
+        "{ " + style_rules + " padding: 18px 22px; border-radius: 14px;"
+        "  margin: 8px 0; animation: fadeUp 0.4s ease-out; }"
+    )
+    return stylable_container(key=key or f"zone-{kind}", css_styles=css)
 
 
 def big_stat(label: str, value: str, sub: str = "", tone: str = "primary") -> None:
@@ -391,16 +524,13 @@ def big_stat(label: str, value: str, sub: str = "", tone: str = "primary") -> No
         "warn": "warn",
         "good": "good",
     }.get(tone, "")
-    st.markdown(
-        f"""
+    _render(f"""
         <div class="big-stat">
             <div class="label">{label}</div>
             <div class="value {cls_value}">{value}</div>
             <div class="sub">{sub}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """)
 
 
 def kpi_strip(items: list[dict]) -> None:
@@ -408,14 +538,63 @@ def kpi_strip(items: list[dict]) -> None:
 
     Each item supports: ``label``, ``value``, ``sub``.
     """
+    # Single-line cells so no Markdown code-block fallback can trip on them.
     cells = "".join(
-        f"""
-        <div class="kpi">
-            <div class="label">{it.get('label', '')}</div>
-            <div class="value">{it.get('value', '')}</div>
-            <div class="sub">{it.get('sub', '')}</div>
-        </div>
-        """
+        f'<div class="kpi"><div class="label">{it.get("label", "")}</div>'
+        f'<div class="value">{it.get("value", "")}</div>'
+        f'<div class="sub">{it.get("sub", "")}</div></div>'
         for it in items
     )
-    st.markdown(f'<div class="kpi-strip">{cells}</div>', unsafe_allow_html=True)
+    _render(f'<div class="kpi-strip">{cells}</div>')
+
+
+# ---------------------------------------------------------------------------
+# Sidebar helpers (called via ``with st.sidebar:`` or st.sidebar.markdown)
+# ---------------------------------------------------------------------------
+def sidebar_brand(emoji: str, title: str, subtitle: str) -> None:
+    html = (
+        '<div class="sidebar-brand">'
+        f'<div class="brand-mark">{emoji}</div>'
+        '<div class="brand-text">'
+        f'<div class="brand-title">{title}</div>'
+        f'<div class="brand-sub">{subtitle}</div>'
+        '</div></div>'
+    )
+    st.sidebar.markdown(html, unsafe_allow_html=True)
+
+
+def sidebar_model_card(
+    model_name: str, feature_set: str,
+    f1: float, recall: float,
+) -> None:
+    html = (
+        '<div class="sidebar-card">'
+        '<div class="sc-eyebrow">Active model</div>'
+        f'<div class="sc-title">{model_name}</div>'
+        f'<div class="sc-sub">特徵組合 · {feature_set}</div>'
+        '<div class="sc-row">'
+        f'<div><div class="sc-mini-label">F1</div>'
+        f'<div class="sc-mini-value">{f1:.3f}</div></div>'
+        f'<div><div class="sc-mini-label">Recall</div>'
+        f'<div class="sc-mini-value">{recall:.3f}</div></div>'
+        '</div></div>'
+    )
+    st.sidebar.markdown(html, unsafe_allow_html=True)
+
+
+def sidebar_dataset_card(name: str, note: str) -> None:
+    html = (
+        '<div class="sidebar-card">'
+        '<div class="sc-eyebrow">Dataset</div>'
+        f'<div class="sc-title">{name}</div>'
+        f'<div class="sc-sub">{note}</div>'
+        '</div>'
+    )
+    st.sidebar.markdown(html, unsafe_allow_html=True)
+
+
+def sidebar_footer(html_inner: str) -> None:
+    st.sidebar.markdown(
+        f'<div class="sidebar-footer">{html_inner}</div>',
+        unsafe_allow_html=True,
+    )

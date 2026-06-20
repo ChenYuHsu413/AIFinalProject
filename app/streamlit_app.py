@@ -25,6 +25,12 @@ try:
 except Exception:  # pragma: no cover
     HAS_SHADCN = False
 
+try:
+    from streamlit_option_menu import option_menu
+    HAS_OPTION_MENU = True
+except Exception:  # pragma: no cover
+    HAS_OPTION_MENU = False
+
 from src.models.predict import (
     REQUIRED_INPUT_COLUMNS,
     load_model,
@@ -73,26 +79,75 @@ except FileNotFoundError:
     st.stop()
 
 
-st.sidebar.markdown("### 導覽")
-page = st.sidebar.radio(
-    "頁面",
-    [
-        ":dart: 手動單筆預測",
-        ":bulb: What-if 敏感度分析",
-        ":inbox_tray: 批次 CSV 上傳",
-        ":bar_chart: 模型評估結果",
-        ":information_source: 關於本專案",
-    ],
-    label_visibility="collapsed",
+PAGES = [
+    "手動單筆預測",
+    "What-if 敏感度分析",
+    "批次 CSV 上傳",
+    "模型評估結果",
+    "關於本專案",
+]
+PAGE_ICONS = ["bullseye", "lightbulb", "inbox", "bar-chart-fill", "info-circle"]
+
+style.sidebar_brand(
+    emoji=":wrench:",
+    title="Predictive Maintenance",
+    subtitle="伺服馬達故障風險預測原型",
 )
-st.sidebar.markdown("---")
-st.sidebar.success(
-    f"**模型**\n\n{bundle.model_name}\n\n**特徵組合**\n\n{bundle.feature_set}"
+
+with st.sidebar:
+    if HAS_OPTION_MENU:
+        page = option_menu(
+            menu_title=None,
+            options=PAGES,
+            icons=PAGE_ICONS,
+            default_index=0,
+            styles={
+                "container": {
+                    "padding": "4px 0",
+                    "background-color": "transparent",
+                },
+                "icon": {
+                    "color": style.PRIMARY,
+                    "font-size": "16px",
+                },
+                "nav-link": {
+                    "font-size": "14px",
+                    "color": "#334155",
+                    "text-align": "left",
+                    "margin": "2px 0",
+                    "padding": "10px 12px",
+                    "border-radius": "10px",
+                    "--hover-color": "#f0fdfa",
+                },
+                "nav-link-selected": {
+                    "background": (
+                        f"linear-gradient(135deg, {style.PRIMARY}, "
+                        f"{style.PRIMARY_DARK})"
+                    ),
+                    "color": "white",
+                    "font-weight": "600",
+                    "box-shadow": "0 4px 14px rgba(13, 148, 136, 0.22)",
+                },
+                "nav-link-selected .icon": {"color": "white"},
+            },
+        )
+    else:
+        page = st.radio("頁面", PAGES, label_visibility="collapsed")
+
+style.sidebar_model_card(
+    bundle.model_name, bundle.feature_set,
+    bundle.metrics["f1"], bundle.metrics["recall"],
 )
-st.sidebar.caption(
-    "資料：UCI AI4I 2020（合成）\n\n"
-    "用途：維護決策輔助，**不**直接控制馬達。\n\n"
-    "Repo · `ChenYuHsu413/AIFinalProject`"
+style.sidebar_dataset_card(
+    "UCI AI4I 2020", "Synthetic · 10,000 筆 · 故障率 3.39%"
+)
+style.sidebar_footer(
+    '<span class="sf-pill">DECISION SUPPORT</span>'
+    '<span class="sf-pill">NOT CONTROL</span>'
+    '<div style="margin-top:8px;">本系統提供維護建議，<b>不</b>直接控制馬達。</div>'
+    '<div style="margin-top:8px;">'
+    'Repo · <a href="https://github.com/ChenYuHsu413/AIFinalProject" target="_blank">'
+    'ChenYuHsu413/AIFinalProject</a></div>'
 )
 
 
@@ -100,31 +155,31 @@ st.sidebar.caption(
 # Page-specific hero + status strip
 # ---------------------------------------------------------------------------
 HEROES = {
-    ":dart: 手動單筆預測": (
+    "手動單筆預測": (
         "Predict · Explain · Advise",
         "單筆故障風險預測",
         "輸入目前運轉條件，立即得到故障機率、健康分數、可能的故障類型，"
         "以及基於 SHAP 的可解釋分析。",
     ),
-    ":bulb: What-if 敏感度分析": (
+    "What-if 敏感度分析": (
         "Sensitivity · 1D / 2D",
         "What-if 敏感度分析",
         "拖動運轉參數滑桿，即時觀察故障機率的變化，並可掃描單一特徵或產生 "
         "2D 風險地景，找到「最安全的工作點」。",
     ),
-    ":inbox_tray: 批次 CSV 上傳": (
+    "批次 CSV 上傳": (
         "Batch · CSV",
         "批次 CSV 上傳預測",
         "一次處理多筆運轉條件，產出每筆的機率、健康分數、風險等級，"
         "並可下載結果 CSV。",
     ),
-    ":bar_chart: 模型評估結果": (
+    "模型評估結果": (
         "Evaluation · Threshold tuner",
         "模型評估與互動式門檻",
         "比較 50 組（10 模型 × 5 特徵）訓練結果，並透過 slider 即時調整決策"
         "門檻、觀察 Precision / Recall / F1 的取捨。",
     ),
-    ":information_source: 關於本專案": (
+    "關於本專案": (
         "About · Tech stack",
         "關於本專案",
         "以 UCI AI4I 2020 建立的端到端預測性維護原型系統。"
@@ -195,34 +250,33 @@ def render_advice(result: dict) -> None:
 # ---------------------------------------------------------------------------
 # Page 1: manual single prediction
 # ---------------------------------------------------------------------------
-if page == ":dart: 手動單筆預測":
-    style.panel_open("sky")
-    style.section("輸入運轉條件")
-    with st.form("manual"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            type_ = st.selectbox("產品類別 Type", ["L", "M", "H"], index=0)
-            wear = st.number_input(
-                "Tool wear [min]", min_value=0.0, value=108.0, step=1.0,
+if page == "手動單筆預測":
+    with style.zone("sky", key="manual-input"):
+        style.section("輸入運轉條件")
+        with st.form("manual"):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                type_ = st.selectbox("產品類別 Type", ["L", "M", "H"], index=0)
+                wear = st.number_input(
+                    "Tool wear [min]", min_value=0.0, value=108.0, step=1.0,
+                )
+            with c2:
+                air_t = st.number_input(
+                    "Air temperature [K]", 270.0, 320.0, 298.1, step=0.1,
+                )
+                torque = st.number_input(
+                    "Torque [Nm]", 0.0, 100.0, 42.8, step=0.1,
+                )
+            with c3:
+                proc_t = st.number_input(
+                    "Process temperature [K]", 270.0, 330.0, 308.6, step=0.1,
+                )
+                rpm = st.number_input(
+                    "Rotational speed [rpm]", 0.0, 5000.0, 1551.0, step=10.0,
+                )
+            submitted = st.form_submit_button(
+                ":rocket: 執行預測", type="primary", use_container_width=True,
             )
-        with c2:
-            air_t = st.number_input(
-                "Air temperature [K]", 270.0, 320.0, 298.1, step=0.1,
-            )
-            torque = st.number_input(
-                "Torque [Nm]", 0.0, 100.0, 42.8, step=0.1,
-            )
-        with c3:
-            proc_t = st.number_input(
-                "Process temperature [K]", 270.0, 330.0, 308.6, step=0.1,
-            )
-            rpm = st.number_input(
-                "Rotational speed [rpm]", 0.0, 5000.0, 1551.0, step=10.0,
-            )
-        submitted = st.form_submit_button(
-            ":rocket: 執行預測", type="primary", use_container_width=True,
-        )
-    style.panel_close()
 
     if submitted:
         record = {
@@ -330,32 +384,31 @@ if page == ":dart: 手動單筆預測":
 # ---------------------------------------------------------------------------
 # Page 2: What-if sensitivity analysis
 # ---------------------------------------------------------------------------
-elif page == ":bulb: What-if 敏感度分析":
-    style.panel_open("mint")
-    style.section("即時操控運轉條件")
-    st.caption(
-        "拖動下方滑桿，三個分頁會即時更新：預測結果、1D 掃描曲線、2D 風險地景。"
-    )
-    c1, c2 = st.columns(2)
-    with c1:
-        wif_type = st.selectbox("Type", ["L", "M", "H"], key="wif_type")
-        wif_air = st.slider(
-            "Air temperature [K]", 295.0, 305.0, 298.1, step=0.1, key="wif_air"
+elif page == "What-if 敏感度分析":
+    with style.zone("mint", key="whatif-input"):
+        style.section("即時操控運轉條件")
+        st.caption(
+            "拖動下方滑桿，三個分頁會即時更新：預測結果、1D 掃描曲線、2D 風險地景。"
         )
-        wif_proc = st.slider(
-            "Process temperature [K]", 305.0, 315.0, 308.6, step=0.1, key="wif_proc"
-        )
-    with c2:
-        wif_rpm = st.slider(
-            "Rotational speed [rpm]", 1100.0, 2900.0, 1551.0, step=10.0, key="wif_rpm"
-        )
-        wif_torque = st.slider(
-            "Torque [Nm]", 0.0, 80.0, 42.8, step=0.5, key="wif_torque"
-        )
-        wif_wear = st.slider(
-            "Tool wear [min]", 0.0, 260.0, 108.0, step=1.0, key="wif_wear"
-        )
-    style.panel_close()
+        c1, c2 = st.columns(2)
+        with c1:
+            wif_type = st.selectbox("Type", ["L", "M", "H"], key="wif_type")
+            wif_air = st.slider(
+                "Air temperature [K]", 295.0, 305.0, 298.1, step=0.1, key="wif_air"
+            )
+            wif_proc = st.slider(
+                "Process temperature [K]", 305.0, 315.0, 308.6, step=0.1, key="wif_proc"
+            )
+        with c2:
+            wif_rpm = st.slider(
+                "Rotational speed [rpm]", 1100.0, 2900.0, 1551.0, step=10.0, key="wif_rpm"
+            )
+            wif_torque = st.slider(
+                "Torque [Nm]", 0.0, 80.0, 42.8, step=0.5, key="wif_torque"
+            )
+            wif_wear = st.slider(
+                "Tool wear [min]", 0.0, 260.0, 108.0, step=1.0, key="wif_wear"
+            )
 
     base_record = {
         "Type": wif_type,
@@ -473,16 +526,15 @@ elif page == ":bulb: What-if 敏感度分析":
 # ---------------------------------------------------------------------------
 # Page 3: batch CSV upload
 # ---------------------------------------------------------------------------
-elif page == ":inbox_tray: 批次 CSV 上傳":
-    style.panel_open("sand")
-    style.section("批次預測（CSV 上傳）")
-    style.note(
-        "上傳至少包含這些欄位的 CSV："
-        f"<code>{', '.join(REQUIRED_INPUT_COLUMNS)}</code>"
-        "；系統會自動補上衍生特徵並執行批次推論。"
-    )
-    uploaded = st.file_uploader("選擇 CSV 檔案", type=["csv"])
-    style.panel_close()
+elif page == "批次 CSV 上傳":
+    with style.zone("sand", key="batch-input"):
+        style.section("批次預測（CSV 上傳）")
+        style.note(
+            "上傳至少包含這些欄位的 CSV："
+            f"<code>{', '.join(REQUIRED_INPUT_COLUMNS)}</code>"
+            "；系統會自動補上衍生特徵並執行批次推論。"
+        )
+        uploaded = st.file_uploader("選擇 CSV 檔案", type=["csv"])
 
     if uploaded:
         try:
@@ -527,7 +579,7 @@ elif page == ":inbox_tray: 批次 CSV 上傳":
 # ---------------------------------------------------------------------------
 # Page 4: model evaluation
 # ---------------------------------------------------------------------------
-elif page == ":bar_chart: 模型評估結果":
+elif page == "模型評估結果":
     cfg = load_config()
     metrics_csv = resolve(cfg["paths"]["metrics_csv"])
     if not metrics_csv.exists():
@@ -643,31 +695,29 @@ else:
             st.image(str(overview_img), use_container_width=True,
                      caption="專案總覽 infographic")
         with c_r:
-            style.panel_open("mint")
-            st.markdown(
-                """
-                ##### 系統定位
-                **預測性維護原型**：以目前運轉條件估計故障風險，提供決策輔助。
+            with style.zone("mint", key="about-positioning"):
+                st.markdown(
+                    """
+                    ##### 系統定位
+                    **預測性維護原型**：以目前運轉條件估計故障風險，提供決策輔助。
 
-                ##### 不是
-                - 即時控制器
-                - 精準 RUL 預測器
-                - 已驗證的工廠系統
-                """
-            )
-            style.panel_close()
-            style.panel_open("sky")
-            st.markdown(
-                """
-                ##### 技術棧
-                - **ML**：scikit-learn · XGBoost · LightGBM
-                - **可解釋**：SHAP · Permutation Importance
-                - **調參**：Optuna
-                - **UI**：Streamlit · Plotly · shadcn-ui
-                - **服務**：FastAPI · Docker · GitHub Actions
-                """
-            )
-            style.panel_close()
+                    ##### 不是
+                    - 即時控制器
+                    - 精準 RUL 預測器
+                    - 已驗證的工廠系統
+                    """
+                )
+            with style.zone("sky", key="about-stack"):
+                st.markdown(
+                    """
+                    ##### 技術棧
+                    - **ML**：scikit-learn · XGBoost · LightGBM
+                    - **可解釋**：SHAP · Permutation Importance
+                    - **調參**：Optuna
+                    - **UI**：Streamlit · Plotly · shadcn-ui
+                    - **服務**：FastAPI · Docker · GitHub Actions
+                    """
+                )
     else:
         style.note("infographic 圖片 (`docs/0620.png`) 不存在。", kind="warn")
 

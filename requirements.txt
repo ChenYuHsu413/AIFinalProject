@@ -26,6 +26,7 @@ streamlit>=1.30
 # Polished UI (modern interactive charts + shadcn-style components)
 plotly>=5.18
 streamlit-shadcn-ui>=0.1.19
+streamlit-option-menu>=0.4
 
 # FastAPI backend
 fastapi>=0.110
