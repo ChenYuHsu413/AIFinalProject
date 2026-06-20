@@ -4,6 +4,10 @@
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
+<p align="center">
+  <img src="docs/0620.png" alt="專案總覽 — CRISP-DM 全流程、最佳模型、系統功能、教學重點、限制與未來方向" width="720">
+</p>
+
 > **專案定位**：以 UCI **AI4I 2020** 合成資料集建立的端到端**預測性維護原型**。
 >
 > **本系統是**：以目前運轉條件估計故障風險、健康分數，並依規則產生維護建議

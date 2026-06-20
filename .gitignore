@@ -30,6 +30,9 @@ outputs/.fastapi.log
 outputs/.batch_sample.csv
 *.log
 
+# Claude Code export transcripts (local only — may contain private context)
+conversation-*.txt
+
 # Raw dataset (must be downloaded by the user)
 data/raw/*.csv
 data/processed/*.csv
