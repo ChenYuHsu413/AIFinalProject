@@ -23,6 +23,10 @@ lightgbm>=4.0
 # Streamlit dashboard
 streamlit>=1.30
 
+# Polished UI (modern interactive charts + shadcn-style components)
+plotly>=5.18
+streamlit-shadcn-ui>=0.1.19
+
 # FastAPI backend
 fastapi>=0.110
 uvicorn[standard]>=0.27

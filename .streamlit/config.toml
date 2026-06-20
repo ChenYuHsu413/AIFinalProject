@@ -1,0 +1,16 @@
+# ---------------------------------------------------------------------------
+# Streamlit theme — industrial / maintenance-focused brand palette.
+# ---------------------------------------------------------------------------
+[theme]
+primaryColor = "#0d9488"            # teal: trust + industrial
+backgroundColor = "#f8fafc"         # soft cool gray (page bg)
+secondaryBackgroundColor = "#ffffff"  # white panels / sidebar
+textColor = "#0f172a"               # near-black text
+font = "sans serif"
+
+[server]
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
