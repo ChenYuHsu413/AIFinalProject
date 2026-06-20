@@ -1,0 +1,40 @@
+# VCS / IDE / cache
+.git
+.gitignore
+.github
+.idea
+.vscode
+.pytest_cache
+.ipynb_checkpoints
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+
+# Local virtual environments
+.venv
+venv
+env
+
+# Notebooks & tests are not needed at runtime
+notebooks
+tests
+scripts
+
+# Auto-generated runtime artefacts (mounted as volumes instead)
+outputs
+data/raw/*.csv
+data/raw/*.zip
+data/processed/*
+
+# Local logs
+*.log
+outputs/.streamlit.log
+outputs/.fastapi.log
+outputs/.batch_sample.csv
+
+# Docker / CI artefacts themselves
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.yaml

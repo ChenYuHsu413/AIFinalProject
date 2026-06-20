@@ -1,0 +1,42 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Project artefacts
+outputs/models/*.joblib
+outputs/models/*.pkl
+outputs/figures/*.png
+outputs/metrics/*.csv
+outputs/metrics/*.json
+
+# Runtime logs / scratch files written by the launchers
+outputs/.streamlit.log
+outputs/.fastapi.log
+outputs/.batch_sample.csv
+*.log
+
+# Raw dataset (must be downloaded by the user)
+data/raw/*.csv
+data/processed/*.csv
+data/processed/*.parquet
+
+# Keep folder placeholders
+!**/.gitkeep
+
+# Streamlit
+.streamlit/secrets.toml

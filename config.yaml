@@ -1,0 +1,115 @@
+# ---------------------------------------------------------------
+# Predictive Maintenance Prototype – central configuration
+# ---------------------------------------------------------------
+
+paths:
+  data_raw: data/raw/ai4i2020.csv
+  data_processed_dir: data/processed
+  outputs_figures: outputs/figures
+  outputs_metrics: outputs/metrics
+  outputs_models: outputs/models
+  outputs_reports: outputs/reports
+  best_model: outputs/models/best_model.joblib
+  metrics_csv: outputs/metrics/model_comparison.csv
+  best_model_meta: outputs/models/best_model_meta.json
+  failure_type_model: outputs/models/failure_type_model.joblib
+  failure_type_metrics: outputs/metrics/failure_type_comparison.csv
+  tuning_history: outputs/metrics/tuning_history.csv
+  tuned_params: outputs/models/tuned_params.json
+  pretuned_model_backup: outputs/models/best_model_pretuned.joblib
+  model_card: outputs/models/MODEL_CARD.md
+
+# ---------------------------------------------------------------
+# Columns
+# ---------------------------------------------------------------
+columns:
+  id_columns: ["UDI", "Product ID"]
+  categorical: ["Type"]
+  numeric_raw:
+    - "Air temperature [K]"
+    - "Process temperature [K]"
+    - "Rotational speed [rpm]"
+    - "Torque [Nm]"
+    - "Tool wear [min]"
+  engineered:
+    - "temp_diff"
+    - "power_proxy"
+    - "wear_torque_interaction"
+    - "wear_speed_interaction"
+    - "temp_wear_interaction"
+  target_primary: "Machine failure"
+  failure_types: ["TWF", "HDF", "PWF", "OSF", "RNF"]
+
+# ---------------------------------------------------------------
+# Train / test split
+# ---------------------------------------------------------------
+split:
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ---------------------------------------------------------------
+# Modeling
+# ---------------------------------------------------------------
+modeling:
+  # Models to enable (XGBoost / LightGBM are skipped if not installed)
+  enabled_models:
+    - logistic_regression
+    - decision_tree
+    - random_forest
+    - svm
+    - gradient_boosting
+    - xgboost
+    - lightgbm
+    - knn
+    - mlp
+    - naive_bayes
+  class_weight: balanced            # only applied where the estimator supports it
+  cv_folds: 5
+  scoring_for_best: f1              # main criterion: F1 on the positive class
+  random_state: 42
+
+# ---------------------------------------------------------------
+# Hyperparameter tuning (Optuna)
+# ---------------------------------------------------------------
+tuning:
+  top_n_models: 3       # tune the top-N rows of model_comparison.csv (by scoring_for_best)
+  n_trials: 15          # Optuna trials per model
+  cv_folds: 3           # CV folds during tuning (3 is fast and stable for AI4I)
+  timeout_per_model: 600  # seconds; soft cap to keep runtime reasonable
+
+# Feature sets to compare during training
+feature_sets:
+  - name: A_baseline
+    description: "Original raw features only (Type + 5 numeric)."
+    method: raw
+  - name: B_engineered
+    description: "Raw + 5 engineered interaction / domain features."
+    method: engineered
+  - name: C_selectkbest_top8
+    description: "SelectKBest (ANOVA F-test), top-8 features after engineering."
+    method: selectkbest
+    k: 8
+  - name: D_rfe_top8
+    description: "Recursive Feature Elimination with Logistic Regression, top-8."
+    method: rfe
+    k: 8
+  - name: E_rf_importance_top8
+    description: "Top-8 features by Random Forest impurity importance."
+    method: rf_importance
+    k: 8
+
+# ---------------------------------------------------------------
+# Risk thresholds & maintenance advice (used by predict / UI / API)
+# ---------------------------------------------------------------
+risk:
+  low_max: 0.3
+  medium_max: 0.7
+
+# Operating-range thresholds for rule-based maintenance advice.
+# Values are reasonable cut-offs derived from AI4I distribution percentiles.
+advice_thresholds:
+  high_temp_diff_K: 12.0
+  high_torque_Nm: 55.0
+  high_tool_wear_min: 200.0
+  low_rotational_speed_rpm: 1300.0

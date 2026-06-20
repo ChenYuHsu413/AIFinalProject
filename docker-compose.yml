@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# docker compose up    -> starts FastAPI (8000) and Streamlit (8501)
+# docker compose down  -> stops both
+#
+# One-off model training inside the container:
+#   docker compose run --rm api python -m src.models.train
+#   docker compose run --rm api python -m src.models.evaluate
+#   docker compose run --rm api python -m src.models.train_failure_types
+#
+# Both services share the same image and the host's data/outputs directories
+# (bind-mounted), so the trained model on the host is immediately usable
+# inside the containers without rebuilding the image.
+# ---------------------------------------------------------------------------
+
+# Shared image / volume configuration via YAML anchor.
+x-app-base: &app-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: pmm-app:latest
+  environment:
+    - PYTHONUNBUFFERED=1
+  volumes:
+    - ./data:/app/data
+    - ./outputs:/app/outputs
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *app-base
+    container_name: pmm-api
+    ports:
+      - "8000:8000"
+    command:
+      - uvicorn
+      - app.backend.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ui:
+    <<: *app-base
+    container_name: pmm-ui
+    depends_on:
+      - api
+    ports:
+      - "8501:8501"
+    command:
+      - streamlit
+      - run
+      - app/streamlit_app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+      - --server.headless=true
