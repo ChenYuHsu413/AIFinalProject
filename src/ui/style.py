@@ -869,3 +869,50 @@ def dash_tile(icon: str, title: str, sub: str) -> None:
             <div class="dt-sub">{sub}</div>
         </div>
     """)
+
+
+def dash_button_tile(icon: str, title: str, sub: str, key: str) -> bool:
+    """Tile-shaped clickable button. Returns True when clicked.
+
+    Renders the icon + title + sub inside the button label (Streamlit wraps
+    long labels) and styles the whole button to look like the static
+    ``dash_tile``.  The CSS targets the button via stylable_container.
+    """
+    try:
+        from streamlit_extras.stylable_container import stylable_container
+    except Exception:  # pragma: no cover
+        return st.button(f"{icon}  {title}", key=key, use_container_width=True)
+
+    css = f"""
+        button {{
+            background: white;
+            border: 1px solid {BORDER};
+            border-radius: 14px;
+            padding: 18px 20px;
+            text-align: left;
+            min-height: 130px;
+            color: {INK};
+            font-weight: 500;
+            font-size: 0.92rem;
+            line-height: 1.55;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.15s ease-out;
+            white-space: normal !important;
+        }}
+        button:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.10);
+            border-color: {PRIMARY};
+        }}
+        button:focus:not(:active) {{
+            border-color: {PRIMARY};
+            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.18);
+        }}
+        button p {{
+            margin: 0 !important;
+            line-height: 1.55;
+        }}
+    """
+    label = f"{icon}  {title}\n\n{sub}"
+    with stylable_container(key=f"tile-{key}", css_styles=css):
+        return st.button(label, key=key, use_container_width=True)

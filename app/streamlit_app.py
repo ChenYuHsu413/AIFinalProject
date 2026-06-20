@@ -99,6 +99,9 @@ style.sidebar_brand(
     subtitle="伺服馬達故障風險預測原型",
 )
 
+# Pop any programmatic-nav request set by a tile click on the previous run.
+_nav_manual = st.session_state.pop("nav_jump", None)
+
 with st.sidebar:
     if HAS_OPTION_MENU:
         page = option_menu(
@@ -106,6 +109,7 @@ with st.sidebar:
             options=PAGES,
             icons=PAGE_ICONS,
             default_index=0,
+            manual_select=_nav_manual,
             styles={
                 "container": {
                     "padding": "4px 0",
@@ -309,21 +313,28 @@ if page == "首頁總覽":
     cfg = load_config()
     metrics_csv = resolve(cfg["paths"]["metrics_csv"])
 
-    # ---- 4 entry tiles ----
+    # ---- 4 clickable entry tiles ----
     style.section("快速入口")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        style.dash_tile("🎯", "手動單筆預測",
-                        "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議")
-    with c2:
-        style.dash_tile("💡", "What-if 敏感度",
-                        "拖動滑桿即時觀察故障機率、1D/2D 風險地景")
-    with c3:
-        style.dash_tile("📥", "批次 CSV 上傳",
-                        "多筆同時推論、風險分布、Top-N 高風險清單")
-    with c4:
-        style.dash_tile("📊", "模型評估",
-                        "10×5 比較表、互動門檻、訓練圖表")
+    tile_targets = [
+        ("🎯", "手動單筆預測",
+         "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議",
+         PAGES.index("手動單筆預測"), "go-manual"),
+        ("💡", "What-if 敏感度",
+         "拖動滑桿即時觀察故障機率、1D/2D 風險地景",
+         PAGES.index("What-if 敏感度分析"), "go-whatif"),
+        ("📥", "批次 CSV 上傳",
+         "多筆同時推論、風險分布、Top-N 高風險清單",
+         PAGES.index("批次 CSV 上傳"), "go-batch"),
+        ("📊", "模型評估",
+         "10×5 比較表、互動門檻、訓練圖表",
+         PAGES.index("模型評估結果"), "go-eval"),
+    ]
+    tile_cols = st.columns(4)
+    for col, (icon, title, sub, target_idx, key) in zip(tile_cols, tile_targets):
+        with col:
+            if style.dash_button_tile(icon, title, sub, key=key):
+                st.session_state.nav_jump = target_idx
+                st.rerun()
 
     st.divider()
 
