@@ -301,6 +301,198 @@ div[role="tabpanel"] {{
     animation: fadeUp 0.35s ease-out;
 }}
 
+/* ---- Metric card with progress bar ---- */
+.metric-bar {{
+    background: white;
+    border: 1px solid {BORDER};
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeUp 0.45s ease-out;
+    position: relative;
+    overflow: hidden;
+}}
+.metric-bar::before {{
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, {PRIMARY}, {ACCENT});
+}}
+.metric-bar .mb-label {{
+    color: {MUTED};
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    margin-left: 6px;
+}}
+.metric-bar .mb-row {{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 6px 0 8px 6px;
+}}
+.metric-bar .mb-value {{
+    color: {INK};
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+}}
+.metric-bar .mb-sub {{
+    color: {MUTED};
+    font-size: 0.7rem;
+}}
+.metric-bar .mb-track {{
+    background: #f1f5f9;
+    height: 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-left: 6px;
+}}
+.metric-bar .mb-fill {{
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, {PRIMARY}, {ACCENT});
+    animation: barGrow 0.7s cubic-bezier(.21,.71,.34,1.01);
+    transform-origin: left;
+}}
+.metric-bar .mb-fill.warn   {{ background: linear-gradient(90deg, {WARNING}, #d97706); }}
+.metric-bar .mb-fill.danger {{ background: linear-gradient(90deg, #ef4444, {DANGER}); }}
+.metric-bar .mb-fill.good   {{ background: linear-gradient(90deg, #10b981, {SUCCESS}); }}
+@keyframes barGrow {{
+    from {{ transform: scaleX(0); }}
+    to   {{ transform: scaleX(1); }}
+}}
+.metric-bar.with-spark .mb-spark {{
+    margin-top: -2px;
+    margin-left: -10px;
+    margin-right: -10px;
+}}
+
+/* ---- Advice card with category icon ---- */
+.advice-card {{
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: white;
+    border: 1px solid {BORDER};
+    border-left: 4px solid {PRIMARY};
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 8px 0;
+    animation: fadeUp 0.4s ease-out;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}}
+.advice-card:hover {{
+    transform: translateX(2px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}}
+.advice-card.thermal    {{ border-left-color: #f97316; }}
+.advice-card.load       {{ border-left-color: #6366f1; }}
+.advice-card.wear       {{ border-left-color: #a855f7; }}
+.advice-card.speed      {{ border-left-color: #06b6d4; }}
+.advice-card.alert      {{ border-left-color: {DANGER}; background: #fef2f2; }}
+.advice-card.healthy    {{ border-left-color: {SUCCESS}; background: #f0fdf4; }}
+.advice-card .ac-icon {{
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+}}
+.advice-card.thermal .ac-icon {{ background: #fff7ed; }}
+.advice-card.load    .ac-icon {{ background: #eef2ff; }}
+.advice-card.wear    .ac-icon {{ background: #faf5ff; }}
+.advice-card.speed   .ac-icon {{ background: #ecfeff; }}
+.advice-card.alert   .ac-icon {{ background: #fee2e2; }}
+.advice-card.healthy .ac-icon {{ background: #dcfce7; }}
+.advice-card .ac-body {{
+    color: {INK};
+    font-size: 0.93rem;
+    line-height: 1.55;
+    padding-top: 6px;
+}}
+.advice-card .ac-tag {{
+    display: inline-block;
+    background: #f1f5f9;
+    color: {MUTED};
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 4px;
+    margin-right: 6px;
+}}
+
+/* ---- Action bar ---- */
+.action-bar {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0 18px;
+}}
+.action-bar a, .action-bar .ab-link {{
+    background: white;
+    color: {PRIMARY_DARK};
+    border: 1px solid {BORDER};
+    padding: 8px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.86rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: all 0.15s ease-out;
+}}
+.action-bar a:hover, .action-bar .ab-link:hover {{
+    border-color: {PRIMARY};
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.18);
+    transform: translateY(-1px);
+}}
+.action-bar a.primary {{
+    background: linear-gradient(135deg, {PRIMARY}, {PRIMARY_DARK});
+    color: white !important;
+    border-color: transparent;
+}}
+
+/* ---- Dashboard tiles ---- */
+.dash-tile {{
+    background: white;
+    border: 1px solid {BORDER};
+    border-radius: 14px;
+    padding: 18px 20px;
+    height: 100%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeUp 0.4s ease-out;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}}
+.dash-tile:hover {{
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}}
+.dash-tile .dt-icon {{
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, {PRIMARY}, {ACCENT});
+    color: white;
+    display: grid; place-items: center;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}}
+.dash-tile .dt-title {{
+    color: {INK};
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}}
+.dash-tile .dt-sub {{
+    color: {MUTED};
+    font-size: 0.84rem;
+    line-height: 1.5;
+}}
+
 /* ---- Sidebar polish ---- */
 section[data-testid="stSidebar"] > div:first-child {{
     padding-top: 0.5rem;
@@ -598,3 +790,82 @@ def sidebar_footer(html_inner: str) -> None:
         f'<div class="sidebar-footer">{html_inner}</div>',
         unsafe_allow_html=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# Richer primitives for Phase A
+# ---------------------------------------------------------------------------
+def metric_with_bar(label: str, value: str, ratio: float,
+                    sub: str = "", tone: str = "primary") -> None:
+    """Metric card with an animated progress bar showing ``ratio`` (0–1)."""
+    cls_fill = {"primary": "", "warn": "warn",
+                "danger": "danger", "good": "good"}.get(tone, "")
+    pct = max(0.0, min(1.0, float(ratio))) * 100
+    _render(f"""
+        <div class="metric-bar">
+            <div class="mb-label">{label}</div>
+            <div class="mb-row">
+                <div class="mb-value">{value}</div>
+                <div class="mb-sub">{sub}</div>
+            </div>
+            <div class="mb-track">
+                <div class="mb-fill {cls_fill}" style="width:{pct:.1f}%;"></div>
+            </div>
+        </div>
+    """)
+
+
+ADVICE_CATEGORIES = [
+    (("散熱", "溫差", "通風"), "🌡️", "thermal", "Thermal"),
+    (("扭矩", "負載", "夾持"), "⚙️", "load", "Load"),
+    (("刀具", "磨耗", "換刀"), "🔧", "wear", "Wear"),
+    (("轉速", "驅動"), "💨", "speed", "Speed"),
+    (("立即", "通報", "高",), "🚨", "alert", "Alert"),
+    (("健康", "例行", "監控"), "✅", "healthy", "Healthy"),
+]
+
+
+def _classify_advice(text: str) -> tuple[str, str, str]:
+    for keys, icon, css, label in ADVICE_CATEGORIES:
+        if any(k in text for k in keys):
+            return icon, css, label
+    return "💡", "", "Note"
+
+
+def advice_card(text: str) -> None:
+    icon, css, label = _classify_advice(text)
+    _render(f"""
+        <div class="advice-card {css}">
+            <div class="ac-icon">{icon}</div>
+            <div class="ac-body">
+                <span class="ac-tag">{label}</span><br>{text}
+            </div>
+        </div>
+    """)
+
+
+def action_bar(links: list[dict]) -> None:
+    """Render a horizontal row of action buttons / links.
+
+    Each item: ``{label, url|onclick, primary, icon}``.
+    """
+    items = []
+    for it in links:
+        url = it.get("url", "#")
+        primary = " primary" if it.get("primary") else ""
+        icon = it.get("icon", "")
+        items.append(
+            f'<a class="ab-link{primary}" href="{url}" target="_blank">'
+            f'{icon} {it.get("label", "")}</a>'
+        )
+    _render(f'<div class="action-bar">{"".join(items)}</div>')
+
+
+def dash_tile(icon: str, title: str, sub: str) -> None:
+    _render(f"""
+        <div class="dash-tile">
+            <div class="dt-icon">{icon}</div>
+            <div class="dt-title">{title}</div>
+            <div class="dt-sub">{sub}</div>
+        </div>
+    """)

@@ -409,6 +409,48 @@ def leaderboard_bar(df: pd.DataFrame, metric: str = "f1",
 
 
 # ---------------------------------------------------------------------------
+# Sparkline (tiny inline trend chart, no axes)
+# ---------------------------------------------------------------------------
+def sparkline(values, color: str = PRIMARY, height: int = 60,
+              fill: bool = True) -> go.Figure:
+    values = list(values)
+    if not values:
+        values = [0]
+    fig = go.Figure(
+        go.Scatter(
+            y=values,
+            x=list(range(len(values))),
+            mode="lines",
+            line=dict(color=color, width=2.2, shape="spline", smoothing=0.6),
+            fill="tozeroy" if fill else None,
+            fillcolor=f"rgba(13, 148, 136, 0.16)" if color == PRIMARY else "rgba(0,0,0,0.04)",
+            hovertemplate="%{y:.3f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[len(values) - 1], y=[values[-1]],
+            mode="markers",
+            marker=dict(size=8, color=color,
+                        line=dict(color="white", width=2)),
+            hovertemplate="目前 %{y:.3f}<extra></extra>",
+            showlegend=False,
+        )
+    )
+    fig.update_layout(
+        height=height,
+        margin=dict(l=0, r=0, t=4, b=0),
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False, showgrid=False, zeroline=False),
+        yaxis=dict(visible=False, showgrid=False, zeroline=False,
+                   range=[min(values) - 0.02, max(values) + 0.02]),
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------
 def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:

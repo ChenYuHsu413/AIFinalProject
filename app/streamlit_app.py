@@ -51,6 +51,7 @@ from src.ui.charts import (
     risk_donut,
     risk_landscape,
     shap_bar,
+    sparkline,
 )
 from src.utils.paths import load_config, resolve
 
@@ -83,13 +84,14 @@ except FileNotFoundError:
 
 
 PAGES = [
+    "首頁總覽",
     "手動單筆預測",
     "What-if 敏感度分析",
     "批次 CSV 上傳",
     "模型評估結果",
     "關於本專案",
 ]
-PAGE_ICONS = ["bullseye", "lightbulb", "inbox", "bar-chart-fill", "info-circle"]
+PAGE_ICONS = ["house-fill", "bullseye", "lightbulb", "inbox", "bar-chart-fill", "info-circle"]
 
 style.sidebar_brand(
     emoji=":wrench:",
@@ -158,6 +160,12 @@ style.sidebar_footer(
 # Page-specific hero + status strip
 # ---------------------------------------------------------------------------
 HEROES = {
+    "首頁總覽": (
+        "Dashboard · One-page view",
+        "預測性維護原型系統 · 總覽",
+        "一頁看完模型、資料、排行榜與最近活動。"
+        "可從這裡跳到任何工作流：單筆預測、What-if、批次上傳、評估。",
+    ),
     "手動單筆預測": (
         "Predict · Explain · Advise",
         "單筆故障風險預測",
@@ -197,15 +205,59 @@ style.hero(
 )
 
 
-# Top KPI strip showing the model's headline metrics
-m = bundle.metrics
-style.kpi_strip([
-    {"label": "Recall", "value": f"{m['recall']:.3f}", "sub": "故障樣本的命中率"},
-    {"label": "F1",     "value": f"{m['f1']:.3f}",     "sub": "P/R 調和平均"},
-    {"label": "ROC-AUC", "value": f"{m['roc_auc']:.3f}", "sub": "整體鑑別力"},
-    {"label": "PR-AUC", "value": f"{m['pr_auc']:.3f}", "sub": "不平衡資料首選"},
-    {"label": "FN（測試集）", "value": "13 / 68",       "sub": "預設 thr = 0.5"},
+# Action bar — quick links to the API, model card, dataset, etc.
+style.action_bar([
+    {"label": "FastAPI /docs", "icon": ":books:",
+     "url": "http://127.0.0.1:8000/docs", "primary": True},
+    {"label": "GitHub Repo", "icon": ":file_folder:",
+     "url": "https://github.com/ChenYuHsu413/AIFinalProject"},
+    {"label": "Model Card", "icon": ":scroll:",
+     "url": "https://github.com/ChenYuHsu413/AIFinalProject/blob/main/outputs/models/MODEL_CARD.md"},
+    {"label": "Dataset (UCI)", "icon": ":bar_chart:",
+     "url": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset"},
 ])
+
+# Top KPI strip — metric cards with animated progress bars
+m = bundle.metrics
+
+
+def _tone_for(value: float) -> str:
+    if value >= 0.85:
+        return "good"
+    if value >= 0.65:
+        return "primary"
+    if value >= 0.45:
+        return "warn"
+    return "danger"
+
+
+kpi_cols = st.columns(5)
+with kpi_cols[0]:
+    style.metric_with_bar(
+        "Recall", f"{m['recall']:.3f}", m['recall'],
+        sub="故障命中率", tone=_tone_for(m['recall']),
+    )
+with kpi_cols[1]:
+    style.metric_with_bar(
+        "F1", f"{m['f1']:.3f}", m['f1'],
+        sub="P/R 調和平均", tone=_tone_for(m['f1']),
+    )
+with kpi_cols[2]:
+    style.metric_with_bar(
+        "ROC-AUC", f"{m['roc_auc']:.3f}", m['roc_auc'],
+        sub="整體鑑別力", tone=_tone_for(m['roc_auc']),
+    )
+with kpi_cols[3]:
+    style.metric_with_bar(
+        "PR-AUC", f"{m['pr_auc']:.3f}", m['pr_auc'],
+        sub="不平衡首選", tone=_tone_for(m['pr_auc']),
+    )
+with kpi_cols[4]:
+    # FN ratio: 13 / 68 = ~19% miss rate. Convert to a 0–1 "ok" score for the bar.
+    style.metric_with_bar(
+        "Miss rate", f"{13/68:.1%}", 1 - 13/68,
+        sub="FN 13 / 68 故障", tone="warn",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -247,13 +299,126 @@ def render_result_block(result: dict) -> None:
 def render_advice(result: dict) -> None:
     style.section("維護建議")
     for tip in result.get("maintenance_advice", []):
-        st.markdown(f"<div class='note-box'>{tip}</div>", unsafe_allow_html=True)
+        style.advice_card(tip)
+
+
+# ---------------------------------------------------------------------------
+# Page 0: dashboard / one-page overview
+# ---------------------------------------------------------------------------
+if page == "首頁總覽":
+    cfg = load_config()
+    metrics_csv = resolve(cfg["paths"]["metrics_csv"])
+
+    # ---- 4 entry tiles ----
+    style.section("快速入口")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        style.dash_tile(":dart:", "手動單筆預測",
+                        "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議")
+    with c2:
+        style.dash_tile(":bulb:", "What-if 敏感度",
+                        "拖動滑桿即時觀察故障機率、1D/2D 風險地景")
+    with c3:
+        style.dash_tile(":inbox_tray:", "批次 CSV 上傳",
+                        "多筆同時推論、風險分布、Top-N 高風險清單")
+    with c4:
+        style.dash_tile(":bar_chart:", "模型評估",
+                        "10×5 比較表、互動門檻、訓練圖表")
+
+    st.divider()
+
+    # ---- main 2-col grid ----
+    cL, cR = st.columns([1.2, 1])
+
+    with cL:
+        style.section("目前部署的模型")
+        with style.zone("sky", key="home-model"):
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                style.big_stat("Recall", f"{m['recall']:.3f}",
+                               "故障命中率",
+                               tone=_tone_for(m['recall']))
+            with mc2:
+                style.big_stat("F1", f"{m['f1']:.3f}",
+                               "整體分數",
+                               tone=_tone_for(m['f1']))
+            with mc3:
+                style.big_stat("PR-AUC", f"{m['pr_auc']:.3f}",
+                               "不平衡資料首選",
+                               tone=_tone_for(m['pr_auc']))
+            st.markdown(
+                f"<div style='color:#64748b;font-size:0.9rem;margin-top:10px;'>"
+                f"<b>{bundle.model_name}</b>　·　特徵組合 "
+                f"<code>{bundle.feature_set}</code>　·　共 "
+                f"{len(bundle.feature_columns)} 個特徵</div>",
+                unsafe_allow_html=True,
+            )
+
+        if metrics_csv.exists():
+            style.section("Top 5 模型排行榜（依 F1）")
+            comp = pd.read_csv(metrics_csv)
+            st.plotly_chart(
+                leaderboard_bar(comp, metric="f1", top_n=5),
+                use_container_width=True,
+            )
+
+    with cR:
+        style.section("資料集")
+        with style.zone("mint", key="home-dataset"):
+            style.kpi_strip([
+                {"label": "Rows", "value": "10,000",
+                 "sub": "AI4I 2020 全部"},
+                {"label": "Failure rate", "value": "3.39%",
+                 "sub": "嚴重不平衡"},
+            ])
+            style.kpi_strip([
+                {"label": "Type L", "value": "60.0%",
+                 "sub": "低成本變體"},
+                {"label": "Type M", "value": "30.0%",
+                 "sub": "中規格"},
+                {"label": "Type H", "value": "10.0%",
+                 "sub": "高規格"},
+            ])
+            st.caption(
+                "資料來源：UCI Machine Learning Repository。"
+                "由參數化過程模型產生，**不是**真實工廠紀錄。"
+            )
+
+        style.section("最近 What-if 活動")
+        if "wif_history" in st.session_state and st.session_state.wif_history:
+            history = st.session_state.wif_history
+            mini = sparkline(history[-30:], color=style.PRIMARY, height=120)
+            st.plotly_chart(mini, use_container_width=True)
+            st.caption(
+                f"已試 {len(history)} 步；"
+                f"目前 {history[-1]*100:.1f}%　·　"
+                f"歷史最高 {max(history)*100:.1f}%　·　"
+                f"歷史最低 {min(history)*100:.1f}%"
+            )
+        else:
+            style.note(
+                "去 <b>What-if 敏感度分析</b> 頁拖動滑桿，"
+                "之後這裡就會出現你最近的探索軌跡。",
+            )
+
+    st.divider()
+
+    # ---- footer chips ----
+    style.section("技術棧")
+    style.kpi_strip([
+        {"label": "ML",     "value": "scikit-learn", "sub": "+ XGBoost / LightGBM"},
+        {"label": "Explain", "value": "SHAP",        "sub": "TreeExplainer"},
+        {"label": "Tune",   "value": "Optuna",      "sub": "TPE sampler"},
+        {"label": "UI",     "value": "Streamlit",   "sub": "+ Plotly + shadcn"},
+        {"label": "API",    "value": "FastAPI",     "sub": "8 endpoints"},
+        {"label": "Deploy", "value": "Docker",      "sub": "+ GitHub Actions CI"},
+    ])
 
 
 # ---------------------------------------------------------------------------
 # Page 1: manual single prediction
 # ---------------------------------------------------------------------------
-if page == "手動單筆預測":
+elif page == "手動單筆預測":
     with style.zone("sky", key="manual-input"):
         style.section("輸入運轉條件")
         with st.form("manual"):
@@ -310,8 +475,22 @@ if page == "手動單筆預測":
 
         with tabs[0]:
             render_advice(result)
-            with st.expander("查看完整 JSON 回傳結果"):
-                st.json(result)
+
+            with st.expander(":scroll: API 回傳的 JSON（可直接複製到 curl / Postman）"):
+                cjson_l, cjson_r = st.columns([2, 1])
+                with cjson_l:
+                    import json as _json
+                    st.code(
+                        _json.dumps(result, indent=2, ensure_ascii=False),
+                        language="json",
+                    )
+                with cjson_r:
+                    st.markdown(
+                        "**對應 FastAPI 端點**\n\n"
+                        "`POST /predict_full`\n\n"
+                        "把上方 JSON 對應的輸入欄位 send 過去，"
+                        "就會得到同樣的回傳結構。",
+                    )
 
         with tabs[1]:
             if not shap_supported():
@@ -428,6 +607,15 @@ elif page == "What-if 敏感度分析":
         wif_result = predict_single(base_record)
         has_ft = False
 
+    # ---- session-state probability history (for the sparkline) ----
+    if "wif_history" not in st.session_state:
+        st.session_state.wif_history = []
+    st.session_state.wif_history.append(
+        float(wif_result["failure_probability"])
+    )
+    st.session_state.wif_history = st.session_state.wif_history[-40:]
+    history = st.session_state.wif_history
+
     tabs = st.tabs([
         ":dart: 即時預測 + 指紋",
         ":arrow_right: 1D 掃描",
@@ -436,6 +624,30 @@ elif page == "What-if 敏感度分析":
 
     with tabs[0]:
         render_result_block(wif_result)
+
+        # ---- recent change history (sparkline + delta) ----
+        if len(history) >= 2:
+            delta = history[-1] - history[-2]
+            delta_pct = delta * 100
+            arrow = "▲" if delta > 0 else ("▼" if delta < 0 else "■")
+            colour = "#dc2626" if delta > 0 else ("#16a34a" if delta < 0 else "#64748b")
+            sp_c1, sp_c2 = st.columns([3, 1])
+            with sp_c1:
+                style.section("最近 40 步的故障機率走勢")
+                st.plotly_chart(
+                    sparkline(history, color=style.PRIMARY, height=80),
+                    use_container_width=True,
+                )
+            with sp_c2:
+                st.markdown(
+                    f"<div style='padding-top:38px;text-align:center;"
+                    f"font-size:1.6rem;font-weight:700;color:{colour};'>"
+                    f"{arrow} {abs(delta_pct):.1f}%</div>"
+                    f"<div style='text-align:center;color:#64748b;font-size:0.78rem;'>"
+                    f"相對上一步</div>",
+                    unsafe_allow_html=True,
+                )
+
         c_l, c_r = st.columns([1, 1])
         with c_l:
             st.plotly_chart(
