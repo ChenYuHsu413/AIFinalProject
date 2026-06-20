@@ -44,14 +44,42 @@ section[data-testid="stSidebar"] .stRadio label {{
     font-weight: 500;
 }}
 
-/* ---- Hero banner ---- */
+/* ---- Keyframes ---- */
+@keyframes heroShift {{
+    0%   {{ background-position: 0% 50%; }}
+    50%  {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+@keyframes fadeUp {{
+    from {{ opacity: 0; transform: translateY(8px); }}
+    to   {{ opacity: 1; transform: translateY(0); }}
+}}
+@keyframes pulseRing {{
+    0%   {{ box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.45); }}
+    70%  {{ box-shadow: 0 0 0 14px rgba(13, 148, 136, 0); }}
+    100% {{ box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }}
+}}
+
+/* ---- Hero banner (animated gradient) ---- */
 .hero-banner {{
-    background: linear-gradient(135deg, {PRIMARY} 0%, {ACCENT} 100%);
+    background: linear-gradient(135deg, {PRIMARY} 0%, {ACCENT} 50%, #1e3a8a 100%);
+    background-size: 200% 200%;
+    animation: heroShift 14s ease infinite, fadeUp 0.5s ease-out;
     color: white;
-    padding: 28px 32px;
-    border-radius: 16px;
+    padding: 30px 34px;
+    border-radius: 18px;
     margin-bottom: 22px;
-    box-shadow: 0 10px 30px rgba(13, 148, 136, 0.18);
+    box-shadow: 0 14px 36px rgba(13, 148, 136, 0.22);
+    position: relative;
+    overflow: hidden;
+}}
+.hero-banner::after {{
+    content: "";
+    position: absolute;
+    top: -50%; right: -10%;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 60%);
+    pointer-events: none;
 }}
 .hero-banner .hero-eyebrow {{
     font-size: 0.78rem;
@@ -62,7 +90,7 @@ section[data-testid="stSidebar"] .stRadio label {{
 }}
 .hero-banner h1 {{
     margin: 0 0 8px 0;
-    font-size: 1.65rem;
+    font-size: 1.7rem;
     font-weight: 700;
     line-height: 1.25;
 }}
@@ -71,6 +99,21 @@ section[data-testid="stSidebar"] .stRadio label {{
     opacity: 0.92;
     font-size: 0.96rem;
     max-width: 760px;
+}}
+.hero-banner .hero-chips {{
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}}
+.hero-banner .hero-chips span {{
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    backdrop-filter: blur(4px);
 }}
 
 /* ---- Section header (left accent bar) ---- */
@@ -151,11 +194,14 @@ section[data-testid="stSidebar"] .stRadio label {{
 
 /* ---- Polish Streamlit's own widgets ---- */
 .stButton > button {{
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 600;
     border: none;
-    padding: 8px 18px;
-    transition: transform 0.05s ease-in;
+    padding: 10px 22px;
+    transition: transform 0.05s ease-in, box-shadow 0.15s ease-out;
+}}
+.stButton > button:hover {{
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.25);
 }}
 .stButton > button:active {{ transform: translateY(1px); }}
 div[data-testid="stExpander"] {{
@@ -166,6 +212,101 @@ div[data-testid="stDataFrame"] {{
     border-radius: 10px;
     overflow: hidden;
 }}
+.stTabs [data-baseweb="tab-list"] {{
+    gap: 6px;
+}}
+.stTabs [data-baseweb="tab"] {{
+    border-radius: 10px 10px 0 0;
+    padding: 8px 18px;
+    background: #f1f5f9;
+    border: 1px solid transparent;
+}}
+.stTabs [aria-selected="true"] {{
+    background: linear-gradient(180deg, {PRIMARY} 0%, {PRIMARY_DARK} 100%) !important;
+    color: white !important;
+    border-color: transparent !important;
+}}
+
+/* ---- Coloured zone panels for visual rhythm ---- */
+.zone {{
+    padding: 18px 22px;
+    border-radius: 14px;
+    margin: 14px 0;
+    animation: fadeUp 0.4s ease-out;
+}}
+.zone-mint   {{ background: linear-gradient(135deg, #ecfdf5, #f0fdfa); border: 1px solid #d1fae5; }}
+.zone-sand   {{ background: linear-gradient(135deg, #fffbeb, #fef9c3); border: 1px solid #fde68a; }}
+.zone-sky    {{ background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 1px solid #bfdbfe; }}
+.zone-blush  {{ background: linear-gradient(135deg, #fef2f2, #fff1f2); border: 1px solid #fecaca; }}
+.zone-stone  {{ background: #f1f5f9; border: 1px solid #e2e8f0; }}
+
+/* ---- Big animated stat ---- */
+.big-stat {{
+    text-align: center;
+    padding: 22px 14px;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid {BORDER};
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeUp 0.5s ease-out;
+}}
+.big-stat .label {{
+    color: {MUTED};
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}}
+.big-stat .value {{
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    margin: 8px 0 4px;
+    background: linear-gradient(135deg, {PRIMARY}, {ACCENT});
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}}
+.big-stat .sub {{
+    color: {MUTED};
+    font-size: 0.78rem;
+}}
+.big-stat .value.danger {{ background: linear-gradient(135deg, #ef4444, {DANGER}); -webkit-background-clip: text; background-clip: text; color: transparent; }}
+.big-stat .value.warn   {{ background: linear-gradient(135deg, {WARNING}, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; }}
+.big-stat .value.good   {{ background: linear-gradient(135deg, #10b981, {SUCCESS}); -webkit-background-clip: text; background-clip: text; color: transparent; }}
+
+/* ---- Result card with subtle pulse around the icon ---- */
+.result-card {{
+    background: white;
+    border-radius: 14px;
+    border: 1px solid {BORDER};
+    padding: 20px 24px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    animation: fadeUp 0.4s ease-out;
+}}
+
+/* ---- Streamlit tabs panel: small fade-in ---- */
+div[role="tabpanel"] {{
+    animation: fadeUp 0.35s ease-out;
+}}
+
+/* ---- KPI strip cards ---- */
+.kpi-strip {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 4px 0 14px;
+}}
+.kpi-strip .kpi {{
+    background: white;
+    border-radius: 12px;
+    border: 1px solid {BORDER};
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    animation: fadeUp 0.45s ease-out;
+}}
+.kpi .label {{ color: {MUTED}; font-size: 0.78rem; }}
+.kpi .value {{ color: {INK}; font-size: 1.55rem; font-weight: 700; line-height: 1; margin: 4px 0; }}
+.kpi .sub {{ color: {MUTED}; font-size: 0.74rem; }}
 </style>
 """
 
@@ -178,13 +319,19 @@ def inject() -> None:
 # ---------------------------------------------------------------------------
 # Reusable HTML widgets (server-rendered markdown blocks)
 # ---------------------------------------------------------------------------
-def hero(eyebrow: str, title: str, subtitle: str) -> None:
+def hero(eyebrow: str, title: str, subtitle: str,
+         chips: list[str] | None = None) -> None:
+    chips_html = ""
+    if chips:
+        items = "".join(f"<span>{c}</span>" for c in chips)
+        chips_html = f'<div class="hero-chips">{items}</div>'
     st.markdown(
         f"""
         <div class="hero-banner">
             <div class="hero-eyebrow">{eyebrow}</div>
             <h1>{title}</h1>
             <p>{subtitle}</p>
+            {chips_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -222,3 +369,53 @@ def fallback_metric_card(label: str, value: str, delta: str | None = None) -> No
         """,
         unsafe_allow_html=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# Higher-impact visual primitives
+# ---------------------------------------------------------------------------
+def panel_open(kind: str = "stone") -> None:
+    """Open a coloured zone container. Pair with ``panel_close()``."""
+    st.markdown(f'<div class="zone zone-{kind}">', unsafe_allow_html=True)
+
+
+def panel_close() -> None:
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def big_stat(label: str, value: str, sub: str = "", tone: str = "primary") -> None:
+    """Hero-sized gradient stat block."""
+    cls_value = {
+        "primary": "",
+        "danger": "danger",
+        "warn": "warn",
+        "good": "good",
+    }.get(tone, "")
+    st.markdown(
+        f"""
+        <div class="big-stat">
+            <div class="label">{label}</div>
+            <div class="value {cls_value}">{value}</div>
+            <div class="sub">{sub}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def kpi_strip(items: list[dict]) -> None:
+    """Render a responsive KPI grid from a list of dicts.
+
+    Each item supports: ``label``, ``value``, ``sub``.
+    """
+    cells = "".join(
+        f"""
+        <div class="kpi">
+            <div class="label">{it.get('label', '')}</div>
+            <div class="value">{it.get('value', '')}</div>
+            <div class="sub">{it.get('sub', '')}</div>
+        </div>
+        """
+        for it in items
+    )
+    st.markdown(f'<div class="kpi-strip">{cells}</div>', unsafe_allow_html=True)

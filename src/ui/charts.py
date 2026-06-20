@@ -160,6 +160,136 @@ def risk_landscape(xs: Sequence[float], ys: Sequence[float], Z: np.ndarray,
 
 
 # ---------------------------------------------------------------------------
+# Failure-probability gauge (Plotly Indicator)
+# ---------------------------------------------------------------------------
+def failure_probability_gauge(prob: float) -> go.Figure:
+    """Big circular gauge — visual showpiece for the headline number."""
+    pct = float(prob) * 100.0
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=pct,
+            number={"suffix": "%", "font": {"size": 44, "color": INK}},
+            title={"text": "<b>故障機率</b>", "font": {"size": 16, "color": MUTED}},
+            domain={"x": [0, 1], "y": [0, 1]},
+            gauge={
+                "axis": {"range": [0, 100], "tickwidth": 1,
+                          "tickcolor": MUTED, "tickfont": {"size": 11}},
+                "bar": {"color": PRIMARY, "thickness": 0.28},
+                "bgcolor": "white",
+                "borderwidth": 0,
+                "steps": [
+                    {"range": [0, 30], "color": "#dcfce7"},   # green zone
+                    {"range": [30, 70], "color": "#fef3c7"},  # amber zone
+                    {"range": [70, 100], "color": "#fee2e2"}, # red zone
+                ],
+                "threshold": {
+                    "line": {"color": DANGER, "width": 3},
+                    "thickness": 0.85,
+                    "value": 70,
+                },
+            },
+        )
+    )
+    fig.update_layout(
+        height=280,
+        margin=dict(l=18, r=18, t=40, b=10),
+        paper_bgcolor="white", plot_bgcolor="white",
+        font=dict(color=INK),
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Input radar (運轉指紋)
+# ---------------------------------------------------------------------------
+_INPUT_BOUNDS = {
+    "Air temperature [K]":      (295.0, 305.0, "Air T"),
+    "Process temperature [K]":  (305.0, 315.0, "Proc T"),
+    "Rotational speed [rpm]":   (1100.0, 2900.0, "RPM"),
+    "Torque [Nm]":              (0.0, 80.0, "Torque"),
+    "Tool wear [min]":          (0.0, 260.0, "Wear"),
+}
+
+
+def input_radar(record: dict, prob: float | None = None) -> go.Figure:
+    """Polar chart of the five raw inputs, normalised to [0, 100]."""
+    short_labels: List[str] = []
+    norms: List[float] = []
+    raw_vals: List[float] = []
+    for col, (lo, hi, short) in _INPUT_BOUNDS.items():
+        raw = float(record[col])
+        n = (raw - lo) / (hi - lo) if hi > lo else 0.0
+        norms.append(max(0.0, min(1.0, n)) * 100.0)
+        raw_vals.append(raw)
+        short_labels.append(short)
+    # close the polygon
+    norms.append(norms[0])
+    short_labels.append(short_labels[0])
+    raw_vals.append(raw_vals[0])
+
+    # Color the fingerprint by risk band if probability is supplied
+    if prob is None:
+        line_color = PRIMARY
+        fill_color = "rgba(13, 148, 136, 0.30)"
+    elif prob >= 0.7:
+        line_color = DANGER
+        fill_color = "rgba(220, 38, 38, 0.30)"
+    elif prob >= 0.3:
+        line_color = WARNING
+        fill_color = "rgba(245, 158, 11, 0.32)"
+    else:
+        line_color = SUCCESS
+        fill_color = "rgba(22, 163, 74, 0.30)"
+
+    fig = go.Figure()
+    # neutral reference ring at 50%
+    fig.add_trace(
+        go.Scatterpolar(
+            r=[50] * len(short_labels),
+            theta=short_labels,
+            line=dict(color="#cbd5e1", width=1, dash="dot"),
+            fill="none",
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+    fig.add_trace(
+        go.Scatterpolar(
+            r=norms,
+            theta=short_labels,
+            fill="toself",
+            fillcolor=fill_color,
+            line=dict(color=line_color, width=3),
+            marker=dict(size=10, color=line_color,
+                        line=dict(color="white", width=2)),
+            customdata=raw_vals,
+            hovertemplate="<b>%{theta}</b><br>原始值=%{customdata:.2f}"
+                          "<br>佔範圍 %{r:.0f}%<extra></extra>",
+            name="目前運轉指紋",
+        )
+    )
+    fig.update_layout(
+        polar=dict(
+            bgcolor="#f8fafc",
+            radialaxis=dict(visible=True, range=[0, 100],
+                            showticklabels=False, gridcolor="#e2e8f0"),
+            angularaxis=dict(tickfont=dict(size=13, color=INK),
+                             gridcolor="#e2e8f0"),
+        ),
+        title=dict(text="<b>運轉條件指紋</b>（依參考範圍正規化）",
+                   x=0.5, y=0.97, xanchor="center",
+                   font=dict(size=15, color=INK)),
+        showlegend=False,
+        height=380,
+        margin=dict(l=40, r=40, t=60, b=30),
+        paper_bgcolor="white", plot_bgcolor="white",
+        font=dict(color=INK),
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------
 def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:
