@@ -15,7 +15,7 @@
 | 使用資料集 | **IMS / NASA Bearing Dataset，只用 Set 2（Test 2）** | NASA 與 IMS 是同一份 run-to-failure 資料；Set 2 通道單純（4 通道）、外圈故障是教科書範例、檔案最少（984），原型最適合 |
 | 健康分數方案 | **方案 A：線性 RUL → health（100→0）** | 簡單、誠實、可解釋；拐點法（方案 B）寫進未來 refinement |
 | 建模對象 | **只對故障軸承 B1 建退化曲線**，其餘 3 個軸承只留 RMS 當對照 | 聚焦真正退化的軸承，避免無效工作 |
-| 進階模型 | **第 4 步之後再加 1D-CNN / LSTM 當進階對照**，放最後 | 有一個月時程可做；做不完不影響主線交付 |
+| 進階模型 | **1D-CNN Autoencoder 異常偵測**（取代原「1D-CNN / LSTM 做 RUL 回歸」），放最後 | DL 做 RUL 回歸會撞單軌跡外推牆；改無監督異常偵測。詳見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md) |
 
 > ⚠️ 動工前務必先跟組員確認：原本宣稱「手上的 `Data.mat` / `features_fault_named.csv`」
 > 目前在本機 `D:\AI Class ChenYu` 底下查無此檔，整段論述不可掛在不存在的檔案上。
@@ -107,10 +107,12 @@ outputs/models/ims_rul.joblib  +  outputs/metrics/ims_rul.json
   - 峭度 / BPFO 能量曲線在外殼發熱前數週跳起；
   - 標出**告警門檻穿越點**（早警提前量，週為單位）。
 
-### ⑥（進階，最後做）深度模型對照 — `src/models/train_rul_dl.py`
-- **1D-CNN** 或 **LSTM**，輸入滑動視窗序列 → RUL。
-- 與 ④ 的傳統回歸器比 MAE / RMSE，當報告的進階加分。
-- 排在主線完成後；做不完不影響交付。
+### ⑥（進階，最後做）深度模型對照
+
+> ⚠️ **方向已更新** —— 原規劃的「1D-CNN / LSTM 做 RUL 回歸」經真實數據評估後**捨棄**：
+> 單一退化軌跡下會撞與 ④ 監督式回歸相同的「無法外推」牆，且 DL 更嚴重、報告會露破綻。
+> 改為 **1D-CNN Autoencoder 異常偵測**（無監督，與統計 FPT 互相印證）。
+> 完整分析與規劃見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)。
 
 ---
 
@@ -134,7 +136,7 @@ outputs/models/ims_rul.joblib  +  outputs/metrics/ims_rul.json
 | 3 | 標籤 + 組表（方案 A） | RUL 單調遞減、health ∈ [0,100] ✅ |
 | 4 | RUL：監督式回歸（對照，已知失敗）→ **趨勢外推法（採用）** | 退化區 MAE ≈ 25 h、FPT 提前 3.1 天 ✅ |
 | 5 | Dashboard 頁籤 | 健康曲線 100→0 + FPT/告警 + RUL 預測圖 ✅ |
-| 6 | 1D-CNN / LSTM 對照（進階） | MAE/RMSE 與步 4 並列比較（未做） |
+| 6 | 1D-CNN Autoencoder 異常偵測（進階，見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)） | 重建誤差 FPT 與統計 FPT 並列印證（未做） |
 
 ---
 
