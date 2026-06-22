@@ -25,9 +25,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install Python dependencies first so the layer is cached across code edits.
-COPY requirements.txt ./
+# The image runs the FastAPI backend and the training CLI as well as the
+# Streamlit UI, so it needs the full environment (requirements-dev.txt pulls
+# in requirements.txt via its leading -r).
+COPY requirements.txt requirements-dev.txt ./
 RUN pip install --upgrade pip \
- && pip install -r requirements.txt
+ && pip install -r requirements-dev.txt
 
 # Application code.  Note: data/ and outputs/ are mounted as volumes at run
 # time so the container does NOT bake in the dataset or trained models.
