@@ -25,3 +25,9 @@ streamlit-option-menu>=0.4
 # Needed transitively by the model-evaluation page:
 # pandas Styler.background_gradient requires matplotlib.
 matplotlib>=3.7
+
+# Module B (IMS dynamic health / RUL):
+# - pyarrow: read the committed ims_set2_features.parquet on the cloud demo
+# - scipy: time-domain vibration features (kurtosis / skew)
+pyarrow>=14.0
+scipy>=1.11
