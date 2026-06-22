@@ -1,0 +1,11 @@
+feature,importance
+num__power_proxy,0.2691297476450367
+num__temp_diff,0.2689589481944984
+num__wear_torque_interaction,0.24753535015350608
+num__Rotational speed [rpm],0.10587622114715951
+num__temp_wear_interaction,0.039947050319923974
+cat__Type_L,0.029770873255936685
+num__Tool wear [min],0.022903795023859225
+num__Torque [Nm],0.011498235674836123
+cat__Type_M,0.003371906578113072
+cat__Type_H,0.0010078720071303067

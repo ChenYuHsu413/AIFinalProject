@@ -3,9 +3,14 @@
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aifinalproject-test.streamlit.app/)
 
 <p align="center">
   <img src="docs/0620.png" alt="專案總覽 — CRISP-DM 全流程、最佳模型、系統功能、教學重點、限制與未來方向" width="720">
+</p>
+
+<p align="center">
+  🚀 <strong>線上 Demo</strong>：<a href="https://aifinalproject-test.streamlit.app/">https://aifinalproject-test.streamlit.app/</a>
 </p>
 
 > **專案定位**：以 UCI **AI4I 2020** 合成資料集建立的端到端**預測性維護原型**。

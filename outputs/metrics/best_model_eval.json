@@ -1,0 +1,49 @@
+{
+  "model_name": "gradient_boosting",
+  "feature_set": "D_rfe_top8",
+  "confusion_matrix": [
+    [
+      1931,
+      1
+    ],
+    [
+      13,
+      55
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9933127572016461,
+      "recall": 0.9994824016563147,
+      "f1-score": 0.9963880288957688,
+      "support": 1932.0
+    },
+    "1": {
+      "precision": 0.9821428571428571,
+      "recall": 0.8088235294117647,
+      "f1-score": 0.8870967741935484,
+      "support": 68.0
+    },
+    "accuracy": 0.993,
+    "macro avg": {
+      "precision": 0.9877278071722516,
+      "recall": 0.9041529655340397,
+      "f1-score": 0.9417424015446586,
+      "support": 2000.0
+    },
+    "weighted avg": {
+      "precision": 0.9929329805996473,
+      "recall": 0.993,
+      "f1-score": 0.9926721262358933,
+      "support": 2000.0
+    }
+  },
+  "summary_metrics": {
+    "accuracy": 0.993,
+    "precision": 0.9821428571428571,
+    "recall": 0.8088235294117647,
+    "f1": 0.8870967741935484,
+    "roc_auc": 0.9685216477895506,
+    "pr_auc": 0.9058862427611453
+  }
+}
