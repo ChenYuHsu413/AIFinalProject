@@ -1302,14 +1302,74 @@ else:
         style.note("infographic 圖片 (`docs/0620.png`) 不存在。", kind="warn")
 
     st.divider()
+    style.section("模組 A vs 模組 B 對照")
+    ca, cb = st.columns(2)
+    with ca:
+        with style.zone("mint", key="about-mod-a"):
+            st.markdown(
+                """
+                ##### 🅰 模組 A · 靜態風險評估
+                **AI4I 2020** 單筆製程點資料
+                → 分類模型（10 × 5）
+                → 故障機率 · 健康分數 · 維護建議
+                """
+            )
+    with cb:
+        with style.zone("sky", key="about-mod-b"):
+            st.markdown(
+                """
+                ##### 🅱 模組 B · 動態健康度預測
+                **IMS 軸承** 20kHz 振動全壽命
+                → 時頻特徵 · FPT · 趨勢外推
+                → 健康退化曲線 · RUL 剩餘壽命
+                """
+            )
+    compare_df = pd.DataFrame(
+        {
+            "🅰 模組 A · 靜態風險": [
+                "UCI AI4I 2020（合成）",
+                "單筆點資料（製程快照）",
+                "溫度 / 扭矩 / 轉速 / 刀具磨耗",
+                "故障 / 正常二元分類",
+                "監督式分類（10 模型 × 5 特徵組）",
+                "F1 / Recall / ROC-AUC / PR-AUC",
+                "故障機率 · 健康分數 · 維護建議",
+                "無（靜態快照）",
+                "單筆 / What-if / 批次 / 評估",
+                "合成資料、無 RUL 標籤",
+            ],
+            "🅱 模組 B · 動態健康度": [
+                "NASA/IMS 軸承 Set 2（實測 run-to-failure）",
+                "20 kHz 高頻振動時間序列",
+                "加速度振動（時域 + 頻域）",
+                "健康分數退化 + 剩餘壽命 RUL",
+                "健康指標 + FPT + 指數趨勢外推",
+                "RUL MAE / RMSE（小時）、退化提前量",
+                "退化曲線（100→0）· RUL · 告警提前量",
+                "有（全壽命動態演進）",
+                "健康度總覽 / RUL 預測 / 互動探索",
+                "單一退化軌跡、突發失效 → RUL 偏粗",
+            ],
+        },
+        index=["資料集", "資料型態", "感測量", "目標", "建模方法",
+               "評估指標", "主要輸出", "時間維度", "對應頁面", "核心限制"],
+    )
+    st.table(compare_df)
+    style.note(
+        "兩模組<b>無法合併成同一個模型</b>（物理量、感測器、目標皆不同），"
+        "在系統中以平行的獨立軌道呈現。模組 B 細節見 "
+        "<code>docs/MODULE_B_IMS_PLAN.md</code> 與 <code>docs/MODULE_B_RESULTS.md</code>。"
+    )
+
+    st.divider()
     style.section("數字一覽")
     style.kpi_strip([
         {"label": "推上 GitHub 的檔案", "value": "53+", "sub": "含 LICENSE / Docker / CI"},
         {"label": "訓練 + 比較模型", "value": "95", "sub": "50 baseline + 45 Optuna"},
         {"label": "圖表產出", "value": "22", "sub": "EDA / 評估 / 比較"},
         {"label": "FastAPI 端點", "value": "8", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "5", "sub": "含 What-if 敏感度"},
-        {"label": "單元測試", "value": "9 / 9", "sub": "全部通過"},
+        {"label": "Streamlit 頁面", "value": "8", "sub": "模組 A 5 頁 + 模組 B 3 頁"},
+        {"label": "單元測試", "value": "18 / 18", "sub": "全部通過"},
     ])
     style.section("外部連結")
     st.markdown(
