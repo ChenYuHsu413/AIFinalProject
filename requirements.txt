@@ -1,42 +1,27 @@
-# Core data / ML stack
+# ---------------------------------------------------------------------------
+# Runtime dependencies — minimal set to RUN the Streamlit dashboard with a
+# pre-trained model.  This is what Streamlit Community Cloud installs.
+#
+# For local training / tuning / notebooks / the FastAPI backend, install the
+# full environment instead:   pip install -r requirements-dev.txt
+# ---------------------------------------------------------------------------
+
+# Core data / ML stack (model load + inference)
 numpy>=1.24
 pandas>=2.0
 scikit-learn>=1.3
 joblib>=1.3
 PyYAML>=6.0
 
-# Visualisation
-matplotlib>=3.7
-seaborn>=0.12
-
-# Per-prediction explainability (TreeExplainer for tree-based best models)
+# Per-prediction explainability (SHAP TreeExplainer for the best tree model)
 shap>=0.44
 
-# Hyperparameter tuning
-optuna>=3.5
-
-# Optional gradient-boosting libraries
-# Comment-out if installation fails on your platform; the pipeline gracefully skips them.
-xgboost>=1.7
-lightgbm>=4.0
-
-# Streamlit dashboard
+# Streamlit dashboard + interactive charts / components
 streamlit>=1.30
-
-# Polished UI (modern interactive charts + shadcn-style components)
 plotly>=5.18
 streamlit-shadcn-ui>=0.1.19
 streamlit-option-menu>=0.4
 
-# FastAPI backend
-fastapi>=0.110
-uvicorn[standard]>=0.27
-pydantic>=2.5
-python-multipart>=0.0.9
-
-# Testing
-pytest>=7.4
-
-# Jupyter (for the EDA notebook)
-jupyter>=1.0
-ipykernel>=6.27
+# Needed transitively by the model-evaluation page:
+# pandas Styler.background_gradient requires matplotlib.
+matplotlib>=3.7

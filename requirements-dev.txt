@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# Full development environment: runtime deps (requirements.txt) plus the
+# libraries needed for training, tuning, the FastAPI backend, testing and the
+# EDA notebook.  Use this locally:   pip install -r requirements-dev.txt
+# Deployment (Streamlit Cloud) uses the slim requirements.txt instead.
+# ---------------------------------------------------------------------------
+
+-r requirements.txt
+
+# Visualisation (training-time plots)
+seaborn>=0.12
+
+# Hyperparameter tuning
+optuna>=3.5
+
+# Optional gradient-boosting libraries
+# Comment-out if installation fails on your platform; the pipeline gracefully skips them.
+xgboost>=1.7
+lightgbm>=4.0
+
+# FastAPI backend
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.5
+python-multipart>=0.0.9
+
+# Testing
+pytest>=7.4
+
+# Jupyter (for the EDA notebook)
+jupyter>=1.0
+ipykernel>=6.27
