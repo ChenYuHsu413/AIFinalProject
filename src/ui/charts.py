@@ -451,6 +451,143 @@ def sparkline(values, color: str = PRIMARY, height: int = 60,
 
 
 # ---------------------------------------------------------------------------
+# Module B — bearing health-degradation curve (RUL track)
+# ---------------------------------------------------------------------------
+def health_curve(
+    t: Sequence,
+    health: Sequence[float],
+    alarm_health: float = 30.0,
+    fpt_t=None,
+) -> go.Figure:
+    """Data-driven health indicator (100 -> 0) over the run, with the degradation
+    onset (FPT) and the maintenance-alarm crossing marked.
+
+    ``fpt_t`` (the First Predicting Time) shows when degradation was first
+    detected; the alarm crossing shows how far ahead of total failure the alert
+    fires.
+    """
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=list(t), y=list(health), mode="lines",
+            line=dict(color=PRIMARY, width=3),
+            name="健康指標（由振動推導）",
+            hovertemplate="%{x}<br>健康 = %{y:.1f}<extra></extra>",
+        )
+    )
+    fig.add_hline(
+        y=alarm_health, line_dash="dash", line_color=DANGER, line_width=1.5,
+        annotation_text=f"維護告警線 {alarm_health:.0f}",
+        annotation_position="bottom right", annotation_font_color=DANGER,
+    )
+    if fpt_t is not None:
+        fig.add_vline(
+            x=fpt_t, line_dash="dot", line_color=ACCENT, line_width=1.5,
+            annotation_text="退化起點 FPT", annotation_position="top left",
+            annotation_font_color=ACCENT,
+        )
+
+    # Mark the alarm crossing and the lead time before failure.
+    hh = np.asarray(health, dtype=float)
+    below = np.where(hh <= alarm_health)[0]
+    if below.size:
+        cross_t = list(t)[below[0]]
+        fig.add_vline(
+            x=cross_t, line_dash="dot", line_color=WARNING, line_width=1.5,
+            annotation_text="告警觸發", annotation_position="top",
+            annotation_font_color=WARNING,
+        )
+    fig = _style(fig, height=420, title="<b>軸承健康度退化曲線</b>（100 → 0）")
+    fig.update_xaxes(title_text="時間")
+    fig.update_yaxes(range=[-2, 104], title_text="健康分數")
+    fig.update_layout(legend=dict(orientation="h", y=1.06, x=0.0))
+    return fig
+
+
+def rul_forecast(t: Sequence, rul_true: Sequence[float],
+                 rul_pred: Sequence[float]) -> go.Figure:
+    """Predicted vs actual RUL (hours) over the degradation region.
+
+    The actual RUL is the straight ramp to zero; the predicted curve is expected
+    to be rough early and converge toward the truth as failure approaches.
+    """
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=list(t), y=list(rul_true), mode="lines",
+            line=dict(color=MUTED, width=2, dash="dash"),
+            name="實際 RUL",
+            hovertemplate="%{x}<br>實際 RUL = %{y:.1f} h<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=list(t), y=list(rul_pred), mode="lines+markers",
+            line=dict(color=ACCENT, width=2),
+            marker=dict(size=4, color=ACCENT),
+            name="預測 RUL",
+            hovertemplate="%{x}<br>預測 RUL = %{y:.1f} h<extra></extra>",
+        )
+    )
+    fig = _style(fig, height=360, title="<b>剩餘壽命（RUL）預測 vs 實際</b>")
+    fig.update_xaxes(title_text="時間")
+    fig.update_yaxes(title_text="RUL（小時）", rangemode="tozero")
+    fig.update_layout(legend=dict(orientation="h", y=1.08, x=0.0))
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Module B — raw vibration waveform & spectrum (interactive explorer)
+# ---------------------------------------------------------------------------
+def vibration_waveform(signal: Sequence[float], fs: float,
+                       title: str = "原始振動波形") -> go.Figure:
+    """Time-domain waveform of one snapshot (sub-sampled for a responsive plot)."""
+    x = np.asarray(signal, dtype=float)
+    step = max(1, x.size // 2000)
+    idx = np.arange(0, x.size, step)
+    t_ms = idx / fs * 1000.0
+    fig = go.Figure(
+        go.Scatter(
+            x=t_ms, y=x[idx], mode="lines",
+            line=dict(color=PRIMARY, width=1),
+            hovertemplate="%{x:.2f} ms<br>%{y:.4f} g<extra></extra>",
+        )
+    )
+    fig = _style(fig, height=300, title=f"<b>{title}</b>")
+    fig.update_xaxes(title_text="時間 (ms)")
+    fig.update_yaxes(title_text="加速度 (g)")
+    return fig
+
+
+def vibration_spectrum(signal: Sequence[float], fs: float, defect_freqs: dict,
+                       title: str = "FFT 頻譜") -> go.Figure:
+    """Magnitude spectrum with bearing defect frequencies marked (BPFO/BPFI/...)."""
+    x = np.asarray(signal, dtype=float)
+    mag = np.abs(np.fft.rfft(x))
+    freqs = np.fft.rfftfreq(x.size, d=1.0 / fs)
+    fig = go.Figure(
+        go.Scatter(
+            x=freqs, y=mag, mode="lines",
+            line=dict(color=ACCENT, width=1),
+            hovertemplate="%{x:.0f} Hz<br>幅值 %{y:.1f}<extra></extra>",
+        )
+    )
+    palette = {"BPFO": DANGER, "BPFI": WARNING, "BSF": SUCCESS, "FTF": MUTED}
+    for name, f in defect_freqs.items():
+        if f <= freqs[-1]:
+            fig.add_vline(
+                x=f, line_dash="dot", line_width=1.2,
+                line_color=palette.get(name, MUTED),
+                annotation_text=name, annotation_position="top",
+                annotation_font=dict(size=10, color=palette.get(name, MUTED)),
+            )
+    fig = _style(fig, height=300, title=f"<b>{title}</b>")
+    fig.update_xaxes(title_text="頻率 (Hz)", range=[0, min(2000, freqs[-1])])
+    fig.update_yaxes(title_text="幅值")
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------
 def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:

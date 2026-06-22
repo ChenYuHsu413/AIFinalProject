@@ -1,0 +1,21 @@
+{
+  "method": "trend_extrapolation",
+  "indicator": "b1_rms",
+  "metrics": {
+    "mae_hours": 25.22524018492451,
+    "rmse_hours": 36.671896247257045,
+    "r2": -1.6536426892219098,
+    "n_eval": 357
+  },
+  "near_failure_metrics": {
+    "mae_hours": 30.815608070536918,
+    "rmse_hours": 53.9700492640679,
+    "r2": -112.1974959956689,
+    "n_eval": 73
+  },
+  "fpt_index": 534,
+  "fpt_time": "2004-02-16 03:32:39",
+  "lead_time_days": 3.1180555555555554,
+  "hi_baseline": 0.07776074483170249,
+  "hi_failure": 0.379142173075029
+}

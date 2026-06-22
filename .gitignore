@@ -37,6 +37,14 @@ conversation-*.txt
 data/raw/*.csv
 data/processed/*.csv
 data/processed/*.parquet
+# IMS Set 2 raw snapshots (~1.5 GB, extensionless files) — never commit
+data/raw/ims/
+
+# Module B (IMS) processed artefacts — small, committed so the live demo works
+# without the 1.5 GB raw dataset (override the broad ignores above).
+!data/processed/ims_set2_features.parquet
+!outputs/metrics/ims_rul_predictions.csv
+!outputs/metrics/ims_rul.json
 
 # Keep folder placeholders
 !**/.gitkeep

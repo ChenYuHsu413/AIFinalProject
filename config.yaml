@@ -100,6 +100,43 @@ feature_sets:
     k: 8
 
 # ---------------------------------------------------------------
+# Module B — IMS bearing run-to-failure (dynamic health / RUL)
+# Independent from the AI4I track above. See docs/MODULE_B_IMS_PLAN.md.
+# ---------------------------------------------------------------
+ims:
+  # Folder of 984 timestamp-named ASCII snapshots from IMS Set 2 (Test 2).
+  # Not committed to git — see data/README.md for the download instructions.
+  raw_dir: data/raw/ims/2nd_test
+  processed_features: data/processed/ims_set2_features.parquet
+  rul_model: outputs/models/ims_rul.joblib
+  rul_metrics: outputs/metrics/ims_rul.json
+  rul_predictions: outputs/metrics/ims_rul_predictions.csv
+  rul_test_frac: 0.3                 # last 30% of the run (by time) is the test fold
+  alarm_health: 30.0                 # health below this raises a maintenance alarm
+  # --- Trend-extrapolation RUL (the honest method for a single run-to-failure
+  #     trajectory; tree regressors cannot extrapolate a monotone target). ---
+  health_indicator: b1_rms           # feature used as the degradation indicator
+  hi_smooth_window: 5                # rolling-median smoothing of the indicator
+  baseline_n: 100                    # first N snapshots define the healthy baseline
+  fpt_n_sigma: 3.0                   # onset = indicator > baseline_mean + n*std ...
+  fpt_consecutive: 5                 # ... for this many consecutive snapshots
+  fail_percentile: 99               # failure threshold = this percentile of the indicator
+  min_fit_points: 5                  # min points after onset before extrapolating
+  fit_window: 80                     # rolling window (snapshots) for the local exp fit
+  near_failure_n: 100                # report a separate MAE over the last N snapshots
+  sampling_rate_hz: 20000          # 20 kHz, 20480 samples (~1.024 s) per file
+  n_bearings: 4                    # Set 2 has 1 channel per bearing
+  target_bearing: 1                # B1 (column index 0) suffers the outer-race failure
+  sliding_window: 10               # snapshots used for rolling mean / slope features
+  # Rexnord ZA-2115 defect frequencies @ 2000 rpm (Hz). B1 = outer race -> BPFO.
+  band_halfwidth_hz: 10.0
+  defect_freqs:
+    BPFO: 236.4
+    BPFI: 296.9
+    BSF: 139.9
+    FTF: 14.8
+
+# ---------------------------------------------------------------
 # Risk thresholds & maintenance advice (used by predict / UI / API)
 # ---------------------------------------------------------------
 risk:

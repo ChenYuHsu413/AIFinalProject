@@ -15,6 +15,8 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+import json
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -39,11 +41,15 @@ from src.models.predict import (
     predict_single,
 )
 from src.models.explain import explain_record, is_supported as shap_supported
+from src.data.load_ims import list_ims_files, load_ims_file
+from src.models.rul_extrapolation import build_health_indicator, detect_fpt
 from src.ui import style
 from src.ui.charts import (
     confusion_heatmap,
     failure_probability_gauge,
     failure_type_bar,
+    health_curve,
+    rul_forecast,
     input_radar,
     leaderboard_bar,
     one_d_sweep,
@@ -52,6 +58,8 @@ from src.ui.charts import (
     risk_landscape,
     shap_bar,
     sparkline,
+    vibration_spectrum,
+    vibration_waveform,
 )
 from src.utils.paths import load_config, resolve
 
@@ -83,15 +91,52 @@ except FileNotFoundError:
     st.stop()
 
 
-PAGES = [
-    "首頁總覽",
-    "手動單筆預測",
-    "What-if 敏感度分析",
-    "批次 CSV 上傳",
-    "模型評估結果",
-    "關於本專案",
+# Navigation = one option_menu per section, with non-clickable st.markdown
+# section labels in between (模組 A / 模組 B).  Inactive sections render with a
+# "no-highlight" selected style so only the active section shows a highlight.
+NAV_GROUPS = [
+    {"title": None, "items": ["首頁總覽"], "icons": ["house-fill"], "key": "nav_home"},
+    {"title": "模組 A · 靜態風險 (AI4I)",
+     "items": ["手動單筆預測", "What-if 敏感度分析", "批次 CSV 上傳", "模型評估結果"],
+     "icons": ["bullseye", "lightbulb", "inbox", "bar-chart-fill"], "key": "nav_a"},
+    {"title": "模組 B · 動態健康度 (IMS)",
+     "items": ["健康度總覽", "RUL 預測", "互動探索"],
+     "icons": ["heart-pulse", "graph-down-arrow", "search"], "key": "nav_b"},
+    {"title": None, "items": ["關於本專案"], "icons": ["info-circle"], "key": "nav_about"},
 ]
-PAGE_ICONS = ["house-fill", "bullseye", "lightbulb", "inbox", "bar-chart-fill", "info-circle"]
+ALL_PAGES = [p for g in NAV_GROUPS for p in g["items"]]
+
+_NAV_LINK = {
+    "font-size": "14px", "color": "#334155", "text-align": "left",
+    "margin": "2px 0", "padding": "10px 12px", "border-radius": "10px",
+    "--hover-color": "#f0fdfa",
+}
+_NAV_SEL = {
+    "background": f"linear-gradient(135deg, {style.PRIMARY}, {style.PRIMARY_DARK})",
+    "color": "white", "font-weight": "600",
+    "box-shadow": "0 4px 14px rgba(13, 148, 136, 0.22)",
+}
+_NAV_SEL_OFF = {"background": "transparent", "color": "#334155",
+                "font-weight": "400", "box-shadow": "none"}
+
+
+def _nav_styles(is_active: bool) -> dict:
+    """option_menu styles; inactive sections get an invisible 'selected' state."""
+    return {
+        "container": {"padding": "0", "background-color": "transparent"},
+        "icon": {"color": style.PRIMARY, "font-size": "16px"},
+        "nav-link": _NAV_LINK,
+        "nav-link-selected": _NAV_SEL if is_active else _NAV_SEL_OFF,
+        "nav-link-selected .icon": {"color": "white" if is_active else style.PRIMARY},
+    }
+
+
+def _nav_pick(menu_key: str) -> None:
+    """on_change callback: commit the clicked item as the active page."""
+    val = st.session_state.get(menu_key)
+    if val:
+        st.session_state.active_page = val
+
 
 style.sidebar_brand(
     emoji="🔧",
@@ -99,49 +144,45 @@ style.sidebar_brand(
     subtitle="伺服馬達故障風險預測原型",
 )
 
-# Pop any programmatic-nav request set by a tile click on the previous run.
-_nav_manual = st.session_state.pop("nav_jump", None)
+if "active_page" not in st.session_state:
+    st.session_state.active_page = "首頁總覽"
+
+# A tile click on the homepage stores a target page name; apply it and force the
+# owning menu to highlight it this run.
+_jump = st.session_state.pop("nav_jump", None)
+if _jump in ALL_PAGES:
+    st.session_state.active_page = _jump
+    st.session_state["_nav_force"] = _jump
+_force = st.session_state.pop("_nav_force", None)
+active = st.session_state.active_page
 
 with st.sidebar:
     if HAS_OPTION_MENU:
-        page = option_menu(
-            menu_title=None,
-            options=PAGES,
-            icons=PAGE_ICONS,
-            default_index=0,
-            manual_select=_nav_manual,
-            styles={
-                "container": {
-                    "padding": "4px 0",
-                    "background-color": "transparent",
-                },
-                "icon": {
-                    "color": style.PRIMARY,
-                    "font-size": "16px",
-                },
-                "nav-link": {
-                    "font-size": "14px",
-                    "color": "#334155",
-                    "text-align": "left",
-                    "margin": "2px 0",
-                    "padding": "10px 12px",
-                    "border-radius": "10px",
-                    "--hover-color": "#f0fdfa",
-                },
-                "nav-link-selected": {
-                    "background": (
-                        f"linear-gradient(135deg, {style.PRIMARY}, "
-                        f"{style.PRIMARY_DARK})"
-                    ),
-                    "color": "white",
-                    "font-weight": "600",
-                    "box-shadow": "0 4px 14px rgba(13, 148, 136, 0.22)",
-                },
-                "nav-link-selected .icon": {"color": "white"},
-            },
-        )
+        for g in NAV_GROUPS:
+            if g["title"]:
+                st.markdown(
+                    f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
+                    f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
+                    f"{g['title']}</div>",
+                    unsafe_allow_html=True,
+                )
+            in_group = active in g["items"]
+            option_menu(
+                menu_title=None,
+                options=g["items"],
+                icons=g["icons"],
+                default_index=g["items"].index(active) if in_group else 0,
+                manual_select=(g["items"].index(active)
+                               if (_force == active and in_group) else None),
+                key=g["key"],
+                on_change=_nav_pick,
+                styles=_nav_styles(in_group),
+            )
+        page = st.session_state.active_page
     else:
-        page = st.radio("頁面", PAGES, label_visibility="collapsed")
+        page = st.radio("頁面", ALL_PAGES, label_visibility="collapsed",
+                        index=ALL_PAGES.index(active))
+        st.session_state.active_page = page
 
 style.sidebar_model_card(
     bundle.model_name, bundle.feature_set,
@@ -193,6 +234,23 @@ HEROES = {
         "模型評估與互動式門檻",
         "比較 50 組（10 模型 × 5 特徵）訓練結果，並透過 slider 即時調整決策"
         "門檻、觀察 Precision / Recall / F1 的取捨。",
+    ),
+    "健康度總覽": (
+        "Module B · Dynamic Health",
+        "模組 B · 健康度總覽",
+        "以 IMS 軸承 run-to-failure 數據，由振動特徵推導健康分數、偵測退化起點 "
+        "(FPT)，並可調整告警門檻、沿時間軸回放整個運轉過程。",
+    ),
+    "RUL 預測": (
+        "Module B · RUL Forecast",
+        "模組 B · 剩餘壽命預測",
+        "以退化趨勢外推估計剩餘壽命 (RUL)，並對照監督式回歸為何在單一退化軌跡上失效。",
+    ),
+    "互動探索": (
+        "Module B · Explore",
+        "模組 B · 互動探索",
+        "切換健康指標即時重算退化起點，並檢視任一快照的原始振動波形與 FFT 頻譜"
+        "（標出 BPFO 等軸承故障頻率）。",
     ),
     "關於本專案": (
         "About · Tech stack",
@@ -271,6 +329,41 @@ RISK_LABEL = {"Low": "低", "Medium": "中", "High": "高"}
 RISK_TONE = {"Low": "good", "Medium": "warn", "High": "danger"}
 
 
+# --- Module B (IMS) shared loaders -----------------------------------------
+@st.cache_data(show_spinner=False)
+def _ims_feature_table(path_str: str) -> pd.DataFrame:
+    """Cached load of the IMS feature table (keyed by path string)."""
+    return pd.read_parquet(path_str).sort_index()
+
+
+def _ims_guard() -> tuple[dict, bool]:
+    """Render the 'data not ready' notes; return (ims_cfg, ready)."""
+    ims = load_config()["ims"]
+    if not resolve(ims["processed_features"]).exists():
+        style.note(
+            "尚未建立 IMS 特徵表。請先依 <code>data/README.md</code> 放好 Set 2，"
+            "再執行 <code>python -m src.data.build_ims_dataset</code>。",
+            kind="warn",
+        )
+        return ims, False
+    return ims, True
+
+
+def _ims_predictions(ims: dict):
+    """Return (preds_df, meta_dict) or (None, None) if RUL not computed yet."""
+    pred_path = resolve(ims["rul_predictions"])
+    if not pred_path.exists():
+        style.note(
+            "尚未計算健康曲線 / RUL。執行 "
+            "<code>python -m src.models.rul_extrapolation</code> 後即會顯示。",
+            kind="info",
+        )
+        return None, None
+    preds = pd.read_csv(pred_path, parse_dates=["timestamp"])
+    meta = json.loads(resolve(ims["rul_metrics"]).read_text(encoding="utf-8"))
+    return preds, meta
+
+
 def render_result_block(result: dict) -> None:
     """Headline: gauge + big health stat + risk pill, in a 3-column layout."""
     c1, c2, c3 = st.columns([1.2, 1, 1])
@@ -318,22 +411,22 @@ if page == "首頁總覽":
     tile_targets = [
         ("🎯", "手動單筆預測",
          "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議",
-         PAGES.index("手動單筆預測"), "go-manual"),
+         "手動單筆預測", "go-manual"),
         ("💡", "What-if 敏感度",
          "拖動滑桿即時觀察故障機率、1D/2D 風險地景",
-         PAGES.index("What-if 敏感度分析"), "go-whatif"),
+         "What-if 敏感度分析", "go-whatif"),
         ("📥", "批次 CSV 上傳",
          "多筆同時推論、風險分布、Top-N 高風險清單",
-         PAGES.index("批次 CSV 上傳"), "go-batch"),
+         "批次 CSV 上傳", "go-batch"),
         ("📊", "模型評估",
          "10×5 比較表、互動門檻、訓練圖表",
-         PAGES.index("模型評估結果"), "go-eval"),
+         "模型評估結果", "go-eval"),
     ]
     tile_cols = st.columns(4)
-    for col, (icon, title, sub, target_idx, key) in zip(tile_cols, tile_targets):
+    for col, (icon, title, sub, target_page, key) in zip(tile_cols, tile_targets):
         with col:
             if style.dash_button_tile(icon, title, sub, key=key):
-                st.session_state.nav_jump = target_idx
+                st.session_state.nav_jump = target_page
                 st.rerun()
 
     st.divider()
@@ -997,6 +1090,177 @@ elif page == "模型評估結果":
                 if p.exists():
                     with cols[i % 2]:
                         st.image(str(p), caption=cap, width='stretch')
+
+
+# ---------------------------------------------------------------------------
+# Module B · 健康度總覽 (health overview: alarm slider + time scrubber)
+# ---------------------------------------------------------------------------
+elif page == "健康度總覽":
+    ims, ready = _ims_guard()
+    if ready:
+        preds, meta = _ims_predictions(ims)
+        if preds is not None:
+            fpt_t = pd.to_datetime(meta["fpt_time"])
+            health = preds["health"].to_numpy()
+            ts = preds["timestamp"]
+
+            # --- interaction 1: adjustable alarm threshold (live lead time) ---
+            alarm = st.slider("維護告警門檻（健康分數）", 5, 60,
+                              int(ims["alarm_health"]), step=1)
+            below = np.where(health <= alarm)[0]
+            if below.size:
+                lead_days = (ts.iloc[-1] - ts.iloc[below[0]]).total_seconds() / 86400.0
+                lead_txt, lead_sub = f"{lead_days:.1f} 天", f"門檻 {alarm} @ {ts.iloc[below[0]]:%m-%d %H:%M}"
+            else:
+                lead_txt, lead_sub = "未觸發", f"健康未跌破 {alarm}"
+
+            m = meta["metrics"]
+            style.kpi_strip([
+                {"label": "告警提前量", "value": lead_txt, "sub": lead_sub},
+                {"label": "退化起點 FPT", "value": f"{fpt_t:%m-%d %H:%M}",
+                 "sub": f"提前 {meta['lead_time_days']:.1f} 天"},
+                {"label": "RUL MAE（退化區）", "value": f"{m['mae_hours']:.1f} h",
+                 "sub": f"RMSE {m['rmse_hours']:.1f} h"},
+                {"label": "健康指標", "value": meta["indicator"], "sub": "趨勢外推法"},
+            ])
+
+            st.plotly_chart(
+                health_curve(ts, health, alarm_health=float(alarm), fpt_t=fpt_t),
+                width='stretch',
+            )
+
+            # --- interaction 2: time-axis scrubber (replay the run) ---
+            style.section("時間軸回放")
+            i = st.slider("運轉時間點（快照序號）", 0, len(preds) - 1,
+                          len(preds) - 1, step=1)
+            row = preds.iloc[i]
+            rul_txt = f"{row['rul_true']:.1f} h" if pd.notna(row["rul_true"]) else "—"
+            pred_txt = f"{row['rul_pred']:.1f} h" if pd.notna(row["rul_pred"]) else "（退化前）"
+            cc = st.columns(4)
+            with cc[0]:
+                style.big_stat("此刻時間", f"{row['timestamp']:%m-%d %H:%M}", "")
+            with cc[1]:
+                style.big_stat("健康分數", f"{row['health']:.0f}", "100 健康 → 0 失效",
+                               tone="danger" if row["health"] <= alarm else "primary")
+            with cc[2]:
+                style.big_stat("實際 RUL", rul_txt, "距離失效")
+            with cc[3]:
+                style.big_stat("預測 RUL", pred_txt, "趨勢外推")
+            style.note(
+                "拖動上方滑桿沿時間回放整個運轉過程：健康分數如何從 100 漸滑到 0，"
+                "以及該時刻的實際 / 預測剩餘壽命。"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Module B · RUL 預測 (forecast vs actual + method contrast)
+# ---------------------------------------------------------------------------
+elif page == "RUL 預測":
+    ims, ready = _ims_guard()
+    if ready:
+        preds, meta = _ims_predictions(ims)
+        if preds is not None:
+            m, near = meta["metrics"], meta["near_failure_metrics"]
+            style.kpi_strip([
+                {"label": "RUL MAE（退化區）", "value": f"{m['mae_hours']:.1f} h",
+                 "sub": f"{m['n_eval']} 點"},
+                {"label": "RUL RMSE（退化區）", "value": f"{m['rmse_hours']:.1f} h",
+                 "sub": "均方根誤差"},
+                {"label": "RUL MAE（近失效）", "value": f"{near['mae_hours']:.1f} h",
+                 "sub": f"最後 {near['n_eval']} 筆"},
+                {"label": "方法", "value": "趨勢外推", "sub": "指數 + 滾動視窗"},
+            ])
+
+            deg = preds[preds["is_degrading"] & preds["rul_pred"].notna()]
+            if not deg.empty:
+                st.plotly_chart(
+                    rul_forecast(deg["timestamp"], deg["rul_true"], deg["rul_pred"]),
+                    width='stretch',
+                )
+            style.note(
+                "RUL 以退化趨勢外推估計。本軸承屬<b>突發型失效</b>（指標在最後 ~2% 壽命"
+                "才暴衝），因此 RUL 早期偏粗、越接近失效越收斂 —— 這是該失效模式的固有限制，"
+                "如實呈現而非過度配適。", kind="warn",
+            )
+            style.section("方法學對照")
+            style.note(
+                "初期曾嘗試<b>監督式回歸</b>（RandomForest / GradientBoosting + 時間切分）"
+                "直接預測 RUL，結果嚴重失敗（MAE≈120 h、R²≈−76）：單一退化軌跡下，測試段的 "
+                "RUL 區間完全落在訓練段之外，而樹模型無法外推單調目標。"
+                "故改採趨勢外推法。詳見 <code>docs/MODULE_B_RESULTS.md</code>。"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Module B · 互動探索 (switch indicator + raw waveform / spectrum)
+# ---------------------------------------------------------------------------
+elif page == "互動探索":
+    ims, ready = _ims_guard()
+    if ready:
+        df = _ims_feature_table(str(resolve(ims["processed_features"])))
+
+        # --- interaction 3: switch the health indicator, recompute FPT live ---
+        style.section("健康指標切換（即時重算退化起點）")
+        candidates = [c for c in ("b1_rms", "b1_kurtosis", "b1_band_BPFO",
+                                   "b1_crest_factor") if c in df.columns]
+        indicator = st.selectbox("健康指標", candidates,
+                                 index=candidates.index(ims["health_indicator"])
+                                 if ims["health_indicator"] in candidates else 0)
+        hi, health, hi_base, hi_fail = build_health_indicator(
+            df[indicator], ims["hi_smooth_window"], ims["baseline_n"],
+            ims["fail_percentile"],
+        )
+        fpt_idx = detect_fpt(hi, ims["baseline_n"], ims["fpt_n_sigma"],
+                             ims["fpt_consecutive"])
+        fpt_t = df.index[fpt_idx]
+        lead_days = (df.index[-1] - fpt_t).total_seconds() / 86400.0
+        style.kpi_strip([
+            {"label": "指標", "value": indicator, "sub": "切換看 FPT 變化"},
+            {"label": "退化起點 FPT", "value": f"{fpt_t:%m-%d %H:%M}",
+             "sub": f"第 {fpt_idx} 個快照"},
+            {"label": "提前量", "value": f"{lead_days:.1f} 天", "sub": "FPT → 失效"},
+        ])
+        hdf = pd.DataFrame({"health": health.to_numpy()}, index=df.index)
+        st.plotly_chart(
+            health_curve(hdf.index, hdf["health"],
+                         alarm_health=float(ims["alarm_health"]), fpt_t=fpt_t),
+            width='stretch',
+        )
+        style.note(
+            "切換指標即時重算健康曲線與退化起點。可看到 <code>b1_rms</code> 最單調穩定，"
+            "峭度 / BPFO 雜訊大或更接近末期才暴衝 —— 這就是選 RMS 當主指標的原因。"
+        )
+
+        # --- interaction 4: raw waveform & FFT spectrum of one snapshot ---
+        style.section("原始波形與頻譜檢視")
+        if not resolve(ims["raw_dir"]).exists():
+            style.note(
+                "原始波形 / 頻譜需要 1.5 GB 的 IMS 原始資料（未隨專案上傳）。"
+                "此功能僅在本地放置 Set 2 後可用；雲端 demo 不提供此項。",
+                kind="info",
+            )
+        else:
+            files = list_ims_files(ims["raw_dir"])
+            snap = st.slider("快照序號", 0, len(files) - 1, fpt_idx, step=1)
+            ts_sel, path_sel = files[snap]
+            ch = load_ims_file(path_sel)[:, ims["target_bearing"] - 1]
+            st.caption(f"快照時間 {ts_sel:%Y-%m-%d %H:%M:%S}　·　軸承 "
+                       f"B{ims['target_bearing']}（{ims['health_indicator']} 退化通道）")
+            wc, sc = st.columns(2)
+            with wc:
+                st.plotly_chart(
+                    vibration_waveform(ch, ims["sampling_rate_hz"]),
+                    width='stretch',
+                )
+            with sc:
+                st.plotly_chart(
+                    vibration_spectrum(ch, ims["sampling_rate_hz"], ims["defect_freqs"]),
+                    width='stretch',
+                )
+            style.note(
+                "拖動快照序號比較健康初期 vs 退化末期：退化後 FFT 在 "
+                "<b>BPFO（外圈，約 236 Hz）</b>附近的能量明顯增強，這是外圈剝落的物理指紋。"
+            )
 
 
 # ---------------------------------------------------------------------------

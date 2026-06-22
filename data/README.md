@@ -40,3 +40,46 @@ data/
 * **故障類型欄位會洩漏目標。** `TWF / HDF / PWF / OSF / RNF` 是 `Machine failure`
   的確定性成因，本專案在前處理時即從 X 移除，以避免 data leakage。
   這五個欄位可保留給「第二階段故障類型分析」使用（請見專案報告）。
+
+---
+
+# 模組 B — IMS 軸承資料集（動態健康度 / RUL）
+
+模組 B 使用 **IMS / NASA Bearing Dataset 的 Set 2（Test 2）**，提供 run-to-failure
+全壽命振動數據，用來建立健康分數退化曲線與 RUL 預測。詳見
+`docs/MODULE_B_IMS_PLAN.md`。
+
+## 如何取得資料集
+
+1. 從以下任一來源下載 IMS Bearing Dataset：
+   - NASA Prognostics Data Repository（Bearing Data Set，由 IMS / 辛辛那提大學貢獻）
+   - 或 Kaggle 鏡像：<https://www.kaggle.com/datasets/vinayak123tyagi/bearing-dataset>
+2. 解壓後取出 **第二組實驗**資料夾（常見命名為 `2nd_test`，內含 984 個檔）。
+3. 放置於：`data/raw/ims/2nd_test/`。
+
+放置後目錄樹應為：
+
+```
+data/
+└── raw/
+    └── ims/
+        └── 2nd_test/
+            ├── 2004.02.12.10.32.39   <-- 984 個無副檔名的時間戳檔
+            ├── 2004.02.12.10.42.39
+            └── ...
+```
+
+## 資料 schema
+
+* 每個檔 = 1 秒振動快照 @ 20 kHz，形狀 `20480 × 4`，ASCII、tab 分隔、**無表頭**。
+* 4 欄 = 4 個軸承各一個加速度通道（B1~B4）。
+* 檔名即時間戳（`YYYY.MM.DD.HH.MM.SS`），用來還原時間順序。
+* **B1（第 1 欄）在實驗末期發生外圈剝落**，是本模組的建模對象。
+
+## 重要注意事項
+
+* **不進 git。** Set 2 解壓後約 1.5 GB，`.gitignore` 已排除 `data/`。
+* **RUL 為衍生標籤。** 資料本身無 RUL 欄位；由「最後一檔 = 故障」反推
+  （`src/data/build_ims_dataset.py`，線性 100→0 健康分數）。
+* **建立特徵表：** 放好資料後執行 `python -m src.data.build_ims_dataset`，
+  會輸出 `data/processed/ims_set2_features.parquet`。
