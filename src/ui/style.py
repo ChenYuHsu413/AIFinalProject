@@ -681,31 +681,33 @@ _ZONE_STYLES = {
 }
 
 
+def _css_container(key: str, css: str):
+    """Native replacement for streamlit-extras' deprecated ``stylable_container``.
+
+    Streamlit tags a keyed container's DOM node with the class
+    ``st-key-{key}``, so we inject a scoped ``<style>`` block and hand back the
+    container.  CSS selectors in ``css`` must already be qualified with
+    ``.st-key-{key}``.
+    """
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    return st.container(key=key)
+
+
 def zone(kind: str = "stone", key: str | None = None):
     """Context manager: render a coloured panel that actually wraps content.
-
-    Uses streamlit-extras ``stylable_container`` (which leverages the CSS
-    ``:has()`` selector) so the panel REALLY contains the Streamlit widgets
-    rendered inside the ``with`` block, instead of leaving stray ``<div>``
-    tags floating in the DOM.
 
     Usage::
 
         with style.zone("sky", key="form-zone"):
             st.form(...)
     """
-    try:
-        from streamlit_extras.stylable_container import stylable_container
-    except Exception:  # pragma: no cover - if the lib is missing, just no-op
-        from contextlib import nullcontext
-        return nullcontext()
-
+    k = key or f"zone-{kind}"
     style_rules = _ZONE_STYLES.get(kind, _ZONE_STYLES["stone"])
     css = (
-        "{ " + style_rules + " padding: 18px 22px; border-radius: 14px;"
-        "  margin: 8px 0; animation: fadeUp 0.4s ease-out; }"
+        f".st-key-{k} {{ {style_rules} padding: 18px 22px; border-radius: 14px;"
+        " margin: 8px 0; animation: fadeUp 0.4s ease-out; }}"
     )
-    return stylable_container(key=key or f"zone-{kind}", css_styles=css)
+    return _css_container(k, css)
 
 
 def big_stat(label: str, value: str, sub: str = "", tone: str = "primary") -> None:
@@ -876,15 +878,11 @@ def dash_button_tile(icon: str, title: str, sub: str, key: str) -> bool:
 
     Renders the icon + title + sub inside the button label (Streamlit wraps
     long labels) and styles the whole button to look like the static
-    ``dash_tile``.  The CSS targets the button via stylable_container.
+    ``dash_tile``.  The CSS targets the button inside a keyed container.
     """
-    try:
-        from streamlit_extras.stylable_container import stylable_container
-    except Exception:  # pragma: no cover
-        return st.button(f"{icon}  {title}", key=key, use_container_width=True)
-
+    k = f"tile-{key}"
     css = f"""
-        button {{
+        .st-key-{k} button {{
             background: white;
             border: 1px solid {BORDER};
             border-radius: 14px;
@@ -899,20 +897,20 @@ def dash_button_tile(icon: str, title: str, sub: str, key: str) -> bool:
             transition: all 0.15s ease-out;
             white-space: normal !important;
         }}
-        button:hover {{
+        .st-key-{k} button:hover {{
             transform: translateY(-3px);
             box-shadow: 0 12px 26px rgba(15, 23, 42, 0.10);
             border-color: {PRIMARY};
         }}
-        button:focus:not(:active) {{
+        .st-key-{k} button:focus:not(:active) {{
             border-color: {PRIMARY};
             box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.18);
         }}
-        button p {{
+        .st-key-{k} button p {{
             margin: 0 !important;
             line-height: 1.55;
         }}
     """
     label = f"{icon}  {title}\n\n{sub}"
-    with stylable_container(key=f"tile-{key}", css_styles=css):
-        return st.button(label, key=key, use_container_width=True)
+    with _css_container(k, css):
+        return st.button(label, key=key, width='stretch')

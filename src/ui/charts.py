@@ -1,7 +1,7 @@
 """Reusable Plotly chart builders for the Streamlit dashboard.
 
 All builders return a ``plotly.graph_objects.Figure`` so the caller can
-``st.plotly_chart(fig, use_container_width=True)`` without re-decorating
+``st.plotly_chart(fig, width='stretch')`` without re-decorating
 each chart with the same layout boilerplate.
 """
 from __future__ import annotations

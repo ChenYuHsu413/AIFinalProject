@@ -277,7 +277,7 @@ def render_result_block(result: dict) -> None:
     with c1:
         st.plotly_chart(
             failure_probability_gauge(result["failure_probability"]),
-            use_container_width=True,
+            width='stretch',
             key=f"gauge-{id(result)}",
         )
     with c2:
@@ -370,7 +370,7 @@ if page == "首頁總覽":
             comp = pd.read_csv(metrics_csv)
             st.plotly_chart(
                 leaderboard_bar(comp, metric="f1", top_n=5),
-                use_container_width=True,
+                width='stretch',
             )
 
     with cR:
@@ -399,7 +399,7 @@ if page == "首頁總覽":
         if "wif_history" in st.session_state and st.session_state.wif_history:
             history = st.session_state.wif_history
             mini = sparkline(history[-30:], color=style.PRIMARY, height=120)
-            st.plotly_chart(mini, use_container_width=True)
+            st.plotly_chart(mini, width='stretch')
             st.caption(
                 f"已試 {len(history)} 步；"
                 f"目前 {history[-1]*100:.1f}%　·　"
@@ -454,7 +454,7 @@ elif page == "手動單筆預測":
                     "Rotational speed [rpm]", 0.0, 5000.0, 1551.0, step=10.0,
                 )
             submitted = st.form_submit_button(
-                "🚀 執行預測", type="primary", use_container_width=True,
+                "🚀 執行預測", type="primary", width='stretch',
             )
 
     if submitted:
@@ -523,7 +523,7 @@ elif page == "手動單筆預測":
                         .iloc[::-1]
                         .reset_index(drop=True)
                     )
-                    st.plotly_chart(shap_bar(df_sv), use_container_width=True)
+                    st.plotly_chart(shap_bar(df_sv), width='stretch')
                     style.note(
                         f"基準 log-odds = <b>{exp.base_value:.3f}</b>；"
                         f"本筆 log-odds = <b>{exp.model_output:.3f}</b>"
@@ -540,7 +540,7 @@ elif page == "手動單筆預測":
                         result["failure_type_probabilities"],
                         result["likely_failure_types"],
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
                 for note in result.get("failure_type_notes", []):
                     style.note(note)
@@ -556,7 +556,7 @@ elif page == "手動單筆預測":
             with c_l:
                 st.plotly_chart(
                     input_radar(record, prob=result["failure_probability"]),
-                    use_container_width=True,
+                    width='stretch',
                 )
             with c_r:
                 style.section("衍生特徵")
@@ -647,7 +647,7 @@ elif page == "What-if 敏感度分析":
                 style.section("最近 40 步的故障機率走勢")
                 st.plotly_chart(
                     sparkline(history, color=style.PRIMARY, height=80),
-                    use_container_width=True,
+                    width='stretch',
                 )
             with sp_c2:
                 st.markdown(
@@ -663,7 +663,7 @@ elif page == "What-if 敏感度分析":
         with c_l:
             st.plotly_chart(
                 input_radar(base_record, prob=wif_result["failure_probability"]),
-                use_container_width=True,
+                width='stretch',
             )
         with c_r:
             if has_ft:
@@ -672,7 +672,7 @@ elif page == "What-if 敏感度分析":
                         wif_result["failure_type_probabilities"],
                         wif_result["likely_failure_types"],
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
             else:
                 style.note("尚未訓練二階段模型。", kind="warn")
@@ -701,7 +701,7 @@ elif page == "What-if 敏感度分析":
         st.plotly_chart(
             one_d_sweep(sweep_values, sweep_probs, sweep_feature,
                         base_record[sweep_feature]),
-            use_container_width=True,
+            width='stretch',
         )
 
     with tabs[2]:
@@ -741,7 +741,7 @@ elif page == "What-if 敏感度分析":
             st.plotly_chart(
                 risk_landscape(xs, ys, Z, feat_x, feat_y,
                                base_record[feat_x], base_record[feat_y]),
-                use_container_width=True,
+                width='stretch',
             )
             style.note(
                 "紅 = 高故障風險、綠 = 健康。白點是目前運轉設定。"
@@ -805,12 +805,12 @@ elif page == "批次 CSV 上傳":
                 with c_l:
                     st.plotly_chart(
                         risk_donut(n_low, n_med, n_high),
-                        use_container_width=True,
+                        width='stretch',
                     )
                 with c_r:
                     st.plotly_chart(
                         probability_histogram(probs),
-                        use_container_width=True,
+                        width='stretch',
                     )
 
                 # --- top-5 highest-risk rows for quick action ---
@@ -830,12 +830,12 @@ elif page == "批次 CSV 上傳":
                             cmap="OrRd", subset=["failure_probability"],
                             vmin=0, vmax=1,
                         ),
-                        use_container_width=True,
+                        width='stretch',
                     )
 
                 # --- full result table ---
                 with st.expander(f"完整結果表（{len(results)} 筆）", expanded=False):
-                    st.dataframe(out, use_container_width=True)
+                    st.dataframe(out, width='stretch')
 
                 st.download_button(
                     "📥 下載預測結果 CSV",
@@ -899,7 +899,7 @@ elif page == "模型評估結果":
             )
             st.plotly_chart(
                 leaderboard_bar(comp, metric=metric_choice, top_n=top_n),
-                use_container_width=True,
+                width='stretch',
             )
 
             # ----- full sortable table tucked behind an expander -----
@@ -923,7 +923,7 @@ elif page == "模型評估結果":
                         vmin=0, vmax=1,
                     )
                 )
-                st.dataframe(styled, use_container_width=True)
+                st.dataframe(styled, width='stretch')
 
         with tabs[1]:
             preds_path = resolve(cfg["paths"]["outputs_metrics"]) / "test_predictions.csv"
@@ -968,7 +968,7 @@ elif page == "模型評估結果":
                 ])
                 cm_mat = np.array([[tn, fp], [fn, tp_]])
                 st.plotly_chart(confusion_heatmap(cm_mat, thr),
-                                use_container_width=True)
+                                width='stretch')
                 style.note(
                     "<b>怎麼讀</b>：往左拉門檻 → 預測為故障的樣本變多 → "
                     "Recall 上升、FN（漏報）下降，但 FP（誤報）通常會上升、"
@@ -996,7 +996,7 @@ elif page == "模型評估結果":
                 p = fig_dir / img
                 if p.exists():
                     with cols[i % 2]:
-                        st.image(str(p), caption=cap, use_container_width=True)
+                        st.image(str(p), caption=cap, width='stretch')
 
 
 # ---------------------------------------------------------------------------
@@ -1008,7 +1008,7 @@ else:
     if overview_img.exists():
         c_l, c_r = st.columns([2, 1])
         with c_l:
-            st.image(str(overview_img), use_container_width=True,
+            st.image(str(overview_img), width='stretch',
                      caption="專案總覽 infographic")
         with c_r:
             with style.zone("mint", key="about-positioning"):
