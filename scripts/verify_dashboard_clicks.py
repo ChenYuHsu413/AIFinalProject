@@ -1,6 +1,7 @@
-"""Drive the Streamlit dashboard via Playwright and verify tile clicks
-navigate to the right page AND that the sidebar option_menu selection
-syncs after each click.
+"""Drive the Streamlit dashboard via Playwright and verify navigation:
+the homepage tiles jump to the right page, the sidebar button nav syncs
+its highlight (active = primary button), and single-item groups (模組 B+)
+stay reachable after navigating away and back.
 
 Outputs screenshots to outputs/screenshots/dashboard_verify/.
 """
@@ -21,12 +22,11 @@ URL = "http://127.0.0.1:8501"
 OUT = Path("outputs/screenshots/dashboard_verify")
 OUT.mkdir(parents=True, exist_ok=True)
 
-# (tile-button-text, main-content-marker-after-click, sidebar-option-menu-label)
+# (tile-button-text, main-content-marker-after-click, sidebar-nav-label)
 TILES = [
-    ("手動單筆預測", "手動單筆預測", "手動單筆預測"),
-    ("What-if 敏感度", "What-if", "What-if 敏感度分析"),
-    ("批次 CSV 上傳", "批次", "批次 CSV 上傳"),
-    ("模型評估", "模型評估", "模型評估結果"),
+    ("模組 A · 單筆風險預測", "輸入運轉條件", "手動單筆預測"),
+    ("模組 B · 健康度總覽", "健康度總覽", "健康度總覽"),
+    ("模組 B+ · 多軌跡泛化", "多軌跡泛化", "多軌跡泛化"),
 ]
 
 
@@ -45,39 +45,29 @@ def screenshot(page: Page, name: str) -> Path:
     return p
 
 
-def get_option_menu_active(page: Page) -> str | None:
-    """The option_menu is rendered inside a custom-component iframe.
-    Find the iframe whose body contains nav labels, return active item text."""
-    for frame in page.frames:
-        try:
-            txt = frame.locator("body").inner_text(timeout=500)
-        except Exception:
-            continue
-        if "首頁總覽" in txt and "手動單筆預測" in txt:
-            # active item gets 'active' class in streamlit-option-menu
-            active = frame.locator(".nav-link.active").first
-            try:
-                return active.inner_text(timeout=500).strip()
-            except Exception:
-                return None
-    return None
+SIDEBAR = 'section[data-testid="stSidebar"]'
 
 
-def click_sidebar_home(page: Page) -> bool:
-    for frame in page.frames:
-        try:
-            txt = frame.locator("body").inner_text(timeout=500)
-        except Exception:
-            continue
-        if "首頁總覽" in txt and "手動單筆預測" in txt:
-            try:
-                frame.get_by_text("首頁總覽", exact=False).first.click(timeout=3_000)
-                return True
-            except Exception as e:
-                print(f"  ERR home click in frame: {e}")
-                return False
-    print("  ERR could not find option_menu frame")
-    return False
+def sidebar_active_text(page: Page) -> str:
+    """Text of the highlighted (primary) sidebar nav button, '' if none."""
+    try:
+        return page.locator(
+            f'{SIDEBAR} button[kind="primary"]'
+        ).first.inner_text(timeout=2_000).strip()
+    except Exception:
+        return ""
+
+
+def click_sidebar(page: Page, label: str) -> bool:
+    """Click the sidebar nav button whose text contains ``label``."""
+    try:
+        page.locator(f"{SIDEBAR} button").filter(
+            has_text=label
+        ).first.click(timeout=3_000)
+        return True
+    except Exception as e:
+        print(f"  ERR sidebar click {label!r}: {e}")
+        return False
 
 
 def main() -> int:
@@ -99,12 +89,13 @@ def main() -> int:
 
         screenshot(page, "00_home_initial")
 
-        active = get_option_menu_active(page)
-        print(f"  option_menu active item: {active!r}  (expected '首頁總覽')")
-        if active != "首頁總覽":
-            print("  WARN: option_menu doesn't show 首頁總覽 active on initial load")
+        active = sidebar_active_text(page)
+        print(f"  sidebar active: {active!r}  (expected to contain '首頁總覽')")
+        if "首頁總覽" not in active:
+            print("  WARN: sidebar doesn't show 首頁總覽 active on initial load")
 
         all_ok = True
+        slugs = ["a", "b", "bplus"]
         for i, (btn_text, marker, menu_label) in enumerate(TILES, start=1):
             print(f"[{i+1}] click tile: {btn_text!r}")
             btn_locator = page.get_by_role("button").filter(has_text=btn_text)
@@ -132,21 +123,46 @@ def main() -> int:
                 body_text = page.locator("body").inner_text()
             page_ok = marker in body_text
 
-            active = get_option_menu_active(page)
-            menu_ok = active == menu_label
+            active = sidebar_active_text(page)
+            menu_ok = menu_label in active
 
-            screenshot(page, f"{i:02d}_after_click_{['manual','whatif','batch','eval'][i-1]}")
+            screenshot(page, f"{i:02d}_after_click_{slugs[i-1]}")
             print(f"  marker '{marker}' in main: {page_ok}")
-            print(f"  option_menu active: {active!r}  (expected {menu_label!r}) → {menu_ok}")
+            print(f"  sidebar active: {active!r}  (expected {menu_label!r}) → {menu_ok}")
 
             if not (page_ok and menu_ok):
                 all_ok = False
 
-            print(f"  -> back to dashboard via sidebar option_menu")
-            if not click_sidebar_home(page):
+            print("  -> back to dashboard via sidebar 首頁總覽")
+            if not click_sidebar(page, "首頁總覽"):
                 all_ok = False
                 break
             wait_idle(page, 2000)
+
+        # Regression for the reported bug: a single-item group (模組 B+) must
+        # stay reachable after navigating away and back via the sidebar.
+        print("[5] round-trip: 多軌跡泛化 → 健康度總覽 → 多軌跡泛化 (sidebar only)")
+        rt_ok = True
+        for label, marker in [("多軌跡泛化", "多軌跡泛化"),
+                              ("健康度總覽", "健康度總覽"),
+                              ("多軌跡泛化", "多軌跡泛化")]:
+            if not click_sidebar(page, label):
+                rt_ok = False
+                break
+            wait_idle(page, 1500)
+            try:
+                body_text = page.locator('div[data-testid="stMain"]').first.inner_text(timeout=3_000)
+            except Exception:
+                body_text = page.locator("body").inner_text()
+            active = sidebar_active_text(page)
+            step_ok = (marker in body_text) and (label in active)
+            print(f"  click {label!r} → marker {marker in body_text}, "
+                  f"active {active!r} → {step_ok}")
+            rt_ok = rt_ok and step_ok
+        if not rt_ok:
+            print("  FAIL: single-item group not reachable on round-trip")
+            all_ok = False
+        screenshot(page, "98_bplus_round_trip")
 
         screenshot(page, "99_final_back_home")
         browser.close()

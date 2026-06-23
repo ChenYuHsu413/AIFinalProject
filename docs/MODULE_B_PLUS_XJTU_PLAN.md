@@ -118,3 +118,5 @@
 - 本模組 MVP 只取**單一工況**，不宣稱跨工況泛化；跨工況列為延伸。
 - LOBO 結果如實呈現，不因加分而過度配適。
 - Paderborn（電流診斷）、多感測器融合、ESP32 實場接入列為未來工作。
+- **延伸規劃**（跨工況領域自適應、維護建議決策層、即時串流回放）見
+  [`MODULE_B_PLUS_EXTENSIONS_PLAN.md`](MODULE_B_PLUS_EXTENSIONS_PLAN.md)。

@@ -497,6 +497,23 @@ div[role="tabpanel"] {{
 section[data-testid="stSidebar"] > div:first-child {{
     padding-top: 0.5rem;
 }}
+/* Sidebar nav buttons: full-width, left-aligned pills driven by active_page */
+section[data-testid="stSidebar"] .stButton > button {{
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 9px 14px;
+    margin: 1px 0;
+    font-weight: 500;
+}}
+section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {{
+    background: transparent;
+    color: #334155;
+}}
+section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {{
+    background: #f0fdfa;
+    box-shadow: none;
+}}
 .sidebar-brand {{
     display: flex;
     align-items: center;

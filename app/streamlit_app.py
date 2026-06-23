@@ -27,12 +27,6 @@ try:
 except Exception:  # pragma: no cover
     HAS_SHADCN = False
 
-try:
-    from streamlit_option_menu import option_menu
-    HAS_OPTION_MENU = True
-except Exception:  # pragma: no cover
-    HAS_OPTION_MENU = False
-
 from src.models.predict import (
     REQUIRED_INPUT_COLUMNS,
     load_model,
@@ -77,6 +71,15 @@ st.set_page_config(
 style.inject()
 
 
+@st.cache_data(show_spinner=False)
+def _metric_json(name: str) -> dict:
+    """Read a small JSON under ``outputs/metrics/`` (empty dict if missing)."""
+    p = _ROOT / "outputs" / "metrics" / name
+    if not p.exists():
+        return {}
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
 # ---------------------------------------------------------------------------
 # Model status & sidebar
 # ---------------------------------------------------------------------------
@@ -92,55 +95,23 @@ except FileNotFoundError:
     st.stop()
 
 
-# Navigation = one option_menu per section, with non-clickable st.markdown
-# section labels in between (模組 A / 模組 B).  Inactive sections render with a
-# "no-highlight" selected style so only the active section shows a highlight.
+# Navigation = sidebar buttons grouped by module.  st.button fires on every
+# click (unlike option_menu, which ignores a click on the already-selected
+# item), so single-item groups stay reachable and the highlight is driven
+# entirely by ``active_page`` (active = primary button, others = secondary).
 NAV_GROUPS = [
-    {"title": None, "items": ["首頁總覽"], "icons": ["house-fill"], "key": "nav_home"},
+    {"title": None,
+     "items": [("首頁總覽", "🏠")]},
     {"title": "模組 A · 靜態風險 (AI4I)",
-     "items": ["手動單筆預測", "What-if 敏感度分析", "批次 CSV 上傳", "模型評估結果"],
-     "icons": ["bullseye", "lightbulb", "inbox", "bar-chart-fill"], "key": "nav_a"},
+     "items": [("手動單筆預測", "🎯"), ("What-if 敏感度分析", "💡"),
+               ("批次 CSV 上傳", "📥"), ("模型評估結果", "📊")]},
     {"title": "模組 B · 動態健康度 (IMS)",
-     "items": ["健康度總覽", "RUL 預測", "互動探索"],
-     "icons": ["heart-pulse", "graph-down-arrow", "search"], "key": "nav_b"},
+     "items": [("健康度總覽", "💓"), ("RUL 預測", "📉"), ("互動探索", "🔍")]},
     {"title": "模組 B+ · 多軌跡泛化 (XJTU)",
-     "items": ["多軌跡泛化"],
-     "icons": ["diagram-3"], "key": "nav_bp"},
-    {"title": None, "items": ["關於本專案"], "icons": ["info-circle"], "key": "nav_about"},
+     "items": [("多軌跡泛化", "🧬")]},
+    {"title": None,
+     "items": [("關於本專案", "ℹ️")]},
 ]
-ALL_PAGES = [p for g in NAV_GROUPS for p in g["items"]]
-
-_NAV_LINK = {
-    "font-size": "14px", "color": "#334155", "text-align": "left",
-    "margin": "2px 0", "padding": "10px 12px", "border-radius": "10px",
-    "--hover-color": "#f0fdfa",
-}
-_NAV_SEL = {
-    "background": f"linear-gradient(135deg, {style.PRIMARY}, {style.PRIMARY_DARK})",
-    "color": "white", "font-weight": "600",
-    "box-shadow": "0 4px 14px rgba(13, 148, 136, 0.22)",
-}
-_NAV_SEL_OFF = {"background": "transparent", "color": "#334155",
-                "font-weight": "400", "box-shadow": "none"}
-
-
-def _nav_styles(is_active: bool) -> dict:
-    """option_menu styles; inactive sections get an invisible 'selected' state."""
-    return {
-        "container": {"padding": "0", "background-color": "transparent"},
-        "icon": {"color": style.PRIMARY, "font-size": "16px"},
-        "nav-link": _NAV_LINK,
-        "nav-link-selected": _NAV_SEL if is_active else _NAV_SEL_OFF,
-        "nav-link-selected .icon": {"color": "white" if is_active else style.PRIMARY},
-    }
-
-
-def _nav_pick(menu_key: str) -> None:
-    """on_change callback: commit the clicked item as the active page."""
-    val = st.session_state.get(menu_key)
-    if val:
-        st.session_state.active_page = val
-
 
 style.sidebar_brand(
     emoji="🔧",
@@ -150,43 +121,28 @@ style.sidebar_brand(
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "首頁總覽"
-
-# A tile click on the homepage stores a target page name; apply it and force the
-# owning menu to highlight it this run.
-_jump = st.session_state.pop("nav_jump", None)
-if _jump in ALL_PAGES:
-    st.session_state.active_page = _jump
-    st.session_state["_nav_force"] = _jump
-_force = st.session_state.pop("_nav_force", None)
 active = st.session_state.active_page
 
 with st.sidebar:
-    if HAS_OPTION_MENU:
-        for g in NAV_GROUPS:
-            if g["title"]:
-                st.markdown(
-                    f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
-                    f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
-                    f"{g['title']}</div>",
-                    unsafe_allow_html=True,
-                )
-            in_group = active in g["items"]
-            option_menu(
-                menu_title=None,
-                options=g["items"],
-                icons=g["icons"],
-                default_index=g["items"].index(active) if in_group else 0,
-                manual_select=(g["items"].index(active)
-                               if (_force == active and in_group) else None),
-                key=g["key"],
-                on_change=_nav_pick,
-                styles=_nav_styles(in_group),
+    for g in NAV_GROUPS:
+        if g["title"]:
+            st.markdown(
+                f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
+                f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
+                f"{g['title']}</div>",
+                unsafe_allow_html=True,
             )
-        page = st.session_state.active_page
-    else:
-        page = st.radio("頁面", ALL_PAGES, label_visibility="collapsed",
-                        index=ALL_PAGES.index(active))
-        st.session_state.active_page = page
+        for name, icon in g["items"]:
+            if st.button(
+                f"{icon}  {name}",
+                key=f"nav::{name}",
+                width="stretch",
+                type="primary" if name == active else "secondary",
+            ):
+                st.session_state.active_page = name
+                st.rerun()
+
+page = st.session_state.active_page
 
 style.sidebar_model_card(
     bundle.model_name, bundle.feature_set,
@@ -271,26 +227,77 @@ HEROES = {
     ),
 }
 _eyebrow, _title, _subtitle = HEROES[page]
+
+# ---- page-aware top header: chips / action bar / KPI strip switch by module ----
+_REPO = "https://github.com/ChenYuHsu413/AIFinalProject"
+_MODULE_B_PAGES = {"健康度總覽", "RUL 預測", "互動探索"}
+_MODULE_BPLUS_PAGES = {"多軌跡泛化"}
+
+
+def _page_module(p: str) -> str:
+    if p in _MODULE_B_PAGES:
+        return "B"
+    if p in _MODULE_BPLUS_PAGES:
+        return "Bplus"
+    if p == "關於本專案":
+        return "about"
+    return "A"  # 首頁總覽 + 模組 A
+
+
+_module = _page_module(page)
+
+_HERO_CHIPS = {
+    "A": ["CRISP-DM", "10 模型 × 5 特徵組合", "SHAP", "Optuna", "Streamlit",
+          "FastAPI", "Docker"],
+    "B": ["IMS 軸承 run-to-failure", "20 kHz 振動", "時域 / 頻域特徵",
+          "FPT 退化起點", "趨勢外推 RUL"],
+    "Bplus": ["XJTU-SY", "15 軸承 × 3 工況", "固定參數泛化",
+              "LOBO / LOCO", "Domain shift"],
+    "about": ["CRISP-DM", "SHAP", "Optuna", "Streamlit", "FastAPI",
+              "Docker", "GitHub Actions"],
+}
 style.hero(
     eyebrow=_eyebrow, title=_title, subtitle=_subtitle,
-    chips=["CRISP-DM", "10 模型 × 5 特徵組合", "SHAP", "Optuna", "Streamlit",
-           "FastAPI", "Docker"],
+    chips=_HERO_CHIPS[_module],
 )
 
 
-# Action bar — quick links to the API, model card, dataset, etc.
-style.action_bar([
-    {"label": "FastAPI /docs", "icon": "📚",
-     "url": "http://127.0.0.1:8000/docs", "primary": True},
-    {"label": "GitHub Repo", "icon": "📁",
-     "url": "https://github.com/ChenYuHsu413/AIFinalProject"},
-    {"label": "Model Card", "icon": "📜",
-     "url": "https://github.com/ChenYuHsu413/AIFinalProject/blob/main/outputs/models/MODEL_CARD.md"},
-    {"label": "Dataset (UCI)", "icon": "📊",
-     "url": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset"},
-])
+# Action bar — links switch with the active module.
+_ACTIONS = {
+    "A": [
+        {"label": "FastAPI /docs", "icon": "📚",
+         "url": "http://127.0.0.1:8000/docs", "primary": True},
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO},
+        {"label": "Model Card", "icon": "📜",
+         "url": f"{_REPO}/blob/main/outputs/models/MODEL_CARD.md"},
+        {"label": "Dataset (UCI)", "icon": "📊",
+         "url": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset"},
+    ],
+    "B": [
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
+        {"label": "模組 B 成果", "icon": "📈",
+         "url": f"{_REPO}/blob/main/docs/MODULE_B_RESULTS.md"},
+        {"label": "IMS Dataset (NASA PCoE)", "icon": "📊",
+         "url": "https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/"},
+    ],
+    "Bplus": [
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
+        {"label": "模組 B+ 規劃", "icon": "🧬",
+         "url": f"{_REPO}/blob/main/docs/MODULE_B_PLUS_XJTU_PLAN.md"},
+        {"label": "XJTU-SY Dataset", "icon": "📊",
+         "url": "https://biaowang.tech/xjtu-sy-bearing-datasets/"},
+    ],
+    "about": [
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
+        {"label": "FastAPI /docs", "icon": "📚",
+         "url": "http://127.0.0.1:8000/docs"},
+        {"label": "Model Card", "icon": "📜",
+         "url": f"{_REPO}/blob/main/outputs/models/MODEL_CARD.md"},
+    ],
+}
+style.action_bar(_ACTIONS[_module])
 
-# Top KPI strip — metric cards with animated progress bars
+# Top KPI strip — switches with the active module.
 m = bundle.metrics
 
 
@@ -304,33 +311,67 @@ def _tone_for(value: float) -> str:
     return "danger"
 
 
-kpi_cols = st.columns(5)
-with kpi_cols[0]:
-    style.metric_with_bar(
-        "Recall", f"{m['recall']:.3f}", m['recall'],
-        sub="故障命中率", tone=_tone_for(m['recall']),
-    )
-with kpi_cols[1]:
-    style.metric_with_bar(
-        "F1", f"{m['f1']:.3f}", m['f1'],
-        sub="P/R 調和平均", tone=_tone_for(m['f1']),
-    )
-with kpi_cols[2]:
-    style.metric_with_bar(
-        "ROC-AUC", f"{m['roc_auc']:.3f}", m['roc_auc'],
-        sub="整體鑑別力", tone=_tone_for(m['roc_auc']),
-    )
-with kpi_cols[3]:
-    style.metric_with_bar(
-        "PR-AUC", f"{m['pr_auc']:.3f}", m['pr_auc'],
-        sub="不平衡首選", tone=_tone_for(m['pr_auc']),
-    )
-with kpi_cols[4]:
-    # FN ratio: 13 / 68 = ~19% miss rate. Convert to a 0–1 "ok" score for the bar.
-    style.metric_with_bar(
-        "Miss rate", f"{13/68:.1%}", 1 - 13/68,
-        sub="FN 13 / 68 故障", tone="warn",
-    )
+if _module == "A":
+    kpi_cols = st.columns(5)
+    with kpi_cols[0]:
+        style.metric_with_bar(
+            "Recall", f"{m['recall']:.3f}", m['recall'],
+            sub="故障命中率", tone=_tone_for(m['recall']),
+        )
+    with kpi_cols[1]:
+        style.metric_with_bar(
+            "F1", f"{m['f1']:.3f}", m['f1'],
+            sub="P/R 調和平均", tone=_tone_for(m['f1']),
+        )
+    with kpi_cols[2]:
+        style.metric_with_bar(
+            "ROC-AUC", f"{m['roc_auc']:.3f}", m['roc_auc'],
+            sub="整體鑑別力", tone=_tone_for(m['roc_auc']),
+        )
+    with kpi_cols[3]:
+        style.metric_with_bar(
+            "PR-AUC", f"{m['pr_auc']:.3f}", m['pr_auc'],
+            sub="不平衡首選", tone=_tone_for(m['pr_auc']),
+        )
+    with kpi_cols[4]:
+        # FN ratio: 13 / 68 = ~19% miss rate. Convert to a 0–1 "ok" score.
+        style.metric_with_bar(
+            "Miss rate", f"{13/68:.1%}", 1 - 13/68,
+            sub="FN 13 / 68 故障", tone="warn",
+        )
+elif _module == "B":
+    _ims = _metric_json("ims_rul.json")
+    _im = _ims.get("metrics", {})
+    style.kpi_strip([
+        {"label": "退化提前量",
+         "value": f"{_ims.get('lead_time_days', 0):.1f} 天",
+         "sub": "FPT → 失效預警"},
+        {"label": "RUL MAE",
+         "value": f"{_im.get('mae_hours', 0):.1f} h",
+         "sub": "退化區趨勢外推"},
+        {"label": "RUL RMSE",
+         "value": f"{_im.get('rmse_hours', 0):.1f} h",
+         "sub": "退化區"},
+        {"label": "資料軌跡", "value": "IMS Set 2 · 1 軸承",
+         "sub": "單軌跡 run-to-failure"},
+    ])
+elif _module == "Bplus":
+    _agg = _metric_json("xjtu_generalization.json").get("aggregate", {})
+    _lobo = _metric_json("xjtu_lobo.json").get("pooled", {})
+    _loco = _metric_json("xjtu_loco.json").get("pooled", {})
+    _n = _agg.get("n_bearings", 0)
+    style.kpi_strip([
+        {"label": "退化偵測", "value": f"{_n}/{_n} 軸承",
+         "sub": "3 工況全數偵測"},
+        {"label": "平均提前量",
+         "value": f"{_agg.get('mean_lead_time_hours', 0):.1f} h",
+         "sub": "固定參數 FPT"},
+        {"label": "LOBO R²", "value": f"{_lobo.get('r2', 0):+.2f}",
+         "sub": "工況內留一軸承"},
+        {"label": "LOCO R²", "value": f"{_loco.get('r2', 0):+.2f}",
+         "sub": "留一工況 · domain shift"},
+    ])
+# about: hero + action bar only (no metric strip)
 
 
 # ---------------------------------------------------------------------------
@@ -448,27 +489,24 @@ if page == "首頁總覽":
     cfg = load_config()
     metrics_csv = resolve(cfg["paths"]["metrics_csv"])
 
-    # ---- 4 clickable entry tiles ----
+    # ---- 3 module entry tiles (A / B / B+) ----
     style.section("快速入口")
     tile_targets = [
-        ("🎯", "手動單筆預測",
-         "輸入運轉條件，得到機率 + SHAP 解釋 + 維護建議",
-         "手動單筆預測", "go-manual"),
-        ("💡", "What-if 敏感度",
-         "拖動滑桿即時觀察故障機率、1D/2D 風險地景",
-         "What-if 敏感度分析", "go-whatif"),
-        ("📥", "批次 CSV 上傳",
-         "多筆同時推論、風險分布、Top-N 高風險清單",
-         "批次 CSV 上傳", "go-batch"),
-        ("📊", "模型評估",
-         "10×5 比較表、互動門檻、訓練圖表",
-         "模型評估結果", "go-eval"),
+        ("🅰", "模組 A · 單筆風險預測",
+         "AI4I 靜態特徵 → 故障機率 + SHAP 解釋 + 維護建議",
+         "手動單筆預測", "go-a"),
+        ("🅱", "模組 B · 健康度總覽",
+         "IMS 振動 → 健康指標、退化起點 (FPT)、RUL 外推",
+         "健康度總覽", "go-b"),
+        ("🅱➕", "模組 B+ · 多軌跡泛化",
+         "XJTU 15 軸承 × 3 工況 → 跨軸承 / 跨工況泛化驗證",
+         "多軌跡泛化", "go-bplus"),
     ]
-    tile_cols = st.columns(4)
+    tile_cols = st.columns(3)
     for col, (icon, title, sub, target_page, key) in zip(tile_cols, tile_targets):
         with col:
             if style.dash_button_tile(icon, title, sub, key=key):
-                st.session_state.nav_jump = target_page
+                st.session_state.active_page = target_page
                 st.rerun()
 
     st.divider()
