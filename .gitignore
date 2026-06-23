@@ -39,6 +39,8 @@ data/processed/*.csv
 data/processed/*.parquet
 # IMS Set 2 raw snapshots (~1.5 GB, extensionless files) — never commit
 data/raw/ims/
+# XJTU-SY raw snapshots (Module B+, multi-bearing CSVs) — never commit
+data/raw/xjtu/
 
 # Module B (IMS) processed artefacts — small, committed so the live demo works
 # without the 1.5 GB raw dataset (override the broad ignores above).

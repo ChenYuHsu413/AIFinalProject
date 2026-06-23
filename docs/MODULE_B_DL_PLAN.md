@@ -7,7 +7,7 @@
 >
 > **核心決策**：做 **1D-CNN Autoencoder 異常偵測**，**不**做 DL 的 RUL 回歸，也**不**做健康階段分類。
 >
-> 本文件只做分析與規劃，尚未實作。對照主線規劃見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)、
+> **狀態（2026-06-23）**：**已推遲**——團隊決定優先補強資料集（XJTU 多軌跡泛化，見 [`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)）；本深度學習對照暫緩，尚未實作（`src/models/train_autoencoder.py` 尚未建立）。對照主線規劃見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)、
 > 實測結果見 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)。
 
 ---
