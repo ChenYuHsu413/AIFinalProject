@@ -48,6 +48,12 @@ data/raw/xjtu/
 !outputs/metrics/ims_rul_predictions.csv
 !outputs/metrics/ims_rul.json
 
+# Module B+ (XJTU) processed artefacts — small, committed for reproducibility.
+!data/processed/xjtu_c1_features.parquet
+!outputs/metrics/xjtu_generalization.csv
+!outputs/metrics/xjtu_generalization.json
+!outputs/metrics/xjtu_rul_predictions.csv
+
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training
 # (override the broad ignores above). ims_rul.joblib stays ignored on purpose.

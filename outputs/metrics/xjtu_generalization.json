@@ -1,0 +1,85 @@
+{
+  "method": "fixed_param_trend_extrapolation_per_bearing",
+  "per_bearing": [
+    {
+      "bearing": "Bearing1_1",
+      "n_snapshots": 123,
+      "life_hours": 2.033333333333333,
+      "fpt_index": 13,
+      "lead_time_hours": 1.8166666666666664,
+      "lead_frac_of_life": 0.8934426229508196,
+      "mae_hours": 0.5233880139378595,
+      "rmse_hours": 0.6536261794485672,
+      "n_eval": 106,
+      "hi_base": 0.6001835045456756,
+      "hi_fail": 3.778452104821082
+    },
+    {
+      "bearing": "Bearing1_2",
+      "n_snapshots": 161,
+      "life_hours": 2.6666666666666665,
+      "fpt_index": 37,
+      "lead_time_hours": 2.05,
+      "lead_frac_of_life": 0.7687499999999999,
+      "mae_hours": 1.3887748296003017,
+      "rmse_hours": 1.4899617632871325,
+      "n_eval": 116,
+      "hi_base": 0.6093847971031136,
+      "hi_fail": 4.536166289364616
+    },
+    {
+      "bearing": "Bearing1_3",
+      "n_snapshots": 158,
+      "life_hours": 2.6166666666666667,
+      "fpt_index": 13,
+      "lead_time_hours": 2.4,
+      "lead_frac_of_life": 0.9171974522292993,
+      "mae_hours": 0.47119065558274364,
+      "rmse_hours": 0.5984221379882705,
+      "n_eval": 134,
+      "hi_base": 0.497945877386777,
+      "hi_fail": 4.22503864400477
+    },
+    {
+      "bearing": "Bearing1_4",
+      "n_snapshots": 122,
+      "life_hours": 2.0166666666666666,
+      "fpt_index": 87,
+      "lead_time_hours": 0.5666666666666667,
+      "lead_frac_of_life": 0.2809917355371901,
+      "mae_hours": 0.37237637202825485,
+      "rmse_hours": 0.39353396157192244,
+      "n_eval": 10,
+      "hi_base": 0.4365619905886292,
+      "hi_fail": 0.4977016068395138
+    },
+    {
+      "bearing": "Bearing1_5",
+      "n_snapshots": 52,
+      "life_hours": 0.85,
+      "fpt_index": 27,
+      "lead_time_hours": 0.39999999999999997,
+      "lead_frac_of_life": 0.47058823529411764,
+      "mae_hours": 0.07113540138080358,
+      "rmse_hours": 0.08748087617208632,
+      "n_eval": 21,
+      "hi_base": 0.9683499199761177,
+      "hi_fail": 5.6679389795673565
+    }
+  ],
+  "aggregate": {
+    "n_bearings": 5,
+    "mean_lead_time_hours": 1.4466666666666665,
+    "mean_mae_hours": 0.5653730545059927,
+    "fixed_params": {
+      "health_indicator": "h_rms",
+      "hi_smooth_window": 5,
+      "baseline_n": 10,
+      "fpt_n_sigma": 3.0,
+      "fpt_consecutive": 5,
+      "fail_percentile": 99,
+      "min_fit_points": 5,
+      "fit_window": 40
+    }
+  }
+}

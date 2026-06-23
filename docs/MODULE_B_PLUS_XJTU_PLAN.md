@@ -4,9 +4,12 @@
 > 做出來**，作為 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md) 單軌跡結論的泛化補強。
 > 資料來源評估與取捨理由見 [`DATASET_EVALUATION.md`](DATASET_EVALUATION.md)。
 >
-> **狀態（2026-06-23）**：步驟 1 起步——`src/data/load_xjtu.py` 骨架已建立、`.gitignore`
-> 已排除 `data/raw/xjtu/`；待使用者下載 XJTU-SY（Condition 1：Bearing1_1~1_5）後驗證讀檔
-> shape `[32768, 2]`。其餘步驟尚未實作。風格對齊 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)。
+> **狀態（2026-06-23）**：步驟 1–3 完成——`load_xjtu.py`／`build_xjtu_dataset.py`
+> （產出 `xjtu_c1_features.parquet`，616×15）／`eval_xjtu_generalization.py` 皆可跑。
+> **5 顆軸承以同一組固定參數全數偵測到退化起點**（平均提前 1.45h），退化區 RUL
+> MAE 0.07–1.39h（平均 0.57h）；產物見 `outputs/metrics/xjtu_generalization.*`。
+> 下一步：步驟 4（LOBO 監督式 RUL，加分）或步驟 5（Dashboard）。
+> 風格對齊 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)。
 
 ---
 
@@ -26,6 +29,10 @@
   **2 通道**（水平 H＋垂直 V）。
 - 真實 run-to-failure，末端有標注故障型（外圈／內圈／保持架等）。
 - 與 IMS 同為振動模態 → **管線高度可重用**。
+- **下載方式（作者 2019.8.25 說明）**：資料壓成 **6 個 WinRAR 分卷**，必須**下載全部分卷、
+  放同一資料夾再一起解壓**（分卷壓縮無法只抽單一工況）。下載完整 15 顆後，本 MVP 只
+  **取用 Condition 1（`35Hz12kN`，Bearing1_1~1_5）**，其餘工況可留作延伸或刪除以省空間。
+  來源：Google Drive / Dropbox / MediaFire / MEGA / Baidu（見 [`DATASET_EVALUATION.md`](DATASET_EVALUATION.md) 或官方頁 biaowang.tech）。
 
 ---
 

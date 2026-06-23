@@ -137,6 +137,35 @@ ims:
     FTF: 14.8
 
 # ---------------------------------------------------------------
+# Module B+ — XJTU-SY bearing run-to-failure (multi-trajectory generalization)
+# Independent from the AI4I track. See docs/MODULE_B_PLUS_XJTU_PLAN.md.
+# ---------------------------------------------------------------
+xjtu:
+  # Downloaded XJTU-SY dataset root; not committed to git (see .gitignore).
+  raw_dir: data/raw/xjtu
+  condition: 35Hz12kN              # MVP: Condition 1 (2100 rpm, 12 kN)
+  bearings: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing1_5]
+  channel: horizontal             # modeling channel; the other channel is kept as a *_rms reference
+  sampling_rate_hz: 25600         # 25.6 kHz, 32768 samples (1.28 s) per file
+  snapshot_interval_min: 1        # one snapshot recorded per minute
+  processed_features: data/processed/xjtu_c1_features.parquet
+  health_indicator: h_rms         # degradation indicator (horizontal RMS), reused by the RUL/FPT step
+  # --- Trend-extrapolation RUL / FPT params. FIXED across all 5 bearings (not
+  #     per-bearing tuned). baseline_n is smaller than IMS's 100 because XJTU
+  #     lifetimes are ~10x shorter (52-161 snapshots vs 984). ---
+  hi_smooth_window: 5
+  baseline_n: 10                  # first 10 minutes define the healthy baseline
+  fpt_n_sigma: 3.0
+  fpt_consecutive: 5
+  fail_percentile: 99
+  min_fit_points: 5
+  fit_window: 40
+  alarm_health: 30.0
+  gen_summary: outputs/metrics/xjtu_generalization.csv
+  gen_metrics: outputs/metrics/xjtu_generalization.json
+  rul_predictions: outputs/metrics/xjtu_rul_predictions.csv
+
+# ---------------------------------------------------------------
 # Risk thresholds & maintenance advice (used by predict / UI / API)
 # ---------------------------------------------------------------
 risk:
