@@ -1445,8 +1445,8 @@ else:
         style.note("infographic 圖片 (`docs/0620.png`) 不存在。", kind="warn")
 
     st.divider()
-    style.section("模組 A vs 模組 B 對照")
-    ca, cb = st.columns(2)
+    style.section("模組 A vs B vs B+ 對照")
+    ca, cb, cc = st.columns(3)
     with ca:
         with style.zone("mint", key="about-mod-a"):
             st.markdown(
@@ -1465,6 +1465,16 @@ else:
                 **IMS 軸承** 20kHz 振動全壽命
                 → 時頻特徵 · FPT · 趨勢外推
                 → 健康退化曲線 · RUL 剩餘壽命
+                """
+            )
+    with cc:
+        with style.zone("sand", key="about-mod-bp"):
+            st.markdown(
+                """
+                ##### 🅱➕ 模組 B+ · 多軌跡泛化
+                **XJTU 軸承** 15 顆 / 3 工況
+                → 固定參數 FPT · LOBO / LOCO
+                → 跨軸承 / 跨工況泛化驗證
                 """
             )
     compare_df = pd.DataFrame(
@@ -1493,15 +1503,28 @@ else:
                 "健康度總覽 / RUL 預測 / 互動探索",
                 "單一退化軌跡、突發失效 → RUL 偏粗",
             ],
+            "🅱➕ 模組 B+ · 多軌跡泛化": [
+                "XJTU-SY（實測 run-to-failure）",
+                "25.6 kHz 振動 × 15 顆 / 3 工況",
+                "加速度振動（水平 / 垂直）",
+                "跨軸承 / 跨工況泛化驗證",
+                "固定參數 FPT/外推 + LOBO/LOCO 監督式",
+                "FPT 提前量、R²（LOBO / LOCO）",
+                "多軌跡健康疊圖、泛化 / 遷移結論",
+                "有（15 條獨立軌跡）",
+                "多軌跡泛化",
+                "絕對 RUL 跨壽命尺度 / 工況受限",
+            ],
         },
         index=["資料集", "資料型態", "感測量", "目標", "建模方法",
                "評估指標", "主要輸出", "時間維度", "對應頁面", "核心限制"],
     )
     st.table(compare_df)
     style.note(
-        "兩模組<b>無法合併成同一個模型</b>（物理量、感測器、目標皆不同），"
-        "在系統中以平行的獨立軌道呈現。模組 B 細節見 "
-        "<code>docs/MODULE_B_IMS_PLAN.md</code> 與 <code>docs/MODULE_B_RESULTS.md</code>。"
+        "三軌（A 靜態 / B 動態 / B+ 多軌跡泛化）<b>無法合併成同一個模型</b>"
+        "（物理量、感測器、目標皆不同），在系統中以平行獨立軌道呈現。B+ 以多軌跡、多工況"
+        "驗證「健康監測可泛化、絕對 RUL 受限」。細節見 <code>docs/MODULE_B_RESULTS.md</code> 與 "
+        "<code>docs/MODULE_B_PLUS_XJTU_PLAN.md</code>。"
     )
 
     st.divider()
@@ -1511,7 +1534,7 @@ else:
         {"label": "訓練 + 比較模型", "value": "95", "sub": "50 baseline + 45 Optuna"},
         {"label": "圖表產出", "value": "22", "sub": "EDA / 評估 / 比較"},
         {"label": "FastAPI 端點", "value": "8", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "8", "sub": "模組 A 5 頁 + 模組 B 3 頁"},
+        {"label": "Streamlit 頁面", "value": "9", "sub": "A 5 頁 + B 3 頁 + B+ 1 頁"},
         {"label": "單元測試", "value": "18 / 18", "sub": "全部通過"},
     ])
     style.section("外部連結")
