@@ -657,16 +657,19 @@ docker run --rm pmm-app:ci python -c "from src.models import predict, explain, t
 
 ### 限制
 - AI4I 2020 為**合成資料**，絕對的指標數值無法直接外推到實際工廠。
-- 資料不含時間序列／run-to-failure 軌跡，因此無法做嚴謹的 RUL 預測。
+- AI4I 無時間維度；run-to-failure 的動態健康度 / RUL 由模組 B（IMS）、B+（XJTU 多軌跡 /
+  多工況）補上。誠實限制：監督式「絕對小時數 RUL」跨壽命尺度 / 工況泛化受限（domain shift），
+  能穩健泛化的是健康監測 / 退化起點偵測。
 - 決策門檻預設為 0.5；實際部署時應依維護成本模型調整。
 - 維護建議規則為靜態門檻；正式部署時應依機台、製程個別校準。
 
-### 未來工作
-- 接入實際伺服馬達遙測資料：電流、電壓、震動、溫度、警報碼、維修紀錄等。
-- 改以 survival analysis / RUL 模型處理 run-to-failure 資料。
-- 成本敏感的決策門檻調整；模型校準分析。
-- 加入 MLOps：定期重訓、特徵漂移監控、模型版本管理、預測審計紀錄。
-- 將規則式維護建議升級為以 LLM 產生的結構化敘述。
+### 未來工作（已排序）
+- **下一步：Paderborn Bearing Dataset** —— 馬達定子電流（MCSA 非侵入式診斷）＋多感測器
+  （電流 / 振動 / 溫度）＋真實損傷子集，最貼近「馬達」主題並補上目前缺的電流模態。
+  詳見 [`docs/DATASET_EVALUATION.md`](docs/DATASET_EVALUATION.md)。
+- **（以下皆推遲）** 其餘公開資料集（FEMTO / Mendeley / PMSM）、RUL 壽命正規化 / 領域自適應、
+  1D-CNN Autoencoder 深度對照、ESP32 邊緣 IoT 實場接入、成本敏感門檻調整 / 模型校準、
+  MLOps（重訓 / 漂移 / 版本 / 審計）、規則式維護建議升級為 LLM 結構化敘述。
 
 ---
 
