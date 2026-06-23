@@ -4,11 +4,12 @@
 > 做出來**，作為 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md) 單軌跡結論的泛化補強。
 > 資料來源評估與取捨理由見 [`DATASET_EVALUATION.md`](DATASET_EVALUATION.md)。
 >
-> **狀態（2026-06-23）**：步驟 1–4 完成。①固定參數跨 5 軌跡：全數偵測退化起點（平均
-> 提前 1.45h、退化區 MAE 平均 0.57h）。②LOBO 監督式 RUL：外推牆消失（相似軸承 R²
-> +0.4~0.6，合併 R²≈−0.11），離群軸承仍弱；趨勢特徵經評估未改善 pooled，預設關閉。
-> 結果見 `MODULE_B_RESULTS.md` 與 `outputs/metrics/xjtu_generalization.*`、`xjtu_lobo.*`。
-> 下一步：步驟 5（Dashboard 多軌跡分頁）。風格對齊 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)。
+> **狀態（2026-06-23）**：**MVP 步驟 1–6 全部完成**。①固定參數跨 5 軌跡：全數偵測退化
+> 起點（平均提前 1.45h、退化區 MAE 平均 0.57h）。②LOBO 監督式 RUL：外推牆消失（相似
+> 軸承 R² +0.4~0.6，合併 R²≈−0.11），離群軸承仍弱；趨勢特徵經評估未改善 pooled、預設
+> 關閉。③Dashboard 新增「模組 B+ · 多軌跡泛化 (XJTU)」分頁（純讀 CSV/JSON/parquet，雲端
+> 可顯示）。④結果寫入 `MODULE_B_RESULTS.md`。產物見 `outputs/metrics/xjtu_*`。
+> 風格對齊 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)。
 
 ---
 

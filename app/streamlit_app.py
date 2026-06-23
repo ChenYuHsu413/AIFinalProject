@@ -60,6 +60,7 @@ from src.ui.charts import (
     sparkline,
     vibration_spectrum,
     vibration_waveform,
+    xjtu_health_overlay,
 )
 from src.utils.paths import load_config, resolve
 
@@ -102,6 +103,9 @@ NAV_GROUPS = [
     {"title": "模組 B · 動態健康度 (IMS)",
      "items": ["健康度總覽", "RUL 預測", "互動探索"],
      "icons": ["heart-pulse", "graph-down-arrow", "search"], "key": "nav_b"},
+    {"title": "模組 B+ · 多軌跡泛化 (XJTU)",
+     "items": ["多軌跡泛化"],
+     "icons": ["diagram-3"], "key": "nav_bp"},
     {"title": None, "items": ["關於本專案"], "icons": ["info-circle"], "key": "nav_about"},
 ]
 ALL_PAGES = [p for g in NAV_GROUPS for p in g["items"]]
@@ -362,6 +366,34 @@ def _ims_predictions(ims: dict):
     preds = pd.read_csv(pred_path, parse_dates=["timestamp"])
     meta = json.loads(resolve(ims["rul_metrics"]).read_text(encoding="utf-8"))
     return preds, meta
+
+
+@st.cache_data(show_spinner=False)
+def _xjtu_feature_table(path_str: str) -> pd.DataFrame:
+    """Cached load of the XJTU combined feature table (keyed by path string)."""
+    return pd.read_parquet(path_str)
+
+
+def _xjtu_guard() -> tuple[dict, bool]:
+    """Render the 'data not ready' note; return (xjtu_cfg, ready)."""
+    xj = load_config().get("xjtu")
+    if xj is None or not resolve(xj["gen_summary"]).exists():
+        style.note(
+            "尚未產生 XJTU 多軌跡泛化結果。請放好 XJTU-SY（Condition 1）後依序執行 "
+            "<code>python -m src.data.build_xjtu_dataset</code> 與 "
+            "<code>python -m src.models.eval_xjtu_generalization</code>。",
+            kind="warn",
+        )
+        return xj or {}, False
+    return xj, True
+
+
+def _xjtu_artifacts(xj: dict):
+    """Load the committed XJTU result artefacts: (summary_df, lobo_dict|None)."""
+    summary = pd.read_csv(resolve(xj["gen_summary"]))
+    lobo_path = resolve(xj["lobo_metrics"])
+    lobo = json.loads(lobo_path.read_text(encoding="utf-8")) if lobo_path.exists() else None
+    return summary, lobo
 
 
 def render_result_block(result: dict) -> None:
@@ -1260,6 +1292,81 @@ elif page == "互動探索":
             style.note(
                 "拖動快照序號比較健康初期 vs 退化末期：退化後 FFT 在 "
                 "<b>BPFO（外圈，約 236 Hz）</b>附近的能量明顯增強，這是外圈剝落的物理指紋。"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Module B+ · 多軌跡泛化 (XJTU cross-bearing generalization)
+# ---------------------------------------------------------------------------
+elif page == "多軌跡泛化":
+    xj, ready = _xjtu_guard()
+    if ready:
+        summary, lobo = _xjtu_artifacts(xj)
+
+        agg_lead = float(summary["lead_time_hours"].mean())
+        agg_mae = float(summary["mae_hours"].mean())
+        best_r2 = max((b["r2"] for b in lobo["per_bearing"]), default=float("nan")) \
+            if lobo else float("nan")
+        style.kpi_strip([
+            {"label": "軸承數（獨立軌跡）", "value": str(len(summary)), "sub": "Condition 1"},
+            {"label": "平均退化提前量", "value": f"{agg_lead:.2f} h", "sub": "固定參數"},
+            {"label": "平均退化區 MAE", "value": f"{agg_mae:.2f} h", "sub": "趨勢外推"},
+            {"label": "LOBO 最佳 R²", "value": f"{best_r2:+.2f}", "sub": "監督式（相似軸承）"},
+        ])
+
+        style.section("固定參數跨 5 軌跡（步驟 3）")
+        disp = summary.rename(columns={
+            "bearing": "軸承", "n_snapshots": "壽命(快照)",
+            "lead_time_hours": "退化提前量(h)", "lead_frac_of_life": "提前佔壽命",
+            "mae_hours": "退化區 MAE(h)",
+        })[["軸承", "壽命(快照)", "退化提前量(h)", "提前佔壽命", "退化區 MAE(h)"]].copy()
+        disp["退化提前量(h)"] = disp["退化提前量(h)"].round(2)
+        disp["提前佔壽命"] = (disp["提前佔壽命"] * 100).round(0).astype(int).astype(str) + "%"
+        disp["退化區 MAE(h)"] = disp["退化區 MAE(h)"].round(2)
+        st.dataframe(disp, hide_index=True, width="stretch")
+
+        # health-indicator overlay (smoothed h_rms vs % of life)
+        feat_path = resolve(xj["processed_features"])
+        if feat_path.exists():
+            feat = _xjtu_feature_table(str(feat_path))
+            ind, sw = xj["health_indicator"], xj["hi_smooth_window"]
+            fpt_by_bearing = dict(zip(summary["bearing"], summary["fpt_index"]))
+            long_rows, fpt_rows = [], []
+            for bearing, g in feat.groupby("bearing", sort=True):
+                g = g.sort_values("minute")
+                hi = g[ind].rolling(sw, min_periods=1).median().to_numpy()
+                n = len(g)
+                life_pct = np.linspace(0, 100, n)
+                long_rows.append(pd.DataFrame(
+                    {"bearing": bearing, "life_pct": life_pct, "hi": hi}))
+                fi = min(int(fpt_by_bearing.get(bearing, 0)), n - 1)
+                fpt_rows.append({"bearing": bearing, "life_pct": life_pct[fi], "hi": hi[fi]})
+            st.plotly_chart(
+                xjtu_health_overlay(pd.concat(long_rows, ignore_index=True),
+                                    pd.DataFrame(fpt_rows)),
+                width="stretch",
+            )
+            style.note(
+                "5 顆獨立軸承、<b>同一組固定參數</b>（未逐顆調），健康指標 h_rms 末期都明顯"
+                "上升、且都偵測到退化起點（★）。這是 IMS 單軌跡無法提供的<b>跨軸承泛化證據</b>。"
+            )
+
+        if lobo:
+            style.section("LOBO 監督式 RUL（步驟 4）")
+            lr = pd.DataFrame(lobo["per_bearing"]).rename(columns={
+                "held_out": "留出軸承", "n_test": "測試點",
+                "mae_hours": "MAE(h)", "r2": "R²",
+            })[["留出軸承", "測試點", "MAE(h)", "R²"]].copy()
+            lr["MAE(h)"] = lr["MAE(h)"].round(2)
+            lr["R²"] = lr["R²"].round(2)
+            st.dataframe(lr, hide_index=True, width="stretch")
+            pooled = lobo["pooled"]
+            style.note(
+                "留一軸承交叉驗證：多軌跡讓測試 RUL 落入訓練範圍，<b>外推牆消失</b>"
+                "（相似軸承 R² 由 IMS 單軌跡的 −76 翻正到 +0.4~0.6）。但只有 5 顆、失效模式"
+                f"差異大 → 合併 R²≈{pooled['r2']:.2f}、離群軸承仍弱。結論：監督式 RUL 成敗取決於"
+                "<b>資料設定（軌跡數與多樣性）</b>，而非方法本身；有限資料上趨勢外推更穩健。",
+                kind="warn",
             )
 
 

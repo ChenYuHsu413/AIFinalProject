@@ -588,6 +588,43 @@ def vibration_spectrum(signal: Sequence[float], fs: float, defect_freqs: dict,
 
 
 # ---------------------------------------------------------------------------
+# Module B+ — XJTU multi-trajectory health-indicator overlay
+# ---------------------------------------------------------------------------
+def xjtu_health_overlay(curves: pd.DataFrame,
+                        fpt_points: pd.DataFrame | None = None) -> go.Figure:
+    """Overlay each bearing's smoothed health indicator vs % of life.
+
+    ``curves``: long-form columns ``[bearing, life_pct, hi]``.
+    ``fpt_points``: optional ``[bearing, life_pct, hi]``, one detected-onset
+    marker per bearing.  Shows that one fixed-parameter pipeline catches
+    degradation on every independent trajectory.
+    """
+    palette = [PRIMARY, ACCENT, WARNING, SUCCESS, DANGER, MUTED]
+    fig = go.Figure()
+    for i, (bearing, g) in enumerate(curves.groupby("bearing")):
+        color = palette[i % len(palette)]
+        fig.add_trace(go.Scatter(
+            x=g["life_pct"], y=g["hi"], mode="lines",
+            line=dict(color=color, width=2), name=str(bearing),
+            hovertemplate=f"{bearing}<br>壽命 %{{x:.0f}}%<br>HI=%{{y:.3f}}<extra></extra>",
+        ))
+    if fpt_points is not None and not fpt_points.empty:
+        fig.add_trace(go.Scatter(
+            x=fpt_points["life_pct"], y=fpt_points["hi"], mode="markers",
+            marker=dict(symbol="star", size=11, color="#1e293b",
+                        line=dict(width=1, color="white")),
+            name="退化起點 FPT",
+            hovertemplate="FPT<br>壽命 %{x:.0f}%<extra></extra>",
+        ))
+    fig = _style(fig, height=440,
+                 title="<b>多軌跡健康指標</b>（5 顆軸承，同一組固定參數）")
+    fig.update_xaxes(title_text="壽命進度 (%)", range=[0, 100])
+    fig.update_yaxes(title_text="健康指標 h_rms（平滑）")
+    fig.update_layout(legend=dict(orientation="h", y=1.06, x=0.0))
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------
 def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:
