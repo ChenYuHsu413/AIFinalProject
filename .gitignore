@@ -46,6 +46,19 @@ data/raw/ims/
 !outputs/metrics/ims_rul_predictions.csv
 !outputs/metrics/ims_rul.json
 
+# Module A + comparison-study artefacts — committed so the dashboard's
+# evaluation tab and the written report render without re-running training
+# (override the broad ignores above). ims_rul.joblib stays ignored on purpose.
+!outputs/models/best_model.joblib
+!outputs/models/failure_type_model.joblib
+!outputs/figures/*.png
+!outputs/metrics/best_model_eval.json
+!outputs/metrics/failure_type_comparison.csv
+!outputs/metrics/feature_importance_native.csv
+!outputs/metrics/feature_importance_permutation.csv
+!outputs/metrics/model_comparison.csv
+!outputs/metrics/test_predictions.csv
+
 # Keep folder placeholders
 !**/.gitkeep
 
