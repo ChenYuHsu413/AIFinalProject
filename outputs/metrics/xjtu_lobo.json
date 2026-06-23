@@ -17,6 +17,7 @@
   ],
   "per_bearing": [
     {
+      "condition": "35Hz12kN",
       "held_out": "Bearing1_1",
       "n_test": 123,
       "mae_hours": 0.36130668473351324,
@@ -24,38 +25,122 @@
       "r2": 0.42732081884092554
     },
     {
+      "condition": "35Hz12kN",
       "held_out": "Bearing1_2",
       "n_test": 161,
-      "mae_hours": 0.743369910282954,
+      "mae_hours": 0.7433699102829541,
       "rmse_hours": 0.8497677846239404,
       "r2": -0.203508812974466
     },
     {
+      "condition": "35Hz12kN",
       "held_out": "Bearing1_3",
       "n_test": 158,
-      "mae_hours": 0.3888393108298169,
+      "mae_hours": 0.38883931082981693,
       "rmse_hours": 0.4851874985965143,
       "r2": 0.5926139302201019
     },
     {
+      "condition": "35Hz12kN",
       "held_out": "Bearing1_4",
       "n_test": 122,
-      "mae_hours": 0.9933374316939881,
+      "mae_hours": 0.993337431693988,
       "rmse_hours": 1.0947952608596578,
       "r2": -2.4790372808085133
     },
     {
+      "condition": "35Hz12kN",
       "held_out": "Bearing1_5",
       "n_test": 52,
-      "mae_hours": 0.6643344017094022,
-      "rmse_hours": 0.7194920752391301,
-      "r2": -7.273508753806331
+      "mae_hours": 0.6643344017094021,
+      "rmse_hours": 0.71949207523913,
+      "r2": -7.273508753806329
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "held_out": "Bearing2_1",
+      "n_test": 491,
+      "mae_hours": 3.464382778909259,
+      "rmse_hours": 4.047205648519462,
+      "r2": -1.9351689806405283
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "held_out": "Bearing2_2",
+      "n_test": 161,
+      "mae_hours": 0.935058661145616,
+      "rmse_hours": 1.2733994531489767,
+      "r2": -1.7025769454668556
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "held_out": "Bearing2_3",
+      "n_test": 533,
+      "mae_hours": 2.2970409631019386,
+      "rmse_hours": 2.8905293814539053,
+      "r2": -0.2705320764625272
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "held_out": "Bearing2_4",
+      "n_test": 42,
+      "mae_hours": 2.6343730158730163,
+      "rmse_hours": 2.9164856001746124,
+      "r2": -207.425622609369
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "held_out": "Bearing2_5",
+      "n_test": 339,
+      "mae_hours": 1.4326350376925596,
+      "rmse_hours": 1.6389414018857793,
+      "r2": -0.009752604358005623
+    },
+    {
+      "condition": "40Hz10kN",
+      "held_out": "Bearing3_1",
+      "n_test": 2538,
+      "mae_hours": 13.955181660975397,
+      "rmse_hours": 17.39896212275853,
+      "r2": -1.0302394577433711
+    },
+    {
+      "condition": "40Hz10kN",
+      "held_out": "Bearing3_2",
+      "n_test": 2496,
+      "mae_hours": 19.376520054309115,
+      "rmse_hours": 22.713998079320596,
+      "r2": -2.5775179703237963
+    },
+    {
+      "condition": "40Hz10kN",
+      "held_out": "Bearing3_3",
+      "n_test": 371,
+      "mae_hours": 2.9598683737646025,
+      "rmse_hours": 4.554354710146957,
+      "r2": -5.510176859024933
+    },
+    {
+      "condition": "40Hz10kN",
+      "held_out": "Bearing3_4",
+      "n_test": 1515,
+      "mae_hours": 9.403932049871656,
+      "rmse_hours": 11.70301751569162,
+      "r2": -1.5778306342281478
+    },
+    {
+      "condition": "40Hz10kN",
+      "held_out": "Bearing3_5",
+      "n_test": 114,
+      "mae_hours": 2.8355224171539977,
+      "rmse_hours": 8.071860371973164,
+      "r2": -215.5981508389418
     }
   ],
   "pooled": {
-    "mae_hours": 0.6189812409812406,
-    "rmse_hours": 0.7551395963560431,
-    "r2": -0.1076169980312518,
-    "mean_per_bearing_mae_hours": 0.6302375478499348
+    "mae_hours": 11.230885579427083,
+    "rmse_hours": 15.773798837888606,
+    "r2": -0.6228256717566099,
+    "mean_per_bearing_mae_hours": 4.163046850136456
   }
 }

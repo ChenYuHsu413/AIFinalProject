@@ -1,0 +1,49 @@
+{
+  "method": "leave_one_condition_out_supervised_rul",
+  "model": "RandomForestRegressor(n_estimators=300, random_state=42)",
+  "features": [
+    "h_rms",
+    "h_peak",
+    "h_peak2peak",
+    "h_kurtosis",
+    "h_skewness",
+    "h_crest_factor",
+    "h_shape_factor",
+    "h_impulse_factor",
+    "h_std",
+    "h_mean",
+    "v_rms"
+  ],
+  "per_condition": [
+    {
+      "held_out_condition": "35Hz12kN",
+      "n_test_bearings": 5,
+      "n_test": 616,
+      "mae_hours": 6.73806331168831,
+      "rmse_hours": 9.949436490505654,
+      "r2": -191.27910566264418
+    },
+    {
+      "held_out_condition": "37.5Hz11kN",
+      "n_test_bearings": 5,
+      "n_test": 1566,
+      "mae_hours": 9.185483148857667,
+      "rmse_hours": 14.132913188169088,
+      "r2": -32.975192017461914
+    },
+    {
+      "held_out_condition": "40Hz10kN",
+      "n_test_bearings": 5,
+      "n_test": 7034,
+      "mae_hours": 16.009707997662147,
+      "rmse_hours": 19.833316473652065,
+      "r2": -1.701621420133256
+    }
+  ],
+  "pooled": {
+    "mae_hours": 14.230403609664352,
+    "rmse_hours": 18.46034256552247,
+    "r2": -1.222689434289491,
+    "mean_per_condition_mae_hours": 10.644418152736042
+  }
+}

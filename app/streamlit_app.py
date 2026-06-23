@@ -257,11 +257,11 @@ HEROES = {
         "（標出 BPFO 等軸承故障頻率）。",
     ),
     "多軌跡泛化": (
-        "Module B+ · Cross-bearing",
+        "Module B+ · Cross-condition",
         "模組 B+ · 多軌跡泛化 (XJTU)",
-        "以 XJTU-SY 五條獨立 run-to-failure 軸承，用同一組固定參數驗證健康監測的"
-        "跨軸承泛化，並以 leave-one-bearing-out 重新檢視監督式 RUL —— 補上 IMS "
-        "單軌跡缺乏的泛化證據。",
+        "以 XJTU-SY 15 顆軸承 × 3 種工況，用同一組固定參數驗證健康監測的跨軸承、"
+        "跨工況泛化，並以 leave-one-bearing-out / leave-one-condition-out 檢視監督式 "
+        "RUL 的條件遷移能力 —— 補上 IMS 單軌跡缺乏的泛化證據。",
     ),
     "關於本專案": (
         "About · Tech stack",
@@ -396,11 +396,14 @@ def _xjtu_guard() -> tuple[dict, bool]:
 
 
 def _xjtu_artifacts(xj: dict):
-    """Load the committed XJTU result artefacts: (summary_df, lobo_dict|None)."""
+    """Load committed XJTU artefacts: (summary_df, lobo_dict|None, loco_dict|None)."""
     summary = pd.read_csv(resolve(xj["gen_summary"]))
-    lobo_path = resolve(xj["lobo_metrics"])
-    lobo = json.loads(lobo_path.read_text(encoding="utf-8")) if lobo_path.exists() else None
-    return summary, lobo
+
+    def _json(key: str):
+        p = resolve(xj[key])
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+    return summary, _json("lobo_metrics"), _json("loco_metrics")
 
 
 def render_result_block(result: dict) -> None:
@@ -1308,71 +1311,97 @@ elif page == "互動探索":
 elif page == "多軌跡泛化":
     xj, ready = _xjtu_guard()
     if ready:
-        summary, lobo = _xjtu_artifacts(xj)
+        summary, lobo, loco = _xjtu_artifacts(xj)
 
-        agg_lead = float(summary["lead_time_hours"].mean())
-        agg_mae = float(summary["mae_hours"].mean())
-        best_r2 = max((b["r2"] for b in lobo["per_bearing"]), default=float("nan")) \
-            if lobo else float("nan")
+        n_cond = summary["condition"].nunique()
         style.kpi_strip([
-            {"label": "軸承數（獨立軌跡）", "value": str(len(summary)), "sub": "Condition 1"},
-            {"label": "平均退化提前量", "value": f"{agg_lead:.2f} h", "sub": "固定參數"},
-            {"label": "平均退化區 MAE", "value": f"{agg_mae:.2f} h", "sub": "趨勢外推"},
-            {"label": "LOBO 最佳 R²", "value": f"{best_r2:+.2f}", "sub": "監督式（相似軸承）"},
+            {"label": "軸承數（獨立軌跡）", "value": str(len(summary)),
+             "sub": f"{n_cond} 種工況"},
+            {"label": "平均退化提前量", "value": f"{summary['lead_time_hours'].mean():.2f} h",
+             "sub": "固定參數"},
+            {"label": "平均退化區 MAE", "value": f"{summary['mae_hours'].mean():.2f} h",
+             "sub": "趨勢外推"},
+            {"label": "LOCO 合併 R²",
+             "value": (f"{loco['pooled']['r2']:+.2f}" if loco else "—"),
+             "sub": "跨工況監督式"},
         ])
 
-        style.section("固定參數跨 5 軌跡（步驟 3）")
-        disp = summary.rename(columns={
-            "bearing": "軸承", "n_snapshots": "壽命(快照)",
-            "lead_time_hours": "退化提前量(h)", "lead_frac_of_life": "提前佔壽命",
-            "mae_hours": "退化區 MAE(h)",
-        })[["軸承", "壽命(快照)", "退化提前量(h)", "提前佔壽命", "退化區 MAE(h)"]].copy()
-        disp["退化提前量(h)"] = disp["退化提前量(h)"].round(2)
-        disp["提前佔壽命"] = (disp["提前佔壽命"] * 100).round(0).astype(int).astype(str) + "%"
-        disp["退化區 MAE(h)"] = disp["退化區 MAE(h)"].round(2)
-        st.dataframe(disp, hide_index=True, width="stretch")
+        style.section("固定參數跨工況泛化（步驟 3）")
+        per_cond = (summary.groupby("condition", sort=False)
+                    .agg(軸承數=("bearing", "count"),
+                         平均提前量_h=("lead_time_hours", "mean"),
+                         平均MAE_h=("mae_hours", "mean")).reset_index()
+                    .rename(columns={"condition": "工況"}))
+        per_cond["平均提前量_h"] = per_cond["平均提前量_h"].round(2)
+        per_cond["平均MAE_h"] = per_cond["平均MAE_h"].round(2)
+        st.dataframe(per_cond, hide_index=True, width="stretch")
+        style.note(
+            "同一組固定參數（未逐顆、未逐工況調）套到 <b>3 種工況、15 顆獨立軸承</b>，"
+            "全數偵測到退化起點。下方為各軸承明細與健康指標疊圖。"
+        )
+        with st.expander("各軸承明細（15 顆）"):
+            disp = summary.rename(columns={
+                "condition": "工況", "bearing": "軸承", "n_snapshots": "壽命(快照)",
+                "lead_time_hours": "提前量(h)", "mae_hours": "退化區MAE(h)",
+            })[["工況", "軸承", "壽命(快照)", "提前量(h)", "退化區MAE(h)"]].copy()
+            disp["提前量(h)"] = disp["提前量(h)"].round(2)
+            disp["退化區MAE(h)"] = disp["退化區MAE(h)"].round(2)
+            st.dataframe(disp, hide_index=True, width="stretch")
 
-        # health-indicator overlay (smoothed h_rms vs % of life)
+        # health-indicator overlay (smoothed h_rms vs % of life, coloured by condition)
         feat_path = resolve(xj["processed_features"])
         if feat_path.exists():
             feat = _xjtu_feature_table(str(feat_path))
             ind, sw = xj["health_indicator"], xj["hi_smooth_window"]
-            fpt_by_bearing = dict(zip(summary["bearing"], summary["fpt_index"]))
+            fpt_by = {(r["condition"], r["bearing"]): r["fpt_index"]
+                      for _, r in summary.iterrows()}
             long_rows, fpt_rows = [], []
-            for bearing, g in feat.groupby("bearing", sort=True):
+            for (cond, bearing), g in feat.groupby(["condition", "bearing"], sort=False):
                 g = g.sort_values("minute")
                 hi = g[ind].rolling(sw, min_periods=1).median().to_numpy()
                 n = len(g)
                 life_pct = np.linspace(0, 100, n)
                 long_rows.append(pd.DataFrame(
-                    {"bearing": bearing, "life_pct": life_pct, "hi": hi}))
-                fi = min(int(fpt_by_bearing.get(bearing, 0)), n - 1)
-                fpt_rows.append({"bearing": bearing, "life_pct": life_pct[fi], "hi": hi[fi]})
+                    {"condition": cond, "bearing": bearing, "life_pct": life_pct, "hi": hi}))
+                fi = min(int(fpt_by.get((cond, bearing), 0)), n - 1)
+                fpt_rows.append({"condition": cond, "bearing": bearing,
+                                 "life_pct": life_pct[fi], "hi": hi[fi]})
             st.plotly_chart(
                 xjtu_health_overlay(pd.concat(long_rows, ignore_index=True),
                                     pd.DataFrame(fpt_rows)),
                 width="stretch",
             )
             style.note(
-                "5 顆獨立軸承、<b>同一組固定參數</b>（未逐顆調），健康指標 h_rms 末期都明顯"
-                "上升、且都偵測到退化起點（★）。這是 IMS 單軌跡無法提供的<b>跨軸承泛化證據</b>。"
+                "15 顆軸承（3 工況以顏色區分）、<b>同一組固定參數</b>，健康指標 h_rms 末期都"
+                "明顯上升、且都偵測到退化起點（★）。這是跨軸承、跨工況的泛化證據。"
             )
 
-        if lobo:
-            style.section("LOBO 監督式 RUL（步驟 4）")
-            lr = pd.DataFrame(lobo["per_bearing"]).rename(columns={
-                "held_out": "留出軸承", "n_test": "測試點",
-                "mae_hours": "MAE(h)", "r2": "R²",
-            })[["留出軸承", "測試點", "MAE(h)", "R²"]].copy()
-            lr["MAE(h)"] = lr["MAE(h)"].round(2)
-            lr["R²"] = lr["R²"].round(2)
-            st.dataframe(lr, hide_index=True, width="stretch")
-            pooled = lobo["pooled"]
+        # supervised RUL: LOBO (within-pool) vs LOCO (cross-condition)
+        if lobo or loco:
+            style.section("監督式 RUL：LOBO vs LOCO（步驟 4）")
+            cc = st.columns(2)
+            with cc[0]:
+                style.big_stat("LOBO 合併 R²",
+                               f"{lobo['pooled']['r2']:+.2f}" if lobo else "—",
+                               "留一軸承（同工況可入訓練）")
+            with cc[1]:
+                style.big_stat("LOCO 合併 R²",
+                               f"{loco['pooled']['r2']:+.2f}" if loco else "—",
+                               "留一工況（測試工況未見過）",
+                               tone="danger")
+            if loco:
+                lr = pd.DataFrame(loco["per_condition"]).rename(columns={
+                    "held_out_condition": "留出工況", "n_test_bearings": "測試軸承",
+                    "mae_hours": "MAE(h)", "r2": "R²",
+                })[["留出工況", "測試軸承", "MAE(h)", "R²"]].copy()
+                lr["MAE(h)"] = lr["MAE(h)"].round(2)
+                lr["R²"] = lr["R²"].round(2)
+                st.dataframe(lr, hide_index=True, width="stretch")
             style.note(
-                "留一軸承交叉驗證：多軌跡讓測試 RUL 落入訓練範圍，<b>外推牆消失</b>"
-                "（相似軸承 R² 由 IMS 單軌跡的 −76 翻正到 +0.4~0.6）。但只有 5 顆、失效模式"
-                f"差異大 → 合併 R²≈{pooled['r2']:.2f}、離群軸承仍弱。結論：監督式 RUL 成敗取決於"
-                "<b>資料設定（軌跡數與多樣性）</b>，而非方法本身；有限資料上趨勢外推更穩健。",
+                "<b>LOBO</b>（留一軸承、同工況樣本可進訓練）通常優於 <b>LOCO</b>（留一整個工況、"
+                "測試工況的轉速/負載完全沒見過）—— 兩者落差正是<b>跨工況 domain shift</b> 的證據。"
+                "誠實結論：監督式 RUL 對運轉條件敏感，跨工況泛化需更多工況或領域自適應；"
+                "固定參數的趨勢外推健康監測則跨工況仍穩健（見上方）。",
                 kind="warn",
             )
 

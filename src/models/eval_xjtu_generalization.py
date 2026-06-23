@@ -56,6 +56,7 @@ def _evaluate_bearing(sub: pd.DataFrame, xj: dict) -> Dict:
 
     lead_hours = float(hours[-1] - hours[fpt_idx])
     summary = {
+        "condition": sub["condition"].iloc[0],
         "bearing": sub["bearing"].iloc[0],
         "n_snapshots": int(len(sub)),
         "life_hours": float(hours[-1]),
@@ -69,6 +70,7 @@ def _evaluate_bearing(sub: pd.DataFrame, xj: dict) -> Dict:
         "hi_fail": hi_fail,
     }
     curve = pd.DataFrame({
+        "condition": sub["condition"],
         "bearing": sub["bearing"],
         "minute": minutes,
         "rul_true": rul_true,
@@ -94,23 +96,33 @@ def run() -> Path:
     df = pd.read_parquet(features_path)
     print(f"    -> 特徵表維度 = {df.shape}，{df['bearing'].nunique()} 顆軸承")
 
-    print(f"[2/3] 對每顆軸承套用固定參數 FPT/RUL（indicator={xj['health_indicator']}）...")
+    print(f"[2/3] 對全 {df['bearing'].nunique()} 顆軸承套用固定參數 FPT/RUL"
+          f"（indicator={xj['health_indicator']}）...")
     summaries: List[Dict] = []
     curves: List[pd.DataFrame] = []
-    for bearing, sub in df.groupby("bearing", sort=True):
+    for (cname, bearing), sub in df.groupby(["condition", "bearing"], sort=False):
         res = _evaluate_bearing(sub, xj)
         summaries.append(res["summary"])
         curves.append(res["curve"])
         s = res["summary"]
-        print(f"    -> {bearing}: FPT@{s['fpt_index']}/{s['n_snapshots']}  "
+        print(f"    -> [{cname}] {bearing}: FPT@{s['fpt_index']}/{s['n_snapshots']}  "
               f"提前 {s['lead_time_hours']:.2f}h ({s['lead_frac_of_life'] * 100:.0f}% 壽命)  "
               f"MAE={s['mae_hours']:.3f}h (n={s['n_eval']})")
 
     summary_df = pd.DataFrame(summaries)
+    by_condition = {
+        cname: {
+            "n_bearings": int(len(g)),
+            "mean_lead_time_hours": float(g["lead_time_hours"].mean()),
+            "mean_mae_hours": float(g["mae_hours"].mean()),
+        }
+        for cname, g in summary_df.groupby("condition", sort=False)
+    }
     aggregate = {
         "n_bearings": int(len(summary_df)),
         "mean_lead_time_hours": float(summary_df["lead_time_hours"].mean()),
         "mean_mae_hours": float(summary_df["mae_hours"].mean()),
+        "by_condition": by_condition,
         "fixed_params": {
             k: xj[k] for k in (
                 "health_indicator", "hi_smooth_window", "baseline_n", "fpt_n_sigma",
@@ -135,8 +147,11 @@ def run() -> Path:
     print(f"    -> 彙總：{resolve(xj['gen_summary'])}")
     print(f"    -> 曲線：{resolve(xj['rul_predictions'])}")
     print(f"    -> 指標：{resolve(xj['gen_metrics'])}")
-    print(f"    == 5 顆平均：提前 {aggregate['mean_lead_time_hours']:.2f}h，"
+    print(f"    == 全 {aggregate['n_bearings']} 顆平均：提前 {aggregate['mean_lead_time_hours']:.2f}h，"
           f"MAE {aggregate['mean_mae_hours']:.3f}h ==")
+    for cname, cm in by_condition.items():
+        print(f"       [{cname}] {cm['n_bearings']} 顆：提前 {cm['mean_lead_time_hours']:.2f}h，"
+              f"MAE {cm['mean_mae_hours']:.3f}h")
     return resolve(xj["gen_summary"])
 
 

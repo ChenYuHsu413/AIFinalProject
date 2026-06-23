@@ -76,17 +76,24 @@ def build_bearing_table(bearing_dir: str | Path, channel: str, interval_min: flo
 
 
 def build_feature_table(raw_dir: Optional[str | Path] = None) -> pd.DataFrame:
-    """Build the combined Condition-1 table (5 bearings stacked, ``bearing`` column)."""
+    """Build the combined table over all conditions (15 bearings stacked).
+
+    Columns include ``condition`` and ``bearing`` so downstream code can group or
+    split by either.  Condition 1 alone is recoverable by filtering ``condition``.
+    """
     cfg = load_config()
     xj = cfg["xjtu"]
-    root = resolve(raw_dir or xj["raw_dir"]) / xj["condition"]
+    root = resolve(raw_dir or xj["raw_dir"])
     channel = xj["channel"]
     interval = xj["snapshot_interval_min"]
     frames = []
-    for bearing in xj["bearings"]:
-        t = build_bearing_table(root / bearing, channel, interval).reset_index()
-        t.insert(0, "bearing", bearing)
-        frames.append(t)
+    for cond in xj["conditions"]:
+        cname = cond["name"]
+        for bearing in cond["bearings"]:
+            t = build_bearing_table(root / cname / bearing, channel, interval).reset_index()
+            t.insert(0, "bearing", bearing)
+            t.insert(0, "condition", cname)
+            frames.append(t)
     return pd.concat(frames, ignore_index=True)
 
 
@@ -97,16 +104,18 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_path)
     print("=" * 70)
-    print("XJTU-SY Condition 1 特徵表已建立")
+    print("XJTU-SY 全工況特徵表已建立")
     print("=" * 70)
     print(f"輸出：{out_path}")
     print(f"形狀：{df.shape}（{df.shape[0]} 列 × {df.shape[1]} 欄）")
-    for bearing, g in df.groupby("bearing"):
-        print(
-            f"  {bearing}: {len(g)} 快照, "
-            f"RUL {g['rul_hours'].min():.2f}–{g['rul_hours'].max():.2f} h, "
-            f"h_rms {g['h_rms'].iloc[0]:.4f}→{g['h_rms'].iloc[-1]:.4f}"
-        )
+    for cname, cg in df.groupby("condition", sort=False):
+        print(f"  [{cname}] {cg['bearing'].nunique()} 顆軸承，{len(cg)} 快照")
+        for bearing, g in cg.groupby("bearing", sort=False):
+            print(
+                f"     {bearing}: {len(g)} 快照, "
+                f"RUL {g['rul_hours'].min():.2f}–{g['rul_hours'].max():.2f} h, "
+                f"h_rms {g['h_rms'].iloc[0]:.3f}→{g['h_rms'].iloc[-1]:.3f}"
+            )
     print("=" * 70)
 
 

@@ -2,6 +2,7 @@
   "method": "fixed_param_trend_extrapolation_per_bearing",
   "per_bearing": [
     {
+      "condition": "35Hz12kN",
       "bearing": "Bearing1_1",
       "n_snapshots": 123,
       "life_hours": 2.033333333333333,
@@ -15,6 +16,7 @@
       "hi_fail": 3.778452104821082
     },
     {
+      "condition": "35Hz12kN",
       "bearing": "Bearing1_2",
       "n_snapshots": 161,
       "life_hours": 2.6666666666666665,
@@ -28,6 +30,7 @@
       "hi_fail": 4.536166289364616
     },
     {
+      "condition": "35Hz12kN",
       "bearing": "Bearing1_3",
       "n_snapshots": 158,
       "life_hours": 2.6166666666666667,
@@ -41,6 +44,7 @@
       "hi_fail": 4.22503864400477
     },
     {
+      "condition": "35Hz12kN",
       "bearing": "Bearing1_4",
       "n_snapshots": 122,
       "life_hours": 2.0166666666666666,
@@ -54,6 +58,7 @@
       "hi_fail": 0.4977016068395138
     },
     {
+      "condition": "35Hz12kN",
       "bearing": "Bearing1_5",
       "n_snapshots": 52,
       "life_hours": 0.85,
@@ -65,12 +70,169 @@
       "n_eval": 21,
       "hi_base": 0.9683499199761177,
       "hi_fail": 5.6679389795673565
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "bearing": "Bearing2_1",
+      "n_snapshots": 491,
+      "life_hours": 8.166666666666666,
+      "fpt_index": 454,
+      "lead_time_hours": 0.5999999999999996,
+      "lead_frac_of_life": 0.073469387755102,
+      "mae_hours": 0.24296329386064644,
+      "rmse_hours": 0.27920360548379114,
+      "n_eval": 33,
+      "hi_base": 0.4272565732428594,
+      "hi_fail": 3.278310317881424
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "bearing": "Bearing2_2",
+      "n_snapshots": 161,
+      "life_hours": 2.6666666666666665,
+      "fpt_index": 48,
+      "lead_time_hours": 1.8666666666666665,
+      "lead_frac_of_life": 0.7,
+      "mae_hours": 0.9671379541191177,
+      "rmse_hours": 1.062063717201655,
+      "n_eval": 83,
+      "hi_base": 0.5068017547171615,
+      "hi_fail": 5.285911322647675
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "bearing": "Bearing2_3",
+      "n_snapshots": 533,
+      "life_hours": 8.866666666666667,
+      "fpt_index": 129,
+      "lead_time_hours": 6.716666666666667,
+      "lead_frac_of_life": 0.7575187969924811,
+      "mae_hours": 2.532903126995062,
+      "rmse_hours": 3.073447835694624,
+      "n_eval": 343,
+      "hi_base": 0.43758692571367386,
+      "hi_fail": 4.767432514119064
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "bearing": "Bearing2_4",
+      "n_snapshots": 42,
+      "life_hours": 0.6833333333333333,
+      "fpt_index": 11,
+      "lead_time_hours": 0.5,
+      "lead_frac_of_life": 0.7317073170731707,
+      "mae_hours": 0.305598432596533,
+      "rmse_hours": 0.34277827531931726,
+      "n_eval": 27,
+      "hi_base": 0.5351215468447923,
+      "hi_fail": 5.394022534804982
+    },
+    {
+      "condition": "37.5Hz11kN",
+      "bearing": "Bearing2_5",
+      "n_snapshots": 339,
+      "life_hours": 5.633333333333334,
+      "fpt_index": 123,
+      "lead_time_hours": 3.583333333333334,
+      "lead_frac_of_life": 0.636094674556213,
+      "mae_hours": 1.1639751887698164,
+      "rmse_hours": 1.4920952565244276,
+      "n_eval": 186,
+      "hi_base": 1.1414761561210696,
+      "hi_fail": 9.803243272580612
+    },
+    {
+      "condition": "40Hz10kN",
+      "bearing": "Bearing3_1",
+      "n_snapshots": 2538,
+      "life_hours": 42.28333333333333,
+      "fpt_index": 14,
+      "lead_time_hours": 42.05,
+      "lead_frac_of_life": 0.9944816712652739,
+      "mae_hours": 15.630833777525961,
+      "rmse_hours": 19.675746983061938,
+      "n_eval": 1460,
+      "hi_base": 0.5005296722323764,
+      "hi_fail": 2.4580799845401127
+    },
+    {
+      "condition": "40Hz10kN",
+      "bearing": "Bearing3_2",
+      "n_snapshots": 2496,
+      "life_hours": 41.583333333333336,
+      "fpt_index": 13,
+      "lead_time_hours": 41.36666666666667,
+      "lead_frac_of_life": 0.9947895791583166,
+      "mae_hours": 16.944796354456233,
+      "rmse_hours": 21.14077919328941,
+      "n_eval": 1369,
+      "hi_base": 0.8479482366578421,
+      "hi_fail": 3.0503347812534445
+    },
+    {
+      "condition": "40Hz10kN",
+      "bearing": "Bearing3_3",
+      "n_snapshots": 371,
+      "life_hours": 6.166666666666667,
+      "fpt_index": 343,
+      "lead_time_hours": 0.4500000000000002,
+      "lead_frac_of_life": 0.072972972972973,
+      "mae_hours": 0.1913710300407638,
+      "rmse_hours": 0.22320815832028518,
+      "n_eval": 24,
+      "hi_base": 0.5682214594948272,
+      "hi_fail": 4.581959143522399
+    },
+    {
+      "condition": "40Hz10kN",
+      "bearing": "Bearing3_4",
+      "n_snapshots": 1515,
+      "life_hours": 25.233333333333334,
+      "fpt_index": 1419,
+      "lead_time_hours": 1.5833333333333357,
+      "lead_frac_of_life": 0.06274768824306481,
+      "mae_hours": 0.5680256936772322,
+      "rmse_hours": 0.6428743680833233,
+      "n_eval": 92,
+      "hi_base": 0.5635845820287695,
+      "hi_fail": 5.317468967728063
+    },
+    {
+      "condition": "40Hz10kN",
+      "bearing": "Bearing3_5",
+      "n_snapshots": 114,
+      "life_hours": 1.8833333333333333,
+      "fpt_index": 11,
+      "lead_time_hours": 1.7,
+      "lead_frac_of_life": 0.9026548672566371,
+      "mae_hours": 0.7465429401122682,
+      "rmse_hours": 0.8987685069067892,
+      "n_eval": 99,
+      "hi_base": 0.7663703841775487,
+      "hi_fail": 6.212012733648153
     }
   ],
   "aggregate": {
-    "n_bearings": 5,
-    "mean_lead_time_hours": 1.4466666666666665,
-    "mean_mae_hours": 0.5653730545059927,
+    "n_bearings": 15,
+    "mean_lead_time_hours": 7.176666666666666,
+    "mean_mae_hours": 2.8080675376455733,
+    "by_condition": {
+      "35Hz12kN": {
+        "n_bearings": 5,
+        "mean_lead_time_hours": 1.4466666666666665,
+        "mean_mae_hours": 0.5653730545059927
+      },
+      "37.5Hz11kN": {
+        "n_bearings": 5,
+        "mean_lead_time_hours": 2.6533333333333333,
+        "mean_mae_hours": 1.0425155992682351
+      },
+      "40Hz10kN": {
+        "n_bearings": 5,
+        "mean_lead_time_hours": 17.43,
+        "mean_mae_hours": 6.816313959162493
+      }
+    },
     "fixed_params": {
       "health_indicator": "h_rms",
       "hi_smooth_window": 5,

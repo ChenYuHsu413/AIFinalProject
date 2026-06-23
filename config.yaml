@@ -143,12 +143,17 @@ ims:
 xjtu:
   # Downloaded XJTU-SY dataset root; not committed to git (see .gitignore).
   raw_dir: data/raw/xjtu
-  condition: 35Hz12kN              # MVP: Condition 1 (2100 rpm, 12 kN)
-  bearings: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing1_5]
+  conditions:                     # all 3 operating conditions (5 bearings each)
+    - name: "35Hz12kN"            # Condition 1: 2100 rpm, 12 kN
+      bearings: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing1_5]
+    - name: "37.5Hz11kN"          # Condition 2: 2250 rpm, 11 kN
+      bearings: [Bearing2_1, Bearing2_2, Bearing2_3, Bearing2_4, Bearing2_5]
+    - name: "40Hz10kN"            # Condition 3: 2400 rpm, 10 kN
+      bearings: [Bearing3_1, Bearing3_2, Bearing3_3, Bearing3_4, Bearing3_5]
   channel: horizontal             # modeling channel; the other channel is kept as a *_rms reference
   sampling_rate_hz: 25600         # 25.6 kHz, 32768 samples (1.28 s) per file
   snapshot_interval_min: 1        # one snapshot recorded per minute
-  processed_features: data/processed/xjtu_c1_features.parquet
+  processed_features: data/processed/xjtu_features.parquet
   health_indicator: h_rms         # degradation indicator (horizontal RMS), reused by the RUL/FPT step
   # --- Trend-extrapolation RUL / FPT params. FIXED across all 5 bearings (not
   #     per-bearing tuned). baseline_n is smaller than IMS's 100 because XJTU
@@ -168,6 +173,8 @@ xjtu:
   lobo_predictions: outputs/metrics/xjtu_lobo_predictions.csv
   lobo_use_trend: false           # add within-bearing rolling trend features? (evaluated; did not improve pooled R^2)
   lobo_window: 5                  # within-bearing rolling window for trend features (mean + slope)
+  loco_metrics: outputs/metrics/xjtu_loco.json          # leave-one-CONDITION-out supervised RUL
+  loco_predictions: outputs/metrics/xjtu_loco_predictions.csv
 
 # ---------------------------------------------------------------
 # Risk thresholds & maintenance advice (used by predict / UI / API)

@@ -4,10 +4,11 @@ The IMS single trajectory made supervised RUL impossible: the test fold's RUL
 range lay entirely outside the training range, and trees cannot extrapolate
 (MAE ~120 h, R^2 ~ -76; see ``src/models/train_rul.py`` / ``MODULE_B_RESULTS.md``).
 
-With FIVE independent XJTU trajectories we can finally do this honestly: train on
-4 bearings, test on the held-out 1, rotate.  Because the other bearings span the
-full RUL range (0 .. ~2.7 h), the held-out bearing's targets now lie *inside* the
-training range, so supervised regression no longer has to extrapolate.
+With multiple independent XJTU trajectories (15 bearings across 3 conditions) we
+can finally do this honestly: train on the other bearings, test on the held-out
+one, rotate.  Because the other bearings span the full RUL range, the held-out
+bearing's targets now lie *inside* the training range, so supervised regression
+no longer has to extrapolate.
 
 The point is not a SOTA RUL score; it is to show the earlier failure was a
 *data-setting* problem (single trajectory), not a flaw of supervised learning.
@@ -36,7 +37,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from src.utils.paths import ensure_output_dirs, load_config, resolve
 
 # Columns that are labels or indices, not condition-monitoring features.
-_NON_FEATURE = {"bearing", "minute", "rul_hours", "health"}
+_NON_FEATURE = {"condition", "bearing", "minute", "rul_hours", "health"}
 
 
 def _feature_columns(df: pd.DataFrame) -> List[str]:
@@ -85,36 +86,42 @@ def run() -> Path:
     if use_trend:
         df = add_trend_features(df, base_feats, window)
     feats = _feature_columns(df)  # base (+ rolling mean/slope trend features if enabled)
-    bearings = list(xj["bearings"])
+    bearings = df["bearing"].drop_duplicates().tolist()
     mode = f"{len(base_feats)} 瞬時 + 趨勢 window={window}" if use_trend else f"{len(base_feats)} 瞬時"
-    print(f"[1/2] LOBO 監督式 RUL：{len(bearings)} 顆軸承，特徵 {len(feats)} 維（{mode}）")
+    print(f"[1/2] LOBO 監督式 RUL：{len(bearings)} 顆軸承（全工況），特徵 {len(feats)} 維（{mode}）")
 
     per_bearing: List[Dict] = []
     all_true, all_pred = [], []
     pred_rows: List[Dict] = []
-    for held in bearings:
-        train = df[df["bearing"] != held]
-        test = df[df["bearing"] == held]
-        if len(test) == 0:
-            continue
-        model = RandomForestRegressor(n_estimators=300, random_state=42, n_jobs=-1)
-        model.fit(train[feats], train["rul_hours"])
-        pred = model.predict(test[feats])
-        yt = test["rul_hours"].to_numpy()
-        mae = float(mean_absolute_error(yt, pred))
-        rmse = float(np.sqrt(mean_squared_error(yt, pred)))
-        r2 = float(r2_score(yt, pred))
-        per_bearing.append({
-            "held_out": held, "n_test": int(len(test)),
-            "mae_hours": mae, "rmse_hours": rmse, "r2": r2,
-        })
-        all_true.append(yt)
-        all_pred.append(pred)
-        for m, t, p in zip(test["minute"].to_numpy(), yt, pred):
-            pred_rows.append({"bearing": held, "minute": int(m),
-                              "rul_true": float(t), "rul_pred": float(p)})
-        print(f"    -> 留 {held}（n={len(test)}）："
-              f"MAE={mae:.3f}h RMSE={rmse:.3f}h R2={r2:.3f}")
+    # Leave-one-bearing-out *within each operating condition* (train only on
+    # same-condition bearings), so this stays a clean within-condition test to
+    # contrast with the cross-condition LOCO experiment.
+    for cond in xj["conditions"]:
+        cdf = df[df["condition"] == cond["name"]]
+        for held in cdf["bearing"].drop_duplicates():
+            train = cdf[cdf["bearing"] != held]
+            test = cdf[cdf["bearing"] == held]
+            if len(test) == 0:
+                continue
+            model = RandomForestRegressor(n_estimators=300, random_state=42, n_jobs=-1)
+            model.fit(train[feats], train["rul_hours"])
+            pred = model.predict(test[feats])
+            yt = test["rul_hours"].to_numpy()
+            mae = float(mean_absolute_error(yt, pred))
+            rmse = float(np.sqrt(mean_squared_error(yt, pred)))
+            r2 = float(r2_score(yt, pred))
+            cname = test["condition"].iloc[0]
+            per_bearing.append({
+                "condition": cname, "held_out": held, "n_test": int(len(test)),
+                "mae_hours": mae, "rmse_hours": rmse, "r2": r2,
+            })
+            all_true.append(yt)
+            all_pred.append(pred)
+            for m, t, p in zip(test["minute"].to_numpy(), yt, pred):
+                pred_rows.append({"condition": cname, "bearing": held, "minute": int(m),
+                                  "rul_true": float(t), "rul_pred": float(p)})
+            print(f"    -> 留 [{cname}] {held}（n={len(test)}）："
+                  f"MAE={mae:.3f}h RMSE={rmse:.3f}h R2={r2:.3f}")
 
     yt_all = np.concatenate(all_true)
     yp_all = np.concatenate(all_pred)
