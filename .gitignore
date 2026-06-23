@@ -53,6 +53,8 @@ data/raw/xjtu/
 !outputs/metrics/xjtu_generalization.csv
 !outputs/metrics/xjtu_generalization.json
 !outputs/metrics/xjtu_rul_predictions.csv
+!outputs/metrics/xjtu_lobo.json
+!outputs/metrics/xjtu_lobo_predictions.csv
 
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training

@@ -1,6 +1,6 @@
 # 模組 B：動態健康度與剩餘壽命預測（IMS 軸承）成果與限制
 
-> **狀態（2026-06-23）**：趨勢外推 RUL 之實作與指標已於 2026-06-22 完成（產物見 `outputs/metrics/ims_rul.json`、`ims_rul_predictions.csv`）；1D-CNN AE 雙印證為進階項，尚未實作。
+> **狀態（2026-06-23）**：IMS 趨勢外推 RUL 已於 2026-06-22 完成（產物見 `outputs/metrics/ims_rul.json`、`ims_rul_predictions.csv`）；**模組 B+（XJTU 多軌跡泛化）步驟 1–4 已完成**（含 LOBO 監督式對照；見下方專節與 `outputs/metrics/xjtu_generalization.*`、`xjtu_lobo.*`）；1D-CNN AE 雙印證已推遲、尚未實作。
 
 為彌補 AI4I 2020 合成資料「單筆點資料、無時間維度」的限制，本模組導入 NASA / IMS
 軸承 run-to-failure 資料集（Set 2，軸承外圈剝落），將系統從**靜態風險分類**延伸為
@@ -33,6 +33,54 @@ BPFO 頻帶能量等）→ 由振動特徵建構資料驅動健康指標 → 偵
 此一發現印證了：對單一 run-to-failure 軌跡，**趨勢外推法優於監督式回歸**。
 保留 `src/models/train_rul.py` 作為「為何不能這樣做」的對照教材。
 
+## 模組 B+：多軌跡泛化驗證（XJTU-SY）
+
+IMS Set 2 只有 B1 一條退化軌跡，無法驗證「健康指標與門檻能否套用到其他軸承」。為補上此
+泛化缺口，本模組 B+ 導入 **XJTU-SY** 軸承加速壽命資料集（Condition 1：2100 rpm / 12 kN，
+Bearing1_1~1_5 共 5 條獨立 run-to-failure 軌跡），並把**與 IMS 完全相同的趨勢外推管線**
+（健康指標 → FPT → 指數外推）以**一組固定參數**套到 5 顆軸承，**不逐顆調參**（`baseline_n`
+因 XJTU 壽命較短而與 IMS 不同，但 5 顆之間完全一致）。
+
+| 軸承 | 壽命(快照) | FPT | 退化提前量 | 佔壽命 | 退化區 MAE |
+| --- | --- | --- | --- | --- | --- |
+| Bearing1_1 | 123 | 13 | 1.82 h | 89% | 0.52 h |
+| Bearing1_2 | 161 | 37 | 2.05 h | 77% | 1.39 h |
+| Bearing1_3 | 158 | 13 | 2.40 h | 92% | 0.47 h |
+| Bearing1_4 | 122 | 87 | 0.57 h | 28% | 0.37 h |
+| Bearing1_5 | 52 | 27 | 0.40 h | 47% | 0.07 h |
+| **平均** | — | — | **1.45 h** | — | **0.57 h** |
+
+**結論**：同一套不調參的方法在 5 條獨立軌跡上**全數偵測到退化起點**，證明 Module B 的健康
+監測流程具跨軸承泛化能力，而非僅對單一軸承過擬合——這是 IMS 單軌跡無法提供的證據。
+
+**誠實限制**：(1) 提前量與 MAE 在各軸承間有明顯落差——早退化軸承（如 Bearing1_2）外推空間
+大、誤差較高；突發失效軸承（如 Bearing1_4，FPT 晚、僅 10 點可評估）提前量小。此為失效模式
+差異的固有現象，如實呈現。(2) 本驗證僅限單一工況（Condition 1），跨工況泛化列為延伸。
+(3) XJTU 為加速壽命試驗，整體壽命僅約 1–2.7 小時，與 IMS 的數天尺度不同，故指標以小時計。
+
+### 監督式 RUL 的再驗證（leave-one-bearing-out）
+
+IMS 單軌跡上監督式回歸慘敗（R²≈−76），根因是測試段 RUL 落在訓練範圍外、樹模型無法外推。
+有了 5 條軌跡後，可做 **leave-one-bearing-out**（留一顆測試、其餘 4 顆訓練、輪流）——此時
+留出軸承的 RUL 範圍已被其他軸承涵蓋，**不再需要外推**。模型為 RandomForest，僅用瞬時振動
+特徵（排除時間索引，避免記憶經過時間）。
+
+| 留出軸承 | MAE | R² |
+| --- | --- | --- |
+| Bearing1_1 | 0.36 h | +0.43 |
+| Bearing1_2 | 0.74 h | −0.20 |
+| Bearing1_3 | 0.39 h | +0.59 |
+| Bearing1_4 | 0.99 h | −2.48 |
+| Bearing1_5 | 0.66 h | −7.27 |
+| **合併** | **0.62 h** | **−0.11** |
+
+**結論**：外推牆確實消失——相似軸承（1_1、1_3）的 R² 由 −76 翻正到 +0.4~0.6。但合併 R² 仍
+≈0，且兩顆離群軸承（1_4 突發失效、1_5 最短命）顯著為負：在**只有 5 顆、且失效模式差異大**
+時，絕對 RUL 的跨軸承泛化本質上仍困難。另已評估加入軸承內滾動趨勢特徵（config 開關
+`xjtu.lobo_use_trend`），對相似軸承更好但**未改善合併 R²**，故預設關閉、以較簡單的瞬時特徵版
+為準。此結果把 Module B 的論點補完整：監督式 RUL 的成敗**取決於資料設定（軌跡數與多樣性）**，
+而非方法本身；在有限資料上，趨勢外推健康指標法仍是更穩健的選擇。
+
 ## 對應實作
 
 | 項目 | 檔案 |
@@ -43,5 +91,10 @@ BPFO 頻帶能量等）→ 由振動特徵建構資料驅動健康指標 → 偵
 | 趨勢外推 RUL（採用） | `src/models/rul_extrapolation.py` |
 | 監督式回歸（對照，已知失敗） | `src/models/train_rul.py` |
 | Dashboard 頁籤 | `app/streamlit_app.py`（「動態健康度 (IMS)」）|
+| —— 模組 B+（XJTU 多軌跡）—— | |
+| 載入 XJTU 快照 | `src/data/load_xjtu.py` |
+| 特徵表（5 顆合併） | `src/data/build_xjtu_dataset.py` |
+| 跨軸承泛化評估 | `src/models/eval_xjtu_generalization.py` |
+| LOBO 監督式 RUL（步驟 4） | `src/models/train_rul_lobo.py` |
 
-完整規劃與分階段交付見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)。
+完整規劃與分階段交付見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)；多軌跡泛化規格見 [`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)。

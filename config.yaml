@@ -164,6 +164,10 @@ xjtu:
   gen_summary: outputs/metrics/xjtu_generalization.csv
   gen_metrics: outputs/metrics/xjtu_generalization.json
   rul_predictions: outputs/metrics/xjtu_rul_predictions.csv
+  lobo_metrics: outputs/metrics/xjtu_lobo.json
+  lobo_predictions: outputs/metrics/xjtu_lobo_predictions.csv
+  lobo_use_trend: false           # add within-bearing rolling trend features? (evaluated; did not improve pooled R^2)
+  lobo_window: 5                  # within-bearing rolling window for trend features (mean + slope)
 
 # ---------------------------------------------------------------
 # Risk thresholds & maintenance advice (used by predict / UI / API)

@@ -1,0 +1,61 @@
+{
+  "method": "leave_one_bearing_out_supervised_rul",
+  "model": "RandomForestRegressor(n_estimators=300, random_state=42)",
+  "trend_features": false,
+  "features": [
+    "h_rms",
+    "h_peak",
+    "h_peak2peak",
+    "h_kurtosis",
+    "h_skewness",
+    "h_crest_factor",
+    "h_shape_factor",
+    "h_impulse_factor",
+    "h_std",
+    "h_mean",
+    "v_rms"
+  ],
+  "per_bearing": [
+    {
+      "held_out": "Bearing1_1",
+      "n_test": 123,
+      "mae_hours": 0.36130668473351324,
+      "rmse_hours": 0.4478211307049844,
+      "r2": 0.42732081884092554
+    },
+    {
+      "held_out": "Bearing1_2",
+      "n_test": 161,
+      "mae_hours": 0.743369910282954,
+      "rmse_hours": 0.8497677846239404,
+      "r2": -0.203508812974466
+    },
+    {
+      "held_out": "Bearing1_3",
+      "n_test": 158,
+      "mae_hours": 0.3888393108298169,
+      "rmse_hours": 0.4851874985965143,
+      "r2": 0.5926139302201019
+    },
+    {
+      "held_out": "Bearing1_4",
+      "n_test": 122,
+      "mae_hours": 0.9933374316939881,
+      "rmse_hours": 1.0947952608596578,
+      "r2": -2.4790372808085133
+    },
+    {
+      "held_out": "Bearing1_5",
+      "n_test": 52,
+      "mae_hours": 0.6643344017094022,
+      "rmse_hours": 0.7194920752391301,
+      "r2": -7.273508753806331
+    }
+  ],
+  "pooled": {
+    "mae_hours": 0.6189812409812406,
+    "rmse_hours": 0.7551395963560431,
+    "r2": -0.1076169980312518,
+    "mean_per_bearing_mae_hours": 0.6302375478499348
+  }
+}
