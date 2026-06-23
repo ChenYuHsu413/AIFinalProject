@@ -222,8 +222,9 @@ HEROES = {
     "關於本專案": (
         "About · Tech stack",
         "關於本專案",
-        "以 UCI AI4I 2020 建立的端到端預測性維護原型系統。"
-        "覆蓋 CRISP-DM、SHAP、Optuna、Streamlit、FastAPI、Docker、GitHub Actions。",
+        "三軌並行的預測性維護原型：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 "
+        "RUL）、模組 B+（XJTU 多軸承 / 多工況泛化驗證）。涵蓋訊號處理、退化建模、可解釋 "
+        "ML 與端到端部署。",
     ),
 }
 _eyebrow, _title, _subtitle = HEROES[page]
@@ -1449,38 +1450,41 @@ elif page == "多軌跡泛化":
 # ---------------------------------------------------------------------------
 else:
     style.section("專案總覽")
-    overview_img = _ROOT / "docs" / "0620.png"
-    if overview_img.exists():
-        c_l, c_r = st.columns([2, 1])
-        with c_l:
-            st.image(str(overview_img), width='stretch',
-                     caption="專案總覽 infographic")
-        with c_r:
-            with style.zone("mint", key="about-positioning"):
-                st.markdown(
-                    """
-                    ##### 系統定位
-                    **預測性維護原型**：以目前運轉條件估計故障風險，提供決策輔助。
+    style.note(
+        "本系統是一套<b>三軌平行</b>的預測性維護原型："
+        "<b>模組 A</b> 以 AI4I 2020 製程快照做靜態故障風險分類；"
+        "<b>模組 B</b> 以 IMS 軸承振動推導動態健康度與剩餘壽命 (RUL)；"
+        "<b>模組 B+</b> 以 XJTU-SY 多軸承 / 多工況驗證健康監測的泛化能力。"
+        "三軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
+    )
+    c_l, c_r = st.columns(2)
+    with c_l:
+        with style.zone("mint", key="about-positioning"):
+            st.markdown(
+                """
+                ##### 系統定位 — 決策輔助
+                - **A**：由運轉條件估計故障風險
+                - **B**：由振動推導健康退化與剩餘壽命
+                - **B+**：跨軸承 / 跨工況的泛化驗證
 
-                    ##### 不是
-                    - 即時控制器
-                    - 精準 RUL 預測器
-                    - 已驗證的工廠系統
-                    """
-                )
-            with style.zone("sky", key="about-stack"):
-                st.markdown(
-                    """
-                    ##### 技術棧
-                    - **ML**：scikit-learn · XGBoost · LightGBM
-                    - **可解釋**：SHAP · Permutation Importance
-                    - **調參**：Optuna
-                    - **UI**：Streamlit · Plotly · shadcn-ui
-                    - **服務**：FastAPI · Docker · GitHub Actions
-                    """
-                )
-    else:
-        style.note("infographic 圖片 (`docs/0620.png`) 不存在。", kind="warn")
+                ##### 不是
+                - 即時控制器
+                - 精準 RUL 預測器
+                - 已驗證的工廠系統
+                """
+            )
+    with c_r:
+        with style.zone("sky", key="about-stack"):
+            st.markdown(
+                """
+                ##### 技術棧
+                - **訊號處理**：FFT · 時域 / 頻域特徵 · 健康指標
+                - **退化建模**：FPT 偵測 · 指數趨勢外推 · LOBO / LOCO
+                - **ML**：scikit-learn · XGBoost · LightGBM
+                - **可解釋 / 調參**：SHAP · Permutation Importance · Optuna
+                - **UI / 服務**：Streamlit · Plotly · FastAPI · Docker · GitHub Actions
+                """
+            )
 
     st.divider()
     style.section("模組 A vs B vs B+ 對照")
