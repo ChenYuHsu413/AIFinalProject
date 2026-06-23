@@ -13,13 +13,15 @@
   🚀 <strong>線上 Demo</strong>：<a href="https://aifinalproject-test.streamlit.app/">https://aifinalproject-test.streamlit.app/</a>
 </p>
 
-> **專案定位**：以 UCI **AI4I 2020** 合成資料集建立的端到端**預測性維護原型**。
+> **專案定位**：端到端**預測性維護原型**，由三軌組成——模組 A（UCI **AI4I 2020** 靜態
+> 風險分類）、模組 B（**IMS** 軸承動態健康度 / RUL）、模組 B+（**XJTU-SY** 多軌跡、多工況
+> 泛化驗證）。
 >
-> **本系統是**：以目前運轉條件估計故障風險、健康分數，並依規則產生維護建議
-> 的決策輔助工具。
+> **本系統是**：以運轉條件估計故障風險與健康分數、以振動退化趨勢偵測退化起點並估計
+> RUL，並依規則產生維護建議的決策輔助工具。
 >
-> **本系統不是**：即時馬達控制器、精準的剩餘壽命（RUL）回歸器、或已經在實際
-> 工廠長期資料上驗證過的成熟系統。
+> **本系統不是**：即時馬達控制器、可跨工況泛化的精準 RUL 回歸器、或已在實際工廠長期
+> 資料上驗證過的成熟系統。
 
 ---
 
@@ -139,6 +141,18 @@ flowchart TB
 4. **類別不平衡。** 只看 Accuracy 會被誤導，本專案同時報告 Recall、F1、ROC-AUC、PR-AUC，
    並以 F1 作為最佳模型挑選依據（可在 `config.yaml` 調整）。
 
+### 模組 B / B+ 資料集（動態健康度軌）
+
+| 模組 | 資料集 | 內容 | 用途 |
+| --- | --- | --- | --- |
+| B | NASA / **IMS** Bearing Set 2 | 20 kHz 振動 run-to-failure（單一軸承軌跡）| 健康指標 / FPT / 趨勢外推 RUL |
+| B+ | **XJTU-SY** | 25.6 kHz 振動，15 顆 / 3 工況 run-to-failure | 跨軸承、跨工況泛化驗證 |
+
+兩者皆為**實測軸承退化資料**（非伺服馬達本體；本專案以「旋轉機械 / 電動機」為方法範疇、
+以伺服馬達為應用情境），原始資料不進 git、需自行下載。評估與取捨見
+[`docs/DATASET_EVALUATION.md`](docs/DATASET_EVALUATION.md)，流程與結果見
+[`docs/MODULE_B_RESULTS.md`](docs/MODULE_B_RESULTS.md)。
+
 ---
 
 ## 4. 專案架構
@@ -157,8 +171,14 @@ project-root/
 ├── config.yaml
 ├── data/
 │   ├── README.md
-│   ├── raw/                 <-- 將 ai4i2020.csv 放在這裡
+│   ├── raw/                 <-- ai4i2020.csv；模組 B/B+ 為 raw/ims、raw/xjtu（不進 git）
 │   └── processed/
+├── docs/                    # 模組 B/B+ 規劃、結果、資料評估、prompt log
+│   ├── MODULE_B_IMS_PLAN.md
+│   ├── MODULE_B_DL_PLAN.md
+│   ├── MODULE_B_RESULTS.md
+│   ├── MODULE_B_PLUS_XJTU_PLAN.md
+│   └── DATASET_EVALUATION.md
 ├── notebooks/
 │   └── 01_eda.ipynb
 ├── scripts/
@@ -166,10 +186,15 @@ project-root/
 ├── src/
 │   ├── data/
 │   │   ├── load_data.py
-│   │   └── preprocess.py
+│   │   ├── preprocess.py
+│   │   ├── load_ims.py            # 模組 B：IMS 載入
+│   │   ├── build_ims_dataset.py
+│   │   ├── load_xjtu.py           # 模組 B+：XJTU 載入
+│   │   └── build_xjtu_dataset.py
 │   ├── features/
 │   │   ├── feature_engineering.py
-│   │   └── feature_selection.py
+│   │   ├── feature_selection.py
+│   │   └── vibration_features.py  # 模組 B/B+：振動時頻特徵
 │   ├── models/
 │   │   ├── model_registry.py
 │   │   ├── train.py
@@ -178,9 +203,17 @@ project-root/
 │   │   ├── evaluate.py
 │   │   ├── explain.py
 │   │   ├── model_card.py
-│   │   └── predict.py
+│   │   ├── predict.py
+│   │   ├── rul_extrapolation.py        # 模組 B：趨勢外推 RUL
+│   │   ├── train_rul.py                # 模組 B：監督式對照（已知失敗）
+│   │   ├── eval_xjtu_generalization.py # 模組 B+：跨軸承 / 工況泛化
+│   │   ├── train_rul_lobo.py           # 模組 B+：LOBO 監督式
+│   │   └── train_rul_loco.py           # 模組 B+：LOCO 監督式
 │   ├── visualization/
 │   │   └── plots.py
+│   ├── ui/
+│   │   ├── charts.py              # 含模組 B / B+ 圖表
+│   │   └── style.py
 │   └── utils/
 │       └── paths.py
 ├── outputs/
@@ -236,6 +269,11 @@ data/raw/ai4i2020.csv
 ```
 
 詳細連結請見 `data/README.md`。
+
+> 模組 B（IMS）/ B+（XJTU）的軸承資料下載與放置方式，見
+> [`docs/MODULE_B_PLUS_XJTU_PLAN.md`](docs/MODULE_B_PLUS_XJTU_PLAN.md) 與
+> [`docs/DATASET_EVALUATION.md`](docs/DATASET_EVALUATION.md)；原始資料不進 git，
+> 放於 `data/raw/ims/`、`data/raw/xjtu/`。
 
 ---
 
@@ -342,11 +380,24 @@ python -m src.models.predict
 streamlit run app/streamlit_app.py
 ```
 
-頁面：
+頁面（9 頁，依模組分組）：
+
+**🅰 模組 A · 靜態風險**
 - **手動單筆預測** — 填入欄位即可看到機率 / 健康分數 / 風險 / 維護建議。
+- **What-if 敏感度分析** — 拖動參數即時看風險變化，1D / 2D 風險地景。
 - **批次 CSV 上傳** — 上傳含六個原始欄位的 CSV，下載預測結果。
-- **模型評估結果** — 比較表 + 所有已儲存的圖表。
-- **關於本專案** — 系統定位與免責聲明。
+- **模型評估結果** — 比較表 + 所有已儲存的圖表 + 互動式決策門檻。
+
+**🅱 模組 B · 動態健康度（IMS）**
+- **健康度總覽** — 健康曲線、FPT、可調告警門檻、時間軸回放。
+- **RUL 預測** — 預測 vs 實際 RUL，與監督式失敗的方法學對照。
+- **互動探索** — 切換健康指標即時重算 FPT；原始波形 + FFT 頻譜。
+
+**🅱➕ 模組 B+ · 多軌跡泛化（XJTU）**
+- **多軌跡泛化** — 15 顆 / 3 工況固定參數健康監測、健康指標疊圖、LOBO / LOCO 對照。
+
+**ℹ️ 其他**
+- **關於本專案** — 三軌定位、A / B / B+ 對照與免責聲明。
 
 ---
 
