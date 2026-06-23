@@ -1568,11 +1568,11 @@ else:
     st.divider()
     style.section("數字一覽")
     style.kpi_strip([
-        {"label": "推上 GitHub 的檔案", "value": "53+", "sub": "含 LICENSE / Docker / CI"},
-        {"label": "訓練 + 比較模型", "value": "95", "sub": "50 baseline + 45 Optuna"},
-        {"label": "圖表產出", "value": "22", "sub": "EDA / 評估 / 比較"},
-        {"label": "FastAPI 端點", "value": "8", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "9", "sub": "A 5 頁 + B 3 頁 + B+ 1 頁"},
+        {"label": "git 追蹤檔案", "value": "123", "sub": "含 LICENSE / Docker / CI"},
+        {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
+        {"label": "繪圖函式", "value": "17", "sub": "src/ui/charts.py"},
+        {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
+        {"label": "Streamlit 頁面", "value": "10", "sub": "A 5 + B 3 + B+ 1 + 關於 1"},
         {"label": "單元測試", "value": "18 / 18", "sub": "全部通過"},
     ])
     style.section("外部連結")
@@ -1580,7 +1580,9 @@ else:
         """
         - GitHub Repo · <https://github.com/ChenYuHsu413/AIFinalProject>
         - GitHub Actions · <https://github.com/ChenYuHsu413/AIFinalProject/actions>
-        - 資料集 · <https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset>
+        - 模組 A 資料集（AI4I 2020）· <https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset>
+        - 模組 B 資料集（NASA/IMS Bearing）· <https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/>
+        - 模組 B+ 資料集（XJTU-SY Bearing）· <https://biaowang.tech/xjtu-sy-bearing-datasets/>
         - 模型卡 · `outputs/models/MODEL_CARD.md`
         - 報告大綱 · `outputs/reports/REPORT_OUTLINE.md`
         """
