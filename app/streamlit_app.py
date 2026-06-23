@@ -256,6 +256,13 @@ HEROES = {
         "切換健康指標即時重算退化起點，並檢視任一快照的原始振動波形與 FFT 頻譜"
         "（標出 BPFO 等軸承故障頻率）。",
     ),
+    "多軌跡泛化": (
+        "Module B+ · Cross-bearing",
+        "模組 B+ · 多軌跡泛化 (XJTU)",
+        "以 XJTU-SY 五條獨立 run-to-failure 軸承，用同一組固定參數驗證健康監測的"
+        "跨軸承泛化，並以 leave-one-bearing-out 重新檢視監督式 RUL —— 補上 IMS "
+        "單軌跡缺乏的泛化證據。",
+    ),
     "關於本專案": (
         "About · Tech stack",
         "關於本專案",
