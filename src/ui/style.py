@@ -863,6 +863,52 @@ def advice_card(text: str) -> None:
     """)
 
 
+_ADVICE_RISK_STYLE = {
+    "green":  ("#ecfdf5", "#10b981", "🟢"),
+    "yellow": ("#fffbeb", "#f59e0b", "🟡"),
+    "red":    ("#fef2f2", "#ef4444", "🔴"),
+}
+
+
+def bearing_advice_card(
+    title: str, risk: str, risk_label_zh: str,
+    rul_hours: float | None, window_hours: float | None,
+    rationale: list[str], cost_note: str | None = None,
+) -> None:
+    """Maintenance-advice card for one trajectory (Module B/B+ extension E2).
+
+    Self-contained inline styling (no global CSS dependency); colour follows the
+    risk level (green / yellow / red).
+    """
+    bg, accent, dot = _ADVICE_RISK_STYLE.get(risk, _ADVICE_RISK_STYLE["green"])
+    rul_txt = "—" if rul_hours is None else f"{rul_hours:.1f} h"
+    win_txt = "—" if window_hours is None else f"{window_hours:.1f} h 內"
+    items = "".join(f'<li style="margin:2px 0;">{r}</li>' for r in rationale)
+    cost_html = (
+        f'<div style="margin-top:8px;font-size:0.78rem;color:#64748b;">{cost_note}</div>'
+        if cost_note else ""
+    )
+    _render(f"""
+        <div style="background:{bg};border-left:5px solid {accent};border-radius:12px;
+                    padding:14px 16px;margin:6px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:1.0rem;color:#0f172a;">{title}</span>
+            <span style="background:{accent};color:#fff;border-radius:999px;
+                         padding:2px 12px;font-size:0.78rem;font-weight:700;
+                         white-space:nowrap;">{dot} {risk_label_zh}</span>
+          </div>
+          <div style="display:flex;gap:24px;margin:10px 0 6px;">
+            <div><div style="font-size:0.72rem;color:#64748b;">剩餘壽命</div>
+                 <div style="font-size:1.15rem;font-weight:700;color:#0f172a;">{rul_txt}</div></div>
+            <div><div style="font-size:0.72rem;color:#64748b;">建議維護</div>
+                 <div style="font-size:1.15rem;font-weight:700;color:#0f172a;">{win_txt}</div></div>
+          </div>
+          <ul style="margin:6px 0 0;padding-left:18px;font-size:0.84rem;color:#334155;">{items}</ul>
+          {cost_html}
+        </div>
+    """)
+
+
 def action_bar(links: list[dict]) -> None:
     """Render a horizontal row of action buttons / links.
 

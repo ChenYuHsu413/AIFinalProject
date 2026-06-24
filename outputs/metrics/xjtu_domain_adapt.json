@@ -1,0 +1,180 @@
+{
+  "method": "leave_one_condition_out_domain_adaptation",
+  "model": "RandomForestRegressor(n_estimators=300, random_state=42)",
+  "features": [
+    "h_rms",
+    "h_peak",
+    "h_peak2peak",
+    "h_kurtosis",
+    "h_skewness",
+    "h_crest_factor",
+    "h_shape_factor",
+    "h_impulse_factor",
+    "h_std",
+    "h_mean",
+    "v_rms"
+  ],
+  "coral_reg": 1.0,
+  "results": {
+    "baseline": {
+      "per_condition": [
+        {
+          "mae_hours": 6.738063311688312,
+          "rmse_hours": 9.949436490505656,
+          "r2": -191.2791056626442,
+          "n": 616,
+          "held_out_condition": "35Hz12kN"
+        },
+        {
+          "mae_hours": 9.185483148857667,
+          "rmse_hours": 14.132913188169088,
+          "r2": -32.975192017461914,
+          "n": 1566,
+          "held_out_condition": "37.5Hz11kN"
+        },
+        {
+          "mae_hours": 16.009707997662147,
+          "rmse_hours": 19.83331647365206,
+          "r2": -1.7016214201332556,
+          "n": 7034,
+          "held_out_condition": "40Hz10kN"
+        }
+      ],
+      "pooled": {
+        "mae_hours": 14.230403609664352,
+        "rmse_hours": 18.46034256552247,
+        "r2": -1.222689434289491,
+        "n": 9216
+      }
+    },
+    "lifetime_ratio": {
+      "per_condition": [
+        {
+          "held_out_condition": "35Hz12kN",
+          "n": 616,
+          "r2_ratio_space": -0.00970991715318581,
+          "r2_deploy": -63.916084645938184,
+          "mae_deploy": 4.5565154564756964,
+          "r2_oracle": 0.06027986134728036,
+          "mae_oracle": 0.5204410199127367,
+          "source_mean_life_hours": 14.316666666666663
+        },
+        {
+          "held_out_condition": "37.5Hz11kN",
+          "n": 1566,
+          "r2_ratio_space": -0.21516077093857278,
+          "r2_deploy": -1.651582059618443,
+          "mae_deploy": 3.110964847594465,
+          "r2_oracle": -0.031317821794467404,
+          "mae_oracle": 1.9068008545290924,
+          "source_mean_life_hours": 12.733333333333333
+        },
+        {
+          "held_out_condition": "40Hz10kN",
+          "n": 7034,
+          "r2_ratio_space": -0.38060743062478886,
+          "r2_deploy": -1.6542982951434415,
+          "mae_deploy": 15.750508570893643,
+          "r2_oracle": -0.1661441037526561,
+          "mae_oracle": 10.139675158979836,
+          "source_mean_life_hours": 3.6199999999999997
+        }
+      ],
+      "pooled": {
+        "r2_ratio_space": -0.3272909985227934,
+        "mae_ratio": 0.2723825009452399,
+        "r2": -0.9557135179722327,
+        "mae_hours": 12.854563993075939,
+        "rmse_hours": 17.316215508790233,
+        "r2_oracle": 0.14783428310202107,
+        "mae_oracle_hours": 8.097777438663517,
+        "n": 9216
+      }
+    },
+    "transductive_zscore": {
+      "per_condition": [
+        {
+          "mae_hours": 4.203931006493507,
+          "rmse_hours": 7.438934177567187,
+          "r2": -106.48715226986734,
+          "n": 616,
+          "held_out_condition": "35Hz12kN"
+        },
+        {
+          "mae_hours": 3.3381624095359723,
+          "rmse_hours": 5.244182850335957,
+          "r2": -3.6779350669720294,
+          "n": 1566,
+          "held_out_condition": "37.5Hz11kN"
+        },
+        {
+          "mae_hours": 16.063554836824313,
+          "rmse_hours": 19.990042134390656,
+          "r2": -1.7444873058136525,
+          "n": 7034,
+          "held_out_condition": "40Hz10kN"
+        }
+      ],
+      "pooled": {
+        "mae_hours": 13.108531744309413,
+        "rmse_hours": 17.702064692870643,
+        "r2": -1.0438410631622101,
+        "n": 9216
+      }
+    },
+    "coral": {
+      "per_condition": [
+        {
+          "mae_hours": 5.953012265512264,
+          "rmse_hours": 9.3281084032233,
+          "r2": -168.01384971174312,
+          "n": 616,
+          "held_out_condition": "35Hz12kN"
+        },
+        {
+          "mae_hours": 4.764253937845892,
+          "rmse_hours": 7.893825916839308,
+          "r2": -9.599213166728456,
+          "n": 1566,
+          "held_out_condition": "37.5Hz11kN"
+        },
+        {
+          "mae_hours": 15.069420110258111,
+          "rmse_hours": 19.104320753631786,
+          "r2": -1.506669112402137,
+          "n": 7034,
+          "held_out_condition": "40Hz10kN"
+        }
+      ],
+      "pooled": {
+        "mae_hours": 12.709003719376929,
+        "rmse_hours": 17.174604978862437,
+        "r2": -0.9238569968589689,
+        "n": 9216
+      }
+    }
+  },
+  "summary": {
+    "baseline_r2": -1.222689434289491,
+    "best_method": "coral",
+    "best_r2": -0.9238569968589689,
+    "ranking": [
+      [
+        "coral",
+        -0.9238569968589689
+      ],
+      [
+        "lifetime_ratio",
+        -0.9557135179722327
+      ],
+      [
+        "transductive_zscore",
+        -1.0438410631622101
+      ],
+      [
+        "baseline",
+        -1.222689434289491
+      ]
+    ]
+  }
+}

@@ -639,6 +639,51 @@ def xjtu_health_overlay(curves: pd.DataFrame,
     return fig
 
 
+def xjtu_replay_frame(
+    minutes: Sequence[float], hi: Sequence[float],
+    hi_base: float, hi_fail: float,
+    fpt_minute: float | None, total_minutes: float, y_max: float,
+) -> go.Figure:
+    """One frame of the streaming-replay monitor for a single bearing.
+
+    Draws the health indicator (HI) growing snapshot-by-snapshot against fixed
+    healthy-baseline and failure-threshold reference lines, with the current
+    point highlighted and the FPT onset marked once it has been reached.  The
+    axes are held fixed (``total_minutes`` / ``y_max``) so the curve animates
+    into a stable frame rather than rescaling each step.
+    """
+    m = list(minutes)
+    y = list(hi)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=m, y=y, mode="lines", line=dict(color=PRIMARY, width=3),
+        name="健康指標 HI",
+        hovertemplate="第 %{x} 分鐘<br>HI=%{y:.3f}<extra></extra>",
+    ))
+    if m:
+        past_fpt = fpt_minute is not None and m[-1] >= fpt_minute
+        fig.add_trace(go.Scatter(
+            x=[m[-1]], y=[y[-1]], mode="markers", showlegend=False,
+            marker=dict(size=13, color=DANGER if past_fpt else PRIMARY,
+                        line=dict(width=2, color="white")),
+            hovertemplate="目前<br>HI=%{y:.3f}<extra></extra>",
+        ))
+    fig.add_hline(y=hi_base, line_dash="dot", line_color=MUTED, line_width=1.5,
+                  annotation_text="健康基線", annotation_position="bottom right",
+                  annotation_font_color=MUTED)
+    fig.add_hline(y=hi_fail, line_dash="dash", line_color=DANGER, line_width=1.5,
+                  annotation_text="失效門檻", annotation_position="top right",
+                  annotation_font_color=DANGER)
+    if fpt_minute is not None:
+        fig.add_vline(x=fpt_minute, line_dash="dot", line_color=ACCENT, line_width=1.5,
+                      annotation_text="★ FPT 退化起點", annotation_position="top left",
+                      annotation_font_color=ACCENT)
+    fig = _style(fig, height=420, title="<b>即時串流回放</b>：健康指標逐快照重播")
+    fig.update_xaxes(title_text="時間（分鐘）", range=[0, total_minutes])
+    fig.update_yaxes(title_text="HI（h_rms 平滑）", range=[0, y_max])
+    return fig
+
+
 # ---------------------------------------------------------------------------
 # Live confusion matrix (threshold tuner)
 # ---------------------------------------------------------------------------

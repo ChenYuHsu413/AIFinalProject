@@ -7,6 +7,7 @@ Run::
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 # Streamlit runs this file as a script and only puts its own directory on
@@ -36,7 +37,8 @@ from src.models.predict import (
 )
 from src.models.explain import explain_record, is_supported as shap_supported
 from src.data.load_ims import list_ims_files, load_ims_file
-from src.models.rul_extrapolation import build_health_indicator, detect_fpt
+from src.models.rul_extrapolation import build_health_indicator, detect_fpt, extrapolate_rul
+from src.models.maintenance_advice import maintenance_advice
 from src.ui import style
 from src.ui.charts import (
     confusion_heatmap,
@@ -55,6 +57,7 @@ from src.ui.charts import (
     vibration_spectrum,
     vibration_waveform,
     xjtu_health_overlay,
+    xjtu_replay_frame,
 )
 from src.utils.paths import load_config, resolve
 
@@ -421,6 +424,106 @@ def _ims_predictions(ims: dict):
 def _xjtu_feature_table(path_str: str) -> pd.DataFrame:
     """Cached load of the XJTU combined feature table (keyed by path string)."""
     return pd.read_parquet(path_str)
+
+
+@st.cache_data(show_spinner=False)
+def _xjtu_predictions(path_str: str) -> pd.DataFrame:
+    """Cached load of the per-bearing RUL/health prediction table (E2 input)."""
+    return pd.read_csv(path_str)
+
+
+_REPLAY_SPEEDS = {"0.5x": 0.6, "1x": 0.3, "2x": 0.15, "4x": 0.07}
+
+
+@st.fragment
+def _xjtu_replay(feat: pd.DataFrame, xj: dict) -> None:
+    """E3: streaming replay of one bearing's health monitoring (offline data).
+
+    A self-contained fragment so play/step reruns only this block, not the whole
+    page.  Reuses ``build_health_indicator`` / ``detect_fpt`` / ``extrapolate_rul``
+    on the visible prefix — exactly what the system would compute having seen only
+    the first *k* snapshots — while the healthy baseline and failure threshold are
+    pre-calibrated references held fixed across the run.
+    """
+    ind, sw = xj["health_indicator"], xj["hi_smooth_window"]
+    baseline_n, n_sigma = xj["baseline_n"], xj["fpt_n_sigma"]
+    consecutive, fail_pct = xj["fpt_consecutive"], xj["fail_percentile"]
+    min_pts, window, alarm = xj["min_fit_points"], xj["fit_window"], float(xj["alarm_health"])
+    margin = float(load_config().get("maintenance", {}).get("safety_margin", 0.3))
+    ss = st.session_state
+
+    pairs = feat[["condition", "bearing"]].drop_duplicates()
+    labels = {f"{c} · {b}": (c, b) for c, b in zip(pairs["condition"], pairs["bearing"])}
+    top = st.columns([2, 1])
+    label = top[0].selectbox("選擇軸承（單軌跡回放）", list(labels), key="replay_label")
+    speed = top[1].select_slider("速度", list(_REPLAY_SPEEDS), value="1x", key="replay_speed")
+    cond, bearing = labels[label]
+
+    g = (feat[(feat["condition"] == cond) & (feat["bearing"] == bearing)]
+         .sort_values("minute").reset_index(drop=True))
+    n = len(g)
+    hi_full, health_full, hi_base, hi_fail = build_health_indicator(
+        g[ind], sw, baseline_n, fail_pct)
+    fpt_idx = detect_fpt(hi_full, baseline_n, n_sigma, consecutive)
+    minutes = g["minute"].to_numpy()
+    hours = (minutes - minutes[0]) / 60.0
+
+    # reset the frame pointer when the bearing changes
+    if ss.get("replay_for") != label:
+        ss.replay_for = label
+        ss.replay_k = min(baseline_n + 3, n)
+        ss.replay_play = False
+
+    bcols = st.columns(4)
+    if bcols[0].button("⏮ 重置", width="stretch"):
+        ss.replay_k = min(baseline_n + 3, n); ss.replay_play = False
+    if bcols[1].button("⏪ 上一格", width="stretch"):
+        ss.replay_k = max(1, ss.replay_k - 1); ss.replay_play = False
+    if bcols[2].button("⏩ 下一格", width="stretch"):
+        ss.replay_k = min(n, ss.replay_k + 1); ss.replay_play = False
+    if bcols[3].button("⏸ 暫停" if ss.get("replay_play") else "▶ 播放", width="stretch"):
+        ss.replay_play = not ss.get("replay_play", False)
+
+    k = max(1, min(int(ss.get("replay_k", 1)), n))
+    ss.replay_k = k
+
+    fpt_reached = (k - 1) >= fpt_idx
+    health_now = float(health_full.iloc[k - 1])
+    rul_arr = extrapolate_rul(hours[:k], hi_full.to_numpy()[:k], hi_base, hi_fail,
+                              fpt_idx, min_pts, window, float(hours[-1]))
+    rul_now = float(rul_arr[-1]) if np.isfinite(rul_arr[-1]) else None
+
+    st.plotly_chart(
+        xjtu_replay_frame(
+            minutes[:k], hi_full.to_numpy()[:k], hi_base, hi_fail,
+            float(minutes[fpt_idx]) if fpt_reached else None,
+            float(minutes[-1]), float(hi_fail) * 1.15,
+        ),
+        width="stretch",
+    )
+
+    adv = maintenance_advice(health_now, rul_now, fpt_reached,
+                             alarm_health=alarm, safety_margin=margin)
+    m = st.columns(4)
+    m[0].metric("進度", f"{k}/{n} 快照",
+                f"{hours[k-1]:.2f} / {hours[-1]:.2f} h", delta_color="off")
+    m[1].metric("健康分數", f"{health_now:.0f}")
+    m[2].metric("即時 RUL", "估計中…" if rul_now is None else f"{rul_now:.2f} h")
+    m[3].metric("退化起點", "已觸發 ★" if fpt_reached else "未觸發")
+    style.bearing_advice_card(
+        title=f"{bearing} · 即時建議", risk=adv.risk, risk_label_zh=adv.risk_label_zh,
+        rul_hours=rul_now, window_hours=adv.suggested_window_hours,
+        rationale=adv.rationale,
+    )
+
+    # auto-advance one frame, then rerun just this fragment
+    if ss.get("replay_play"):
+        if k < n:
+            time.sleep(_REPLAY_SPEEDS[speed])
+            ss.replay_k = k + 1
+            st.rerun(scope="fragment")
+        else:
+            ss.replay_play = False
 
 
 def _xjtu_guard() -> tuple[dict, bool]:
@@ -1444,6 +1547,123 @@ elif page == "多軌跡泛化":
                 kind="warn",
             )
 
+        # ---- E1: cross-condition domain adaptation (attacks LOCO -1.22) ----
+        da_path = resolve(
+            xj.get("domain_adapt", {}).get("da_metrics", "outputs/metrics/xjtu_domain_adapt.json"))
+        if da_path.exists():
+            style.section("跨工況自適應 RUL：救 LOCO 的 −1.22（E1）")
+            da = json.loads(da_path.read_text(encoding="utf-8"))
+            res, summ = da["results"], da["summary"]
+            DA_LABELS = {
+                "baseline": ("基線（無自適應）", "LOCO 原始監督式 RUL"),
+                "lifetime_ratio": ("壽命比例（可部署）", "預測剩餘壽命比例，乘來源平均壽命還原小時"),
+                "transductive_zscore": ("工況感知標準化", "各工況以自身統計標準化（僅用 target 未標註特徵）"),
+                "coral": ("CORAL 協方差對齊", "把來源特徵協方差對齊到目標（僅用 target 未標註特徵）"),
+            }
+            rows = []
+            for m, _ in summ["ranking"]:  # best first
+                p = res[m]["pooled"]
+                name, desc = DA_LABELS.get(m, (m, ""))
+                flag = " ✅" if m == summ["best_method"] and m != "baseline" else ""
+                rows.append({"手段": name + flag, "LOCO R²(hours)": round(p["r2"], 3),
+                             "MAE(h)": round(p["mae_hours"], 2), "說明": desc})
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+
+            lr_oracle = res.get("lifetime_ratio", {}).get("pooled", {}).get("r2_oracle", float("nan"))
+            cc = st.columns(2)
+            with cc[0]:
+                style.big_stat(
+                    "最佳零洩漏手段", f"{summ['best_r2']:+.2f}",
+                    f"{DA_LABELS.get(summ['best_method'], (summ['best_method'],))[0]}"
+                    f"（baseline {summ['baseline_r2']:+.2f}）", tone="warn")
+            with cc[1]:
+                style.big_stat(
+                    "壽命比例 · oracle 上界", f"{lr_oracle:+.2f}",
+                    "已知壽命時的還原（含洩漏，僅供診斷）", tone="good")
+            style.note(
+                "三種自適應手段都把 LOCO 合併 R² 從 <b>−1.22</b> 往上抬"
+                f"（最佳 <b>{summ['best_method']}</b> 至 <b>{summ['best_r2']:+.2f}</b>），但<b>仍為負</b>"
+                "——跨工況絕對小時數 RUL 並未被「解決」。<b>診斷</b>：壽命比例在"
+                f"<b>已知壽命的 oracle 上界</b>達 <b>{lr_oracle:+.2f}</b>，代表退化"
+                "<b>形狀（剩餘壽命比例）可跨工況泛化</b>，瓶頸在<b>推論期不知道該軸承的壽命尺度</b>。"
+                "誠實聲明：z-score / CORAL 僅用 target 的<b>未標註特徵</b>（transductive，無偷看標籤）；"
+                "oracle 還原使用目標真實壽命，僅作上界診斷、不可部署。",
+                kind="warn",
+            )
+
+        # ---- E2: maintenance-advice decision layer ----
+        pred_path = resolve(xj["rul_predictions"])
+        if pred_path.exists():
+            style.section("維護建議（決策支援 · E2）")
+            preds = _xjtu_predictions(str(pred_path))
+            mcfg = load_config().get("maintenance", {})
+            cc = st.columns([3, 1])
+            with cc[0]:
+                checkpoint = st.slider(
+                    "巡檢檢查點（佔壽命比例 %）", 10, 100, 70, 5,
+                    help="run-to-failure 資料沒有『真實的現在』；此處模擬在某巡檢時點評估，"
+                         "顯示系統當下會給的建議。拉到 100% 即各軸承失效當下。",
+                )
+            with cc[1]:
+                show_cost = st.checkbox("顯示成本對照（示意）", value=False)
+
+            cards, counts = [], {"green": 0, "yellow": 0, "red": 0}
+            for (cond, bearing), g in preds.groupby(["condition", "bearing"], sort=False):
+                g = g.sort_values("minute").reset_index(drop=True)
+                idx = min(int(round((checkpoint / 100.0) * (len(g) - 1))), len(g) - 1)
+                row = g.iloc[idx]
+                rul = None if pd.isna(row["rul_pred"]) else float(row["rul_pred"])
+                adv = maintenance_advice(
+                    health=float(row["health"]),
+                    rul_hours=rul,
+                    past_fpt=bool(row["is_degrading"]),
+                    alarm_health=float(xj["alarm_health"]),
+                    safety_margin=float(mcfg.get("safety_margin", 0.3)),
+                    cost_unplanned=mcfg.get("cost_unplanned") if show_cost else None,
+                    cost_planned=mcfg.get("cost_planned") if show_cost else None,
+                )
+                counts[adv.risk] += 1
+                cards.append((bearing, rul, adv))
+
+            style.kpi_strip([
+                {"label": "巡檢時點", "value": f"{checkpoint}%", "sub": "佔各軸承壽命比例"},
+                {"label": "🟢 健康", "value": str(counts["green"]), "sub": "尚未退化"},
+                {"label": "🟡 退化中", "value": str(counts["yellow"]), "sub": "已過 FPT、可規劃"},
+                {"label": "🔴 迫近失效", "value": str(counts["red"]), "sub": "健康度跌破告警"},
+            ])
+
+            grid = st.columns(3)
+            for i, (bearing, rul, adv) in enumerate(cards):
+                with grid[i % 3]:
+                    style.bearing_advice_card(
+                        title=bearing,
+                        risk=adv.risk,
+                        risk_label_zh=adv.risk_label_zh,
+                        rul_hours=rul,
+                        window_hours=adv.suggested_window_hours,
+                        rationale=adv.rationale,
+                        cost_note=adv.cost_note,
+                    )
+
+            style.note(
+                "本區把每顆軸承的健康度 / FPT / RUL 轉成<b>風險等級 + 建議維護時間窗 + 理由</b>，"
+                "對應專案名稱的「預測性維護<b>建議</b>」。屬<b>決策支援啟發式</b>："
+                "建議時間窗 = 剩餘壽命 ×（1 − 安全裕度），成本參數為示意值，"
+                "未對真實維護結果驗證；定位與 sidebar「DECISION SUPPORT · NOT CONTROL」一致。",
+            )
+
+        # ---- E3: streaming replay (offline data, a "live" monitoring台) ----
+        feat_path_e3 = resolve(xj["processed_features"])
+        if feat_path_e3.exists():
+            style.section("即時串流回放（會動的監測台 · E3）")
+            _xjtu_replay(_xjtu_feature_table(str(feat_path_e3)), xj)
+            style.note(
+                "選一顆軸承，沿時間軸逐快照重播：健康指標 HI 一格格長、跨過 FPT 退化起點後目前點轉紅、"
+                "RUL 以<b>當前可見前綴</b>重新外推；下方即時建議卡片重用 E2 邏輯。"
+                "<b>誠實聲明</b>：這是<b>離線資料重播</b>的視覺化，非真實即時感測串流；健康基線與失效門檻"
+                "為<b>預先校準</b>的參考線；ESP32 真場即時接入仍列未來工作。",
+            )
+
 
 # ---------------------------------------------------------------------------
 # Page 5: about
@@ -1479,7 +1699,7 @@ else:
                 """
                 ##### 技術棧
                 - **訊號處理**：FFT · 時域 / 頻域特徵 · 健康指標
-                - **退化建模**：FPT 偵測 · 指數趨勢外推 · LOBO / LOCO
+                - **退化建模**：FPT 偵測 · 指數趨勢外推 · LOBO / LOCO · 領域自適應（CORAL）
                 - **ML**：scikit-learn · XGBoost · LightGBM
                 - **可解釋 / 調參**：SHAP · Permutation Importance · Optuna
                 - **UI / 服務**：Streamlit · Plotly · FastAPI · Docker · GitHub Actions
@@ -1517,6 +1737,7 @@ else:
                 **XJTU 軸承** 15 顆 / 3 工況
                 → 固定參數 FPT · LOBO / LOCO
                 → 跨軸承 / 跨工況泛化驗證
+                → 延伸 E1 自適應 · E2 維護建議 · E3 串流回放
                 """
             )
     compare_df = pd.DataFrame(
@@ -1550,12 +1771,12 @@ else:
                 "25.6 kHz 振動 × 15 顆 / 3 工況",
                 "加速度振動（水平 / 垂直）",
                 "跨軸承 / 跨工況泛化驗證",
-                "固定參數 FPT/外推 + LOBO/LOCO 監督式",
-                "FPT 提前量、R²（LOBO / LOCO）",
-                "多軌跡健康疊圖、泛化 / 遷移結論",
+                "固定參數 FPT/外推 + LOBO/LOCO + 領域自適應(E1)",
+                "FPT 提前量、R²（LOBO / LOCO / 自適應）",
+                "健康疊圖、泛化結論、維護建議(E2)、串流回放(E3)",
                 "有（15 條獨立軌跡）",
                 "多軌跡泛化",
-                "絕對 RUL 跨壽命尺度 / 工況受限",
+                "絕對 RUL 跨壽命尺度 / 工況受限（E1 部分改善）",
             ],
         },
         index=["資料集", "資料型態", "感測量", "目標", "建模方法",
@@ -1572,12 +1793,12 @@ else:
     st.divider()
     style.section("數字一覽")
     style.kpi_strip([
-        {"label": "git 追蹤檔案", "value": "123", "sub": "含 LICENSE / Docker / CI"},
+        {"label": "git 追蹤檔案", "value": "128", "sub": "含 LICENSE / Docker / CI"},
         {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
-        {"label": "繪圖函式", "value": "17", "sub": "src/ui/charts.py"},
+        {"label": "繪圖函式", "value": "18", "sub": "src/ui/charts.py"},
         {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "10", "sub": "A 5 + B 3 + B+ 1 + 關於 1"},
-        {"label": "單元測試", "value": "18 / 18", "sub": "全部通過"},
+        {"label": "Streamlit 頁面", "value": "10", "sub": "首頁 1 + A 4 + B 3 + B+ 1 + 關於 1"},
+        {"label": "單元測試", "value": "33 / 33", "sub": "全部通過"},
     ])
     style.section("外部連結")
     st.markdown(

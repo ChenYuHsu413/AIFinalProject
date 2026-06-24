@@ -175,6 +175,12 @@ xjtu:
   lobo_window: 5                  # within-bearing rolling window for trend features (mean + slope)
   loco_metrics: outputs/metrics/xjtu_loco.json          # leave-one-CONDITION-out supervised RUL
   loco_predictions: outputs/metrics/xjtu_loco_predictions.csv
+  # --- E1: cross-condition domain adaptation (attacks the LOCO -1.22). All
+  #     transforms are target-label-free; see eval_xjtu_domain_adapt.py. ---
+  domain_adapt:
+    methods: [lifetime_ratio, transductive_zscore, coral]  # remedies tried on the LOCO split
+    coral_reg: 1.0          # ridge added to the feature covariance before whitening
+    da_metrics: outputs/metrics/xjtu_domain_adapt.json
 
 # ---------------------------------------------------------------
 # Risk thresholds & maintenance advice (used by predict / UI / API)
@@ -190,3 +196,14 @@ advice_thresholds:
   high_torque_Nm: 55.0
   high_tool_wear_min: 200.0
   low_rotational_speed_rpm: 1300.0
+
+# ---------------------------------------------------------------------------
+# Maintenance-advice decision layer (Module B/B+ extension E2).
+# Turns health / FPT / RUL into a risk level + suggested maintenance window.
+# Decision SUPPORT heuristic — cost parameters are ILLUSTRATIVE, not validated
+# against real maintenance outcomes. See docs/MODULE_B_PLUS_EXTENSIONS_PLAN.md.
+# ---------------------------------------------------------------------------
+maintenance:
+  safety_margin: 0.3      # hold back this fraction of RUL as a safety buffer
+  cost_unplanned: 10000   # illustrative cost of an unexpected stoppage
+  cost_planned: 2000      # illustrative cost of a planned maintenance
