@@ -27,6 +27,7 @@
 | 深度學習對照（1D-CNN AE） | `docs/MODULE_B_DL_PLAN.md` |
 | 外部資料集評估與擴充 | `docs/DATASET_EVALUATION.md` |
 | 多軌跡泛化（XJTU Module B+） | `docs/MODULE_B_PLUS_XJTU_PLAN.md` |
+| 馬達電流診斷（Paderborn Module C） | `docs/MODULE_C_PADERBORN_PLAN.md` |
 | 報告大綱 / 工作紀錄 | `outputs/reports/` |
 
 - 文件之間以相對連結互相引用；新增文件時補上交叉連結。
@@ -38,3 +39,4 @@
 - 不得宣稱 **IMS Set 2** 單軌跡結果可泛化到其他軸承/馬達。
 - 不做單軌跡資料上的深度 RUL 回歸（會撞外推牆）。
 - **ESP32** 定位為未來實場接入 / IoT demo，非現階段訓練資料來源。
+- **Paderborn（模組 C）**：(a) 電流為**真實 PMSM 試驗台**訊號（MCSA 主張成立），但屬**試驗台、非產線伺服馬達**，不得混為一談；(b) 含**人工（EDM/雕刻）與真實（加速壽命）兩種損傷**，頭條實驗為「訓練人工、測真實」，須**如實呈現泛化落差**、不得只報 baseline；(c) 屬**故障分類非 RUL**，不宣稱 RUL；(d) 為**子集 MVP**（碼/工況見 `config.yaml`），結果限於該子集。

@@ -1,0 +1,104 @@
+{
+  "method": "paderborn_fault_classification_artificial_to_real",
+  "features": [
+    "vib_rms",
+    "vib_peak",
+    "vib_peak2peak",
+    "vib_kurtosis",
+    "vib_skewness",
+    "vib_crest_factor",
+    "vib_shape_factor",
+    "vib_impulse_factor",
+    "vib_std",
+    "vib_mean",
+    "cur1_rms",
+    "cur1_peak",
+    "cur1_peak2peak",
+    "cur1_kurtosis",
+    "cur1_skewness",
+    "cur1_crest_factor",
+    "cur1_shape_factor",
+    "cur1_impulse_factor",
+    "cur1_std",
+    "cur1_mean",
+    "cur2_rms",
+    "cur2_peak",
+    "cur2_peak2peak",
+    "cur2_kurtosis",
+    "cur2_skewness",
+    "cur2_crest_factor",
+    "cur2_shape_factor",
+    "cur2_impulse_factor",
+    "cur2_std",
+    "cur2_mean"
+  ],
+  "results": {
+    "baseline": {
+      "model": "random_forest",
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "labels": [
+        "healthy",
+        "outer",
+        "inner"
+      ],
+      "confusion_matrix": [
+        [
+          100,
+          0,
+          0
+        ],
+        [
+          0,
+          60,
+          0
+        ],
+        [
+          0,
+          0,
+          60
+        ]
+      ],
+      "per_model_macro_f1": {
+        "random_forest": 1.0,
+        "svm": 1.0,
+        "gradient_boosting": 0.9910499524528724
+      },
+      "n": 220
+    },
+    "artificial_to_real": {
+      "model": "random_forest",
+      "accuracy": 0.2409090909090909,
+      "macro_f1": 0.19978070175438598,
+      "labels": [
+        "healthy",
+        "outer",
+        "inner"
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          41,
+          21,
+          38
+        ],
+        [
+          49,
+          39,
+          32
+        ]
+      ],
+      "n": 220
+    }
+  },
+  "summary": {
+    "best_model": "random_forest",
+    "baseline_macro_f1": 1.0,
+    "generalization_macro_f1": 0.19978070175438598,
+    "gap": 0.800219298245614
+  }
+}

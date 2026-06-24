@@ -83,3 +83,57 @@ data/
   （`src/data/build_ims_dataset.py`，線性 100→0 健康分數）。
 * **建立特徵表：** 放好資料後執行 `python -m src.data.build_ims_dataset`，
   會輸出 `data/processed/ims_set2_features.parquet`。
+
+---
+
+# 模組 C — Paderborn 軸承資料集（馬達電流 MCSA + 振動，故障分類）
+
+模組 C 使用 **Paderborn University Bearing Dataset（KAt-DataCenter，Lessmeier et al. 2016）**，
+提供**馬達定子電流 + 振動 + 溫度/轉速/扭矩**多感測器量測，用於**軸承故障分類**（非 RUL），
+補上專案目前缺的「電流模態」。頭條實驗：訓練「健康 + 人工故障」、測「真實加速壽命損傷」，
+量化人工→真實的 domain shift。詳見 `docs/MODULE_C_PADERBORN_PLAN.md`。
+
+## 如何取得資料集
+
+1. 從以下任一來源下載 Paderborn Bearing Dataset：
+   - 官方下載頁（KAt Bearing DataCenter）：
+     <https://mb.uni-paderborn.de/en/kat/research/bearing-datacenter/data-sets-and-download>
+     資料檔下載入口：<https://groups.uni-paderborn.de/kat/BearingDataCenter/>
+   - 或 Kaggle 鏡像（搜尋 "Paderborn bearing"）。
+2. 每個**軸承碼**為一個 ZIP（如 `KA01.rar`），解壓得到以該碼命名的資料夾。
+3. 把所需軸承碼資料夾放到：`data/raw/paderborn/<軸承碼>/`。
+   （MVP 預設用到的碼見 `config.yaml` 的 `paderborn.bearings`；可自行增減。）
+
+放置後目錄樹應為：
+
+```
+data/
+└── raw/
+    └── paderborn/
+        ├── K001/                       <-- 健康軸承
+        │   ├── N15_M07_F10_K001_1.mat  <-- <工況>_<碼>_<序號>.mat（每工況 20 筆）
+        │   └── ...
+        ├── KA01/                       <-- 人工外環故障
+        ├── KI01/                       <-- 人工內環故障
+        ├── KA04/                       <-- 真實外環損傷（加速壽命）
+        └── ...
+```
+
+## 資料 schema
+
+* 每個 `.mat` = 一筆量測的 MATLAB struct，訊號在 `Y` 欄位的具名陣列。
+* 本專案取用的通道（見 `config.yaml` `paderborn.channels`）：
+  `vibration_1`（振動）、`phase_current_1` / `phase_current_2`（兩相馬達電流），皆 64 kHz。
+* 標籤由軸承碼分組推得：`fault_class ∈ {healthy, outer, inner}`、
+  `damage_origin ∈ {healthy, artificial, real}`。
+
+## 重要注意事項
+
+* **不進 git。** 完整資料集約 20 GB，`.gitignore` 已排除 `data/raw/paderborn/`；
+  只提交產出的 `data/processed/paderborn_features.parquet` 與 `outputs/metrics/paderborn_*`。
+* **真實 + 人工混合損傷。** 含 EDM/雕刻等**人工**故障與加速壽命**真實**損傷；報告須誠實揭露
+  「訓練人工、測真實」的設計與泛化落差。
+* **屬故障分類，非 RUL。** 不宣稱剩餘壽命；電流為真實 PMSM 試驗台訊號，但屬**試驗台非產線伺服馬達**。
+* **解析較重（.mat）。** 透過 `scipy.io.loadmat` 解析巢狀 struct，無需新增依賴。
+* **建立特徵表：** 放好資料後執行 `python -m src.data.build_paderborn_dataset`
+  （輸出 `data/processed/paderborn_features.parquet`），再 `python -m src.models.train_paderborn`。

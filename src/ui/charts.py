@@ -761,3 +761,31 @@ def confusion_heatmap(cm: np.ndarray, threshold: float) -> go.Figure:
     fig.update_xaxes(side="bottom")
     fig.update_yaxes(autorange="reversed")
     return fig
+
+
+def class_confusion_heatmap(cm, labels: List[str], title: str) -> go.Figure:
+    """Generic multi-class confusion-matrix heatmap (rows = true, cols = pred).
+
+    Unlike ``confusion_heatmap`` (binary / threshold-specific), the axes and title
+    are parametrised so it serves any label set — e.g. Module C's
+    ``["healthy", "outer", "inner"]``.
+    """
+    cm = np.asarray(cm)
+    text = [[str(v) for v in row] for row in cm]
+    fig = go.Figure(
+        go.Heatmap(
+            z=cm,
+            x=[f"pred {l}" for l in labels],
+            y=[f"true {l}" for l in labels],
+            colorscale=[[0, "#f8fafc"], [1, PRIMARY]],
+            showscale=False,
+            hovertemplate="%{y}<br>%{x}<br>count = %{z}<extra></extra>",
+            text=text,
+            texttemplate="%{text}",
+            textfont=dict(size=18, color=INK),
+        )
+    )
+    fig = _style(fig, height=320, title=title)
+    fig.update_xaxes(side="bottom")
+    fig.update_yaxes(autorange="reversed")
+    return fig

@@ -57,6 +57,7 @@ from src.ui.charts import (
     vibration_waveform,
     xjtu_health_overlay,
     xjtu_replay_animation,
+    class_confusion_heatmap,
 )
 from src.utils.paths import load_config, resolve
 
@@ -111,6 +112,8 @@ NAV_GROUPS = [
      "items": [("健康度總覽", "💓"), ("RUL 預測", "📉"), ("互動探索", "🔍")]},
     {"title": "模組 B+ · 多軌跡泛化 (XJTU)",
      "items": [("多軌跡泛化", "🧬"), ("B+ 延伸應用", "🚀")]},
+    {"title": "模組 C · 馬達電流診斷 (Paderborn)",
+     "items": [("馬達電流故障診斷", "⚡")]},
     {"title": None,
      "items": [("關於本專案", "ℹ️")]},
 ]
@@ -227,12 +230,18 @@ HEROES = {
         "在多軌跡泛化之上的三條延伸：E1 以領域自適應救跨工況 RUL（LOCO −1.22 → −0.92）、"
         "E2 把健康度 / FPT / RUL 轉成維護建議、E3 以瀏覽器端動畫重播整套監測流程。",
     ),
+    "馬達電流故障診斷": (
+        "Module C · Paderborn · MCSA",
+        "模組 C · 馬達電流故障診斷 (Paderborn)",
+        "以 Paderborn 軸承資料的馬達定子電流（MCSA）+ 振動做故障分類；頭條實驗：用健康 + "
+        "人工故障訓練、測真實加速壽命損傷，量化「人工→真實」泛化落差（呼應 B+ 的 domain shift）。",
+    ),
     "關於本專案": (
         "About · Tech stack",
         "關於本專案",
-        "三軌並行的預測性維護原型：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 "
-        "RUL）、模組 B+（XJTU 多軸承 / 多工況泛化驗證）。涵蓋訊號處理、退化建模、可解釋 "
-        "ML 與端到端部署。",
+        "四軌並行的預測性維護原型：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 "
+        "RUL）、模組 B+（XJTU 多軸承 / 多工況泛化驗證）、模組 C（Paderborn 馬達電流故障分類）。"
+        "涵蓋訊號處理、退化建模、可解釋 ML 與端到端部署。",
     ),
 }
 _eyebrow, _title, _subtitle = HEROES[page]
@@ -241,6 +250,7 @@ _eyebrow, _title, _subtitle = HEROES[page]
 _REPO = "https://github.com/ChenYuHsu413/AIFinalProject"
 _MODULE_B_PAGES = {"健康度總覽", "RUL 預測", "互動探索"}
 _MODULE_BPLUS_PAGES = {"多軌跡泛化", "B+ 延伸應用"}
+_MODULE_C_PAGES = {"馬達電流故障診斷"}
 
 
 def _page_module(p: str) -> str:
@@ -248,6 +258,8 @@ def _page_module(p: str) -> str:
         return "B"
     if p in _MODULE_BPLUS_PAGES:
         return "Bplus"
+    if p in _MODULE_C_PAGES:
+        return "C"
     if p == "關於本專案":
         return "about"
     return "A"  # 首頁總覽 + 模組 A
@@ -262,6 +274,8 @@ _HERO_CHIPS = {
           "FPT 退化起點", "趨勢外推 RUL"],
     "Bplus": ["XJTU-SY", "15 軸承 × 3 工況", "固定參數泛化",
               "LOBO / LOCO", "Domain shift"],
+    "C": ["Paderborn", "馬達電流 MCSA", "電流 + 振動", "故障分類",
+          "人工 → 真實泛化"],
     "about": ["CRISP-DM", "SHAP", "Optuna", "Streamlit", "FastAPI",
               "Docker", "GitHub Actions"],
 }
@@ -295,6 +309,13 @@ _ACTIONS = {
          "url": f"{_REPO}/blob/main/docs/MODULE_B_PLUS_XJTU_PLAN.md"},
         {"label": "XJTU-SY Dataset", "icon": "📊",
          "url": "https://biaowang.tech/xjtu-sy-bearing-datasets/"},
+    ],
+    "C": [
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
+        {"label": "模組 C 規劃", "icon": "⚡",
+         "url": f"{_REPO}/blob/main/docs/MODULE_C_PADERBORN_PLAN.md"},
+        {"label": "Paderborn Dataset", "icon": "📊",
+         "url": "https://mb.uni-paderborn.de/en/kat/research/bearing-datacenter/data-sets-and-download"},
     ],
     "about": [
         {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
@@ -379,6 +400,21 @@ elif _module == "Bplus":
          "sub": "工況內留一軸承"},
         {"label": "LOCO R²", "value": f"{_loco.get('r2', 0):+.2f}",
          "sub": "留一工況 · domain shift"},
+    ])
+elif _module == "C":
+    _ps = _metric_json("paderborn_eval.json").get("summary", {})
+    _gen = _ps.get("generalization_macro_f1")
+    style.kpi_strip([
+        {"label": "最佳模型", "value": str(_ps.get("best_model", "—")),
+         "sub": "baseline 選出"},
+        {"label": "baseline macro-F1",
+         "value": (f"{_ps.get('baseline_macro_f1', 0):.2f}" if _ps else "—"),
+         "sub": "健康 + 人工 · 分層 CV"},
+        {"label": "真實 macro-F1",
+         "value": (f"{_gen:.2f}" if _gen is not None else "—"),
+         "sub": "人工→真實泛化"},
+        {"label": "落差", "value": (f"{_ps.get('gap'):.2f}" if _ps.get("gap") is not None else "—"),
+         "sub": "domain shift"},
     ])
 # about: hero + action bar only (no metric strip)
 
@@ -673,6 +709,20 @@ def _xjtu_artifacts(xj: dict):
         return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
     return summary, _json("lobo_metrics"), _json("loco_metrics")
+
+
+def _paderborn_guard() -> tuple[dict, bool]:
+    """Render the 'data not ready' note; return (paderborn_cfg, ready)."""
+    pb = load_config().get("paderborn") or {}
+    if not _metric_json("paderborn_eval.json"):
+        style.note(
+            "尚未產生 Paderborn 模組 C 結果。請下載資料（見 <code>data/README.md</code>）後依序執行 "
+            "<code>python -m src.data.build_paderborn_dataset</code> 與 "
+            "<code>python -m src.models.train_paderborn</code>。",
+            kind="warn",
+        )
+        return pb, False
+    return pb, True
 
 
 def render_result_block(result: dict) -> None:
@@ -1693,16 +1743,82 @@ elif page == "B+ 延伸應用":
 
 
 # ---------------------------------------------------------------------------
+# Page 4c: Module C · Paderborn motor-current fault diagnosis
+# ---------------------------------------------------------------------------
+elif page == "馬達電流故障診斷":
+    pb, ready = _paderborn_guard()
+    if ready:
+        ev = _metric_json("paderborn_eval.json")
+        res, summ = ev.get("results", {}), ev.get("summary", {})
+        base, gen = res.get("baseline") or {}, res.get("artificial_to_real")
+
+        style.note(
+            "<b>模組 C</b> 以 Paderborn 軸承資料的<b>馬達定子電流（MCSA）+ 振動</b>做故障分類，"
+            "補上 A/B/B+ 都缺的電流模態。<b>頭條實驗</b>：用「健康 + <b>人工</b>故障」訓練、"
+            "測「<b>真實</b>加速壽命損傷」，量化人工→真實 domain shift。"
+        )
+
+        style.section("baseline（健康 + 人工 · 分層 CV） vs 人工→真實泛化")
+        cc = st.columns(2)
+        with cc[0]:
+            style.big_stat("baseline macro-F1", f"{base.get('macro_f1', 0):.2f}",
+                           f"{base.get('model', '—')}｜n={base.get('n', 0)}", tone="good")
+        with cc[1]:
+            if gen:
+                style.big_stat("真實損傷 macro-F1", f"{gen.get('macro_f1', 0):.2f}",
+                               f"人工→真實｜n={gen.get('n', 0)}", tone="danger")
+            else:
+                style.big_stat("真實損傷 macro-F1", "—", "未配置真實損傷測試", tone="warn")
+
+        per_model = base.get("per_model_macro_f1", {})
+        if per_model:
+            pm = (pd.DataFrame({"模型": list(per_model), "baseline macro-F1": list(per_model.values())})
+                  .sort_values("baseline macro-F1", ascending=False))
+            pm["baseline macro-F1"] = pm["baseline macro-F1"].round(3)
+            st.dataframe(pm, hide_index=True, width="stretch")
+
+        labels = base.get("labels", ["healthy", "outer", "inner"])
+        cm_cols = st.columns(2)
+        with cm_cols[0]:
+            if base.get("confusion_matrix"):
+                st.plotly_chart(
+                    class_confusion_heatmap(base["confusion_matrix"], labels,
+                                            "baseline 混淆矩陣（CV）"),
+                    width="stretch")
+        with cm_cols[1]:
+            if gen and gen.get("confusion_matrix"):
+                st.plotly_chart(
+                    class_confusion_heatmap(gen["confusion_matrix"], gen.get("labels", labels),
+                                            "真實損傷混淆矩陣（人工→真實）"),
+                    width="stretch")
+
+        gap = summ.get("gap")
+        style.note(
+            "特徵為振動與兩相馬達電流的<b>時域指標</b>（重用既有抽取器）；MCSA 頻譜邊帶列後續加值。"
+            + (f" baseline 與真實的 macro-F1 落差 <b>{gap:.2f}</b>，即人工→真實 domain shift"
+               "（人工 EDM/雕刻故障訊號不同於真實疲勞損傷）。"
+               if gap is not None else "")
+            + " 注意：真實測試集<b>全為受損軸承（無健康類）</b>，三類 macro-F1 含 0 分 healthy 會機械性拉低，"
+            "且模型把大量真實損傷誤判為健康——落差為真、magnitude 受此影響。"
+            + " <b>誠實聲明</b>：電流為<b>真實 PMSM 試驗台</b>訊號（MCSA 成立），但屬<b>試驗台非產線伺服馬達</b>；"
+            "資料含<b>人工 + 真實</b>兩種損傷，此處明確「訓練人工、測真實」並如實呈現落差；"
+            "屬<b>故障分類非 RUL</b>；MVP 為<b>子集</b>（碼/工況見 config）。",
+            kind="warn",
+        )
+
+
+# ---------------------------------------------------------------------------
 # Page 5: about
 # ---------------------------------------------------------------------------
 else:
     style.section("專案總覽")
     style.note(
-        "本系統是一套<b>三軌平行</b>的預測性維護原型："
+        "本系統是一套<b>四軌平行</b>的預測性維護原型："
         "<b>模組 A</b> 以 AI4I 2020 製程快照做靜態故障風險分類；"
         "<b>模組 B</b> 以 IMS 軸承振動推導動態健康度與剩餘壽命 (RUL)；"
-        "<b>模組 B+</b> 以 XJTU-SY 多軸承 / 多工況驗證健康監測的泛化能力。"
-        "三軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
+        "<b>模組 B+</b> 以 XJTU-SY 多軸承 / 多工況驗證健康監測的泛化能力；"
+        "<b>模組 C</b> 以 Paderborn 馬達電流 (MCSA) + 振動做故障分類，驗證人工→真實故障泛化。"
+        "四軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
     )
     c_l, c_r = st.columns(2)
     with c_l:
@@ -1713,6 +1829,7 @@ else:
                 - **A**：由運轉條件估計故障風險
                 - **B**：由振動推導健康退化與剩餘壽命
                 - **B+**：跨軸承 / 跨工況的泛化驗證
+                - **C**：馬達電流 (MCSA) + 振動故障分類，人工→真實泛化
 
                 ##### 不是
                 - 即時控制器
@@ -1725,7 +1842,7 @@ else:
             st.markdown(
                 """
                 ##### 技術棧
-                - **訊號處理**：FFT · 時域 / 頻域特徵 · 健康指標
+                - **訊號處理**：FFT · 時域 / 頻域特徵 · 健康指標 · 馬達電流 (MCSA) 時域特徵
                 - **退化建模**：FPT 偵測 · 指數趨勢外推 · LOBO / LOCO · 領域自適應（CORAL）
                 - **ML**：scikit-learn · XGBoost · LightGBM
                 - **可解釋 / 調參**：SHAP · Permutation Importance · Optuna
@@ -1734,8 +1851,8 @@ else:
             )
 
     st.divider()
-    style.section("模組 A vs B vs B+ 對照")
-    ca, cb, cc = st.columns(3)
+    style.section("模組 A vs B vs B+ vs C 對照")
+    ca, cb, cc, cd = st.columns(4)
     with ca:
         with style.zone("mint", key="about-mod-a"):
             st.markdown(
@@ -1765,6 +1882,16 @@ else:
                 → 固定參數 FPT · LOBO / LOCO
                 → 跨軸承 / 跨工況泛化驗證
                 → 延伸 E1 自適應 · E2 維護建議 · E3 串流回放
+                """
+            )
+    with cd:
+        with style.zone("blush", key="about-mod-c"):
+            st.markdown(
+                """
+                ##### 🅲 模組 C · 馬達電流診斷
+                **Paderborn** 電流 + 振動
+                → MCSA 時域特徵 · 故障分類
+                → 人工 → 真實泛化驗證
                 """
             )
     compare_df = pd.DataFrame(
@@ -1802,8 +1929,20 @@ else:
                 "FPT 提前量、R²（LOBO / LOCO / 自適應）",
                 "健康疊圖、泛化結論、維護建議(E2)、串流回放(E3)",
                 "有（15 條獨立軌跡）",
-                "多軌跡泛化",
+                "多軌跡泛化 / B+ 延伸應用",
                 "絕對 RUL 跨壽命尺度 / 工況受限（E1 部分改善）",
+            ],
+            "🅲 模組 C · 馬達電流診斷": [
+                "Paderborn（實測試驗台，真實+人工損傷）",
+                "64 kHz 電流 + 振動（多筆量測）",
+                "馬達定子電流 (MCSA) + 加速度振動",
+                "故障分類（健康 / 外環 / 內環）",
+                "監督式分類 + 人工→真實泛化",
+                "macro-F1 / 混淆矩陣（baseline vs 真實）",
+                "故障類別、人工→真實泛化落差、混淆矩陣",
+                "無（每筆量測獨立）",
+                "馬達電流故障診斷",
+                "真實+人工混合、分類非 RUL、子集 MVP",
             ],
         },
         index=["資料集", "資料型態", "感測量", "目標", "建模方法",
@@ -1811,21 +1950,22 @@ else:
     )
     st.table(compare_df)
     style.note(
-        "三軌（A 靜態 / B 動態 / B+ 多軌跡泛化）<b>無法合併成同一個模型</b>"
+        "四軌（A 靜態 / B 動態 / B+ 多軌跡泛化 / C 馬達電流診斷）<b>無法合併成同一個模型</b>"
         "（物理量、感測器、目標皆不同），在系統中以平行獨立軌道呈現。B+ 以多軌跡、多工況"
-        "驗證「健康監測可泛化、絕對 RUL 受限」。細節見 <code>docs/MODULE_B_RESULTS.md</code> 與 "
-        "<code>docs/MODULE_B_PLUS_XJTU_PLAN.md</code>。"
+        "驗證「健康監測可泛化、絕對 RUL 受限」；C 以馬達電流補上電氣模態、驗證「人工故障訓練"
+        "能否泛化到真實損傷」。細節見 <code>docs/MODULE_B_RESULTS.md</code>、"
+        "<code>docs/MODULE_B_PLUS_XJTU_PLAN.md</code> 與 <code>docs/MODULE_C_PADERBORN_PLAN.md</code>。"
     )
 
     st.divider()
     style.section("數字一覽")
     style.kpi_strip([
-        {"label": "git 追蹤檔案", "value": "128", "sub": "含 LICENSE / Docker / CI"},
+        {"label": "git 追蹤檔案", "value": "136", "sub": "含 LICENSE / Docker / CI"},
         {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
-        {"label": "繪圖函式", "value": "18", "sub": "src/ui/charts.py"},
+        {"label": "繪圖函式", "value": "19", "sub": "src/ui/charts.py"},
         {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "11", "sub": "首頁 1 + A 4 + B 3 + B+ 2 + 關於 1"},
-        {"label": "單元測試", "value": "33 / 33", "sub": "全部通過"},
+        {"label": "Streamlit 頁面", "value": "12", "sub": "首頁 1 + A 4 + B 3 + B+ 2 + C 1 + 關於 1"},
+        {"label": "單元測試", "value": "41 / 41", "sub": "全部通過"},
     ])
     style.section("外部連結")
     st.markdown(

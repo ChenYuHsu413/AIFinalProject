@@ -41,6 +41,8 @@ data/processed/*.parquet
 data/raw/ims/
 # XJTU-SY raw snapshots (Module B+, multi-bearing CSVs) — never commit
 data/raw/xjtu/
+# Paderborn raw snapshots (Module C, ~20 GB .mat files) — never commit
+data/raw/paderborn/
 
 # Module B (IMS) processed artefacts — small, committed so the live demo works
 # without the 1.5 GB raw dataset (override the broad ignores above).
@@ -57,6 +59,11 @@ data/raw/xjtu/
 !outputs/metrics/xjtu_lobo_predictions.csv
 !outputs/metrics/xjtu_loco.json
 !outputs/metrics/xjtu_loco_predictions.csv
+
+# Module C (Paderborn) processed artefacts — small, committed for reproducibility.
+!data/processed/paderborn_features.parquet
+!outputs/metrics/paderborn_eval.json
+!outputs/metrics/paderborn_predictions.csv
 
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training

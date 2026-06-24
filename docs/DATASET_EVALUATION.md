@@ -4,9 +4,10 @@
 > 「多軌跡泛化」與「真正馬達電氣訊號」兩個缺口。本文件為**報告章節草稿 + 決策依據**，
 > 可直接整理進期末報告（建議放在 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md) 之後、未來工作之前）。
 >
-> **狀態（2026-06-23）**：評估已定案。**XJTU-SY 已實作**（含跨工況，見
-> [`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md) / [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)）；
-> **下一步：Paderborn**（馬達電流 MCSA + 多感測器），其餘資料集與方向皆**推遲**。
+> **狀態（2026-06-24）**：評估已定案。**XJTU-SY 已實作**（模組 B+）；
+> **Paderborn 已納入為模組 C（MVP）**——馬達電流 MCSA + 振動故障分類、人工→真實泛化實驗，
+> 見 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)；其餘資料集與方向
+> （FEMTO / Mendeley / PMSM、ESP32）皆**推遲**。
 
 ---
 
@@ -70,11 +71,12 @@
 ```
 公開 benchmark            跨設備驗證              多感測器融合           實場域 IoT 接入
 IMS（單軌跡） ──▶ XJTU-SY（多軌跡/多工況） ──▶ Paderborn（電流+振動+溫度） ──▶ ESP32 + GCP
-  已完成              已完成（Module B+）          ★ 下一步                 推遲
+  已完成              已完成（Module B+）       已完成（Module C · MVP）       推遲
 ```
 
-**未來工作（已排序）**：(1) **下一步 Paderborn**（馬達電流 MCSA + 多感測器，補上電流模態）；
-(2) 其餘皆推遲（FEMTO / Mendeley / PMSM、RUL 壽命正規化 / 領域自適應、1D-CNN Autoencoder、ESP32）。
+**未來工作（已排序）**：(1) Paderborn 模組 C **MVP 已完成**（馬達電流 MCSA + 振動分類、人工→真實泛化）；
+延伸列 MCSA 頻譜邊帶特徵 / 全 4 工況 / FastAPI 端點。
+(2) 其餘皆推遲（FEMTO / Mendeley / PMSM、1D-CNN Autoencoder、ESP32）。
 
 **ESP32 補充**：ESP32 定位為**實場資料接入／IoT 展示**，非現階段訓練資料來源。需誠實
 指出：ESP32＋MEMS 加速度計的取樣率（單軸約數 kHz）遠低於 IMS 的 20 kHz×4，無法進行

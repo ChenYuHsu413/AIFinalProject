@@ -207,3 +207,30 @@ maintenance:
   safety_margin: 0.3      # hold back this fraction of RUL as a safety buffer
   cost_unplanned: 10000   # illustrative cost of an unexpected stoppage
   cost_planned: 2000      # illustrative cost of a planned maintenance
+
+# ---------------------------------------------------------------------------
+# Module C — Paderborn bearing fault diagnosis (motor current MCSA + vibration).
+# Fault CLASSIFICATION (not RUL). Headline: train on healthy + ARTIFICIAL faults,
+# test on REAL accelerated-lifetime damage -> measure artificial->real domain
+# shift. Independent track. See docs/MODULE_C_PADERBORN_PLAN.md.
+# Raw .mat data is NOT committed (see .gitignore / data/README.md).
+# ---------------------------------------------------------------------------
+paderborn:
+  raw_dir: data/raw/paderborn          # one folder per bearing code, e.g. raw_dir/KA01/
+  conditions: ["N15_M07_F10"]          # MVP: 1 operating condition (1500rpm/0.7Nm/1000N)
+  # Bearing codes grouped by fault class + damage origin. Codes are configurable.
+  bearings:
+    healthy:          [K001, K002, K003, K004, K005]
+    artificial_outer: [KA01, KA05, KA07]
+    artificial_inner: [KI01, KI05, KI07]
+    real_outer:       [KA04, KA15, KA16, KA22, KA30]
+    real_inner:       [KI04, KI14, KI16, KI17, KI18, KI21]
+  channels: [vibration_1, phase_current_1, phase_current_2]  # signals pulled from each .mat
+  sampling_rate_hz: 64000
+  processed_features: data/processed/paderborn_features.parquet
+  enabled_models: [random_forest, svm, gradient_boosting]  # multiclass-capable (LR uses binary-only liblinear)
+  cv_folds: 5
+  random_state: 42
+  best_model: outputs/models/paderborn_clf.joblib
+  metrics: outputs/metrics/paderborn_eval.json          # baseline CV vs artificial->real
+  predictions: outputs/metrics/paderborn_predictions.csv
