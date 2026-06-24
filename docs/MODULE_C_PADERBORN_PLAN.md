@@ -132,6 +132,10 @@
 
 ---
 
+> **延伸規劃**：後續四條延伸軌（CE1 領域自適應救人工→真實 / CE2 MCSA 頻譜邊帶 /
+> CE3 全 4 工況跨工況泛化 / CE4 即時預測端點）見
+> [`MODULE_C_PADERBORN_EXTENSIONS_PLAN.md`](MODULE_C_PADERBORN_EXTENSIONS_PLAN.md)。
+
 > **交叉連結**：[`DATASET_EVALUATION.md`](DATASET_EVALUATION.md)（資料取捨與遷移路線）、
 > [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)（結果回寫處）、
 > [`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)（同構的 domain-shift 主題）。

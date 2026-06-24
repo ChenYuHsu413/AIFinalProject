@@ -1960,7 +1960,7 @@ else:
     st.divider()
     style.section("數字一覽")
     style.kpi_strip([
-        {"label": "git 追蹤檔案", "value": "138", "sub": "含 LICENSE / Docker / CI"},
+        {"label": "git 追蹤檔案", "value": "139", "sub": "含 LICENSE / Docker / CI"},
         {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
         {"label": "繪圖函式", "value": "19", "sub": "src/ui/charts.py"},
         {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
