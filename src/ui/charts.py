@@ -639,48 +639,102 @@ def xjtu_health_overlay(curves: pd.DataFrame,
     return fig
 
 
-def xjtu_replay_frame(
-    minutes: Sequence[float], hi: Sequence[float],
-    hi_base: float, hi_fail: float,
-    fpt_minute: float | None, total_minutes: float, y_max: float,
+def xjtu_replay_animation(
+    records: List[dict], hi_base: float, hi_fail: float,
+    fpt_minute: float, fpt_hi: float, total_minutes: float, y_max: float,
 ) -> go.Figure:
-    """One frame of the streaming-replay monitor for a single bearing.
+    """Client-side animated streaming-replay monitor for a single bearing.
 
-    Draws the health indicator (HI) growing snapshot-by-snapshot against fixed
-    healthy-baseline and failure-threshold reference lines, with the current
-    point highlighted and the FPT onset marked once it has been reached.  The
-    axes are held fixed (``total_minutes`` / ``y_max``) so the curve animates
-    into a stable frame rather than rescaling each step.
+    Builds ONE figure whose ``frames`` are precomputed snapshots of the health
+    indicator (HI) growing over time.  Plotly's native play / pause buttons and
+    slider animate it entirely in the browser — no Streamlit reruns, so no
+    flicker.  Each ``records`` item is a dict with the visible curve and the
+    per-frame status annotation::
+
+        {k, x, y, mx, my, star(bool), ann(str), color(hex)}
+
+    The healthy-baseline / failure-threshold lines and their labels are held
+    fixed across frames; only the curve, the current-point marker, the FPT star
+    and the status box change.
     """
-    m = list(minutes)
-    y = list(hi)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=m, y=y, mode="lines", line=dict(color=PRIMARY, width=3),
-        name="健康指標 HI",
-        hovertemplate="第 %{x} 分鐘<br>HI=%{y:.3f}<extra></extra>",
-    ))
-    if m:
-        past_fpt = fpt_minute is not None and m[-1] >= fpt_minute
-        fig.add_trace(go.Scatter(
-            x=[m[-1]], y=[y[-1]], mode="markers", showlegend=False,
-            marker=dict(size=13, color=DANGER if past_fpt else PRIMARY,
-                        line=dict(width=2, color="white")),
-            hovertemplate="目前<br>HI=%{y:.3f}<extra></extra>",
-        ))
-    fig.add_hline(y=hi_base, line_dash="dot", line_color=MUTED, line_width=1.5,
-                  annotation_text="健康基線", annotation_position="bottom right",
-                  annotation_font_color=MUTED)
-    fig.add_hline(y=hi_fail, line_dash="dash", line_color=DANGER, line_width=1.5,
-                  annotation_text="失效門檻", annotation_position="top right",
-                  annotation_font_color=DANGER)
-    if fpt_minute is not None:
-        fig.add_vline(x=fpt_minute, line_dash="dot", line_color=ACCENT, line_width=1.5,
-                      annotation_text="★ FPT 退化起點", annotation_position="top left",
-                      annotation_font_color=ACCENT)
-    fig = _style(fig, height=420, title="<b>即時串流回放</b>：健康指標逐快照重播")
+    static_labels = [
+        dict(x=total_minutes, y=hi_base, xref="x", yref="y", xanchor="right",
+             yanchor="bottom", text="健康基線", showarrow=False,
+             font=dict(color=MUTED, size=11)),
+        dict(x=total_minutes, y=hi_fail, xref="x", yref="y", xanchor="right",
+             yanchor="top", text="失效門檻", showarrow=False,
+             font=dict(color=DANGER, size=11)),
+    ]
+
+    def _status_ann(r: dict) -> dict:
+        return dict(x=0.02, y=0.98, xref="paper", yref="paper", xanchor="left",
+                    yanchor="top", text=r["ann"], showarrow=False, align="left",
+                    bgcolor=r["color"], font=dict(color="white", size=13),
+                    bordercolor="white", borderwidth=1, borderpad=6, opacity=0.95)
+
+    def _traces(r: dict) -> list:
+        return [
+            go.Scatter(x=r["x"], y=r["y"], mode="lines",
+                       line=dict(color=PRIMARY, width=3), name="健康指標 HI",
+                       hovertemplate="第 %{x} 分鐘<br>HI=%{y:.3f}<extra></extra>"),
+            go.Scatter(x=[r["mx"]], y=[r["my"]], mode="markers", showlegend=False,
+                       marker=dict(size=13, color=DANGER if r["star"] else PRIMARY,
+                                   line=dict(width=2, color="white")),
+                       hovertemplate="目前<br>HI=%{y:.3f}<extra></extra>"),
+            go.Scatter(x=[fpt_minute] if r["star"] else [],
+                       y=[fpt_hi] if r["star"] else [], mode="markers",
+                       showlegend=False, name="FPT",
+                       marker=dict(symbol="star", size=15, color=ACCENT,
+                                   line=dict(width=1, color="white"))),
+        ]
+
+    fig = go.Figure(
+        data=_traces(records[0]),
+        frames=[go.Frame(name=str(i), data=_traces(r),
+                         layout=go.Layout(annotations=[_status_ann(r)] + static_labels))
+                for i, r in enumerate(records)],
+    )
+    fig.add_hline(y=hi_base, line_dash="dot", line_color=MUTED, line_width=1.5)
+    fig.add_hline(y=hi_fail, line_dash="dash", line_color=DANGER, line_width=1.5)
+
+    # Client-side speed buttons.  ``mode="immediate"`` + ``fromcurrent`` means
+    # clicking another speed mid-playback interrupts the current run and resumes
+    # from the CURRENT frame at the new speed — no Streamlit rerun, no reset.
+    # Playback is non-looping, so it naturally stops on the last frame.
+    def _play(label: str, dur: int) -> dict:
+        return dict(label=label, method="animate",
+                    args=[None, {"frame": {"duration": dur, "redraw": True},
+                                 "fromcurrent": True, "mode": "immediate",
+                                 "transition": {"duration": 0}}])
+
+    pause = dict(label="⏸ 暫停", method="animate",
+                 args=[[None], {"frame": {"duration": 0, "redraw": False},
+                                "mode": "immediate", "transition": {"duration": 0}}])
+
+    fig = _style(fig, height=480)  # title lives in the page section header above
     fig.update_xaxes(title_text="時間（分鐘）", range=[0, total_minutes])
     fig.update_yaxes(title_text="HI（h_rms 平滑）", range=[0, y_max])
+    fig.update_layout(
+        showlegend=False,
+        margin=dict(l=10, r=10, t=58, b=58),
+        annotations=[_status_ann(records[0])] + static_labels,
+        updatemenus=[dict(
+            type="buttons", direction="left", showactive=False,
+            x=0.0, y=1.10, xanchor="left", yanchor="bottom", pad=dict(b=4, r=6),
+            bgcolor="#f1f5f9", bordercolor="#94a3b8", borderwidth=1,
+            font=dict(size=13, color="#0f172a"),
+            buttons=[_play("▶ 0.5x", 300), _play("▶ 1x", 150),
+                     _play("▶ 2x", 70), _play("▶ 4x", 35), pause],
+        )],
+        sliders=[dict(
+            active=0, x=0.0, y=0, len=1.0, xanchor="left", yanchor="top",
+            pad=dict(t=4, b=0), currentvalue=dict(prefix="快照 ", visible=True),
+            steps=[dict(method="animate", label=str(r["k"]),
+                        args=[[str(i)], {"frame": {"duration": 0, "redraw": True},
+                                         "mode": "immediate", "transition": {"duration": 0}}])
+                   for i, r in enumerate(records)],
+        )],
+    )
     return fig
 
 

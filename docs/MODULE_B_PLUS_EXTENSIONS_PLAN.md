@@ -9,7 +9,8 @@
 > （壽命比例 / transductive z-score / CORAL）最佳把 LOCO R² 抬到 **−0.92**、壽命比例 oracle 上界
 > **+0.15**（診斷出形狀可泛化、瓶頸在壽命尺度）；產物 `outputs/metrics/xjtu_domain_adapt.json`、
 > 測試 `tests/test_domain_adapt.py`、Dashboard 消融對照表。**E2（維護建議決策層）已完成**。
-> **E3（即時串流回放）已完成**（B+ 頁 `st.fragment` 逐快照重播、重用既有函式、無新產物）。
+> **E3（即時串流回放）已完成**（Plotly 瀏覽器端 frames 動畫逐快照重播、可即時切速、播完停在末幀、
+> 零重跑不閃爍；重用既有函式、無新產物）。E1/E2/E3 已抽出至獨立「**B+ 延伸應用**」頁、以三 tab 呈現。
 > **三軌延伸 E1/E2/E3 全數完成。** 回寫見 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)。
 
 ---
