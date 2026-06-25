@@ -123,11 +123,14 @@ def run() -> Path:
     reg_pipe = build_regressor(reg_name, rs).fit(X, yv)
     print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R²={reg_eval['r2']:.3f}")
 
-    # --- persist artifacts ---
+    # --- persist artifacts (compress=3: keeps the RF regressor well under
+    #     GitHub's 50 MB file recommendation; ~96 MB -> ~29 MB) ---
     joblib.dump({"pipeline": clf_pipe, "feature_columns": cols, "labels": labels,
-                 "model_name": best_name, "metrics": clf_eval}, resolve(sv["clf_model"]))
+                 "model_name": best_name, "metrics": clf_eval},
+                resolve(sv["clf_model"]), compress=3)
     joblib.dump({"pipeline": reg_pipe, "feature_columns": cols,
-                 "model_name": reg_name, "metrics": reg_eval}, resolve(sv["reg_model"]))
+                 "model_name": reg_name, "metrics": reg_eval},
+                resolve(sv["reg_model"]), compress=3)
 
     feature_config = {
         "feature_set": feature_set,
