@@ -56,13 +56,11 @@ def test_rag_search_and_chunking():
 
 
 def test_llm_assistant_fallback():
-    """Without ANTHROPIC_API_KEY the assistant must still return text."""
-    import os
+    """With no LLM provider configured, the assistant must still return text."""
+    from src.llm.maintenance_assistant import available_providers, generate_report
 
-    from src.llm.maintenance_assistant import generate_report
-
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        pytest.skip("API key present; fallback path not exercised")
+    if available_providers():
+        pytest.skip("an LLM provider is configured (e.g. via .env); fallback not exercised")
     pred = {
         "predicted_health_state": "MED", "health_state_zh": "中度退化",
         "degradation_score": 0.6, "health_score": 40.0, "risk_level": "Medium",
