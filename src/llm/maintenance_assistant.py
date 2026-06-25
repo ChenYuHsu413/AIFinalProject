@@ -21,7 +21,10 @@ import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.servo.field_glossary import HEALTH_LABEL_ZH
+from src.utils.env import load_dotenv
 from src.utils.paths import load_config
+
+load_dotenv()  # so FastAPI / CLI also pick up provider keys from .env
 
 # Providers exposing an OpenAI-compatible /chat/completions endpoint.
 _OPENAI_COMPAT_URL = {

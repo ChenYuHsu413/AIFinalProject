@@ -17,6 +17,10 @@ if str(_ROOT) not in sys.path:
 
 import json
 
+from src.utils.env import load_dotenv
+
+load_dotenv()  # pick up LLM provider keys from .env before anything reads os.environ
+
 import numpy as np
 import pandas as pd
 import streamlit as st

@@ -91,5 +91,8 @@ data/raw/servo/
 # Keep folder placeholders
 !**/.gitkeep
 
+# Secrets / local env (LLM provider keys) — keep .env.example committed
+.env
+
 # Streamlit
 .streamlit/secrets.toml
