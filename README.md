@@ -1,9 +1,11 @@
 # AI 伺服馬達健康狀態估測與智慧維護助理系統
 
-> **狀態（2026-06-25）**：主線已重構為 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，
+> **狀態（2026-06-26）**：主線已重構為 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，
 > 健康狀態估測 + 退化值回歸），並加入 **AI 訓練模擬器 / 馬達欄位解釋 / LLM 維護助理 /
-> 維修知識庫(RAG) / 深度學習離線 baseline**。原 Model A / B / B+ / C 保留為**對照與歷史
-> 補充模組**。目前 Servo 以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
+> 維修知識庫(RAG) / 深度學習離線 baseline**。LLM 維護助理為**多供應商**（Groq / OpenRouter /
+> Gemini 免費模型 / Anthropic 依序嘗試，全失敗才用離線範本），金鑰以 `.env` 設定；側邊欄
+> 補充模組（A/B/B+/C）改為**可收合**（預設收合）。原 Model A/B/B+/C 保留為**對照與歷史補充**。
+> 目前 Servo 以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
 > 細節見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md)。
 
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
@@ -402,8 +404,27 @@ streamlit run app/streamlit_app.py
 - **Servo 健康儀表板** — 健康狀態（LN/LO/MED/HI）、退化分數、風險、主要異常特徵、模型信心、建議處置。
 - **AI 訓練模擬器** — 選資料量 / 特徵組 / 演算法，小模型 vs Reference Model 對照 + 文字解釋；含深度學習離線結果（唯讀）。
 - **馬達欄位解釋** — 欄位中文說明、異常意義、特徵組組成。
-- **LLM 維護助理** — 由模型結構化輸出生成維修建議 / 工單草稿 / 報告（無 API Key 走離線範本）。
+- **LLM 維護助理** — 由模型結構化輸出生成維修建議 / 工單草稿 / 報告；**多供應商**（Groq /
+  OpenRouter / Gemini 免費模型 / Anthropic 依序嘗試），全失敗自動退回離線範本。金鑰見下方 `.env` 設定。
 - **維修知識庫** — 文件清單 + TF-IDF 關鍵字檢索（離線）。
+
+### LLM 金鑰設定（`.env`，選用）
+
+LLM 維護助理可離線運作（範本）；要使用真正的 LLM，把根目錄的 `.env.example` 複製成 `.env`，
+填入**任一家**免費供應商金鑰即可（助理依序嘗試，全失敗才用範本）：
+
+```bash
+cp .env.example .env   # 然後編輯 .env 填入任一金鑰
+```
+
+| 供應商 | 環境變數 | 取得金鑰 |
+| --- | --- | --- |
+| Groq | `GROQ_API_KEY` | <https://console.groq.com/keys> |
+| OpenRouter | `OPENROUTER_API_KEY` | <https://openrouter.ai/keys> |
+| Gemini | `GEMINI_API_KEY` | <https://aistudio.google.com/apikey> |
+| Anthropic（選用，非免費） | `ANTHROPIC_API_KEY` | <https://console.anthropic.com/settings/keys> |
+
+`.env` 不會進 git；供應商順序與模型可在 `config.yaml::llm` 調整。設定後重啟 Streamlit 生效。
 
 **🅰 模組 A · 靜態風險**
 - **手動單筆預測** — 填入欄位即可看到機率 / 健康分數 / 風險 / 維護建議。
