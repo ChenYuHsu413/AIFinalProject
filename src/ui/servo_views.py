@@ -339,11 +339,23 @@ def render_assistant() -> None:
         c3.metric("退化分數", f"{pred['degradation_score']:.2f}")
         st.caption("主要異常特徵：" + "、".join(t["feature"] for t in pred["top_features"]))
 
-    has_key = bool(__import__("os").environ.get(
-        load_config().get("llm", {}).get("api_key_env", "ANTHROPIC_API_KEY")))
-    if not has_key:
-        style.note("未偵測到 <code>ANTHROPIC_API_KEY</code>，將使用<b>離線 fallback 範本</b>"
-                   "（設定 API Key 後可改用 LLM 生成更自然的敘述）。", kind="info")
+    from src.llm.maintenance_assistant import _PROVIDER_LABEL, available_providers
+
+    provs = available_providers()
+    if provs:
+        names = "、".join(_PROVIDER_LABEL.get(p, p) for p in provs)
+        style.note(f"已偵測到 LLM 供應商：<b>{names}</b>（依序嘗試，失敗才退回離線範本）。",
+                   kind="info")
+    else:
+        style.note(
+            "未偵測到任何 LLM 供應商金鑰，將使用<b>離線 fallback 範本</b>。"
+            "可設定免費供應商任一：<code>GROQ_API_KEY</code> / "
+            "<code>OPENROUTER_API_KEY</code> / <code>GEMINI_API_KEY</code>"
+            "（或 <code>ANTHROPIC_API_KEY</code>）後改用 LLM 生成。", kind="info")
+
+    def _badge(src: str) -> str:
+        return ("⚪ 離線範本" if src == "fallback"
+                else f"🟢 {_PROVIDER_LABEL.get(src, src)}")
 
     cgen, cqa = st.columns(2)
     with cgen:
@@ -354,8 +366,7 @@ def render_assistant() -> None:
                     " ".join(t["feature"] for t in pred["top_features"]) + " 伺服馬達 滾珠螺桿",
                     top_k=3)
                 rep = generate_report(pred, chunks)
-            badge = "🟢 LLM" if rep["source"] == "llm" else "⚪ 離線範本"
-            st.caption(f"來源：{badge}")
+            st.caption(f"來源：{_badge(rep['source'])}")
             st.markdown(rep["text"])
     with cqa:
         style.section("維修問答")
@@ -364,8 +375,7 @@ def render_assistant() -> None:
             with st.spinner("回答中…"):
                 chunks = search(q + " 伺服馬達 滾珠螺桿", top_k=3)
                 ans = answer_question(q, pred, chunks)
-            badge = "🟢 LLM" if ans["source"] == "llm" else "⚪ 離線範本"
-            st.caption(f"來源：{badge}")
+            st.caption(f"來源：{_badge(ans['source'])}")
             st.markdown(ans["text"])
 
 

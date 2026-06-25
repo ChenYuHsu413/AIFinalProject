@@ -110,18 +110,22 @@ NAV_GROUPS = [
      "items": [("Servo 健康儀表板", "🛰"), ("AI 訓練模擬器", "🧪"),
                ("馬達欄位解釋", "📖"), ("LLM 維護助理", "🤖"),
                ("維修知識庫", "📚")]},
-    {"title": "補充模組 A · 靜態風險 (AI4I)",
+    {"title": "模組 A · 靜態風險 (AI4I)", "collapsible": True,
      "items": [("手動單筆預測", "🎯"), ("What-if 敏感度分析", "💡"),
                ("批次 CSV 上傳", "📥"), ("模型評估結果", "📊")]},
-    {"title": "補充模組 B · 動態健康度 (IMS)",
+    {"title": "模組 B · 動態健康度 (IMS)", "collapsible": True,
      "items": [("健康度總覽", "💓"), ("RUL 預測", "📉"), ("互動探索", "🔍")]},
-    {"title": "補充模組 B+ · 多軌跡泛化 (XJTU)",
+    {"title": "模組 B+ · 多軌跡泛化 (XJTU)", "collapsible": True,
      "items": [("多軌跡泛化", "🧬"), ("B+ 延伸應用", "🚀")]},
-    {"title": "補充模組 C · 馬達電流診斷 (Paderborn)",
+    {"title": "模組 C · 馬達電流診斷 (Paderborn)", "collapsible": True,
      "items": [("馬達電流故障診斷", "⚡")]},
     {"title": None,
      "items": [("關於本專案", "ℹ️")]},
 ]
+# Supplementary (collapsible) page names — used to keep the expander open when one
+# of these pages is active.
+_SUPP_NAMES = {name for g in NAV_GROUPS if g.get("collapsible")
+               for name, _ in g["items"]}
 
 style.sidebar_brand(
     emoji="🛰",
@@ -133,24 +137,43 @@ if "active_page" not in st.session_state:
     st.session_state.active_page = "首頁總覽"
 active = st.session_state.active_page
 
+def _nav_group(g: dict) -> None:
+    if g["title"]:
+        st.markdown(
+            f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
+            f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
+            f"{g['title']}</div>",
+            unsafe_allow_html=True,
+        )
+    for name, icon in g["items"]:
+        if st.button(
+            f"{icon}  {name}",
+            key=f"nav::{name}",
+            width="stretch",
+            type="primary" if name == active else "secondary",
+        ):
+            st.session_state.active_page = name
+            st.rerun()
+
+
 with st.sidebar:
+    # Top-level groups (home + Servo main line) render directly.
     for g in NAV_GROUPS:
-        if g["title"]:
-            st.markdown(
-                f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
-                f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
-                f"{g['title']}</div>",
-                unsafe_allow_html=True,
-            )
-        for name, icon in g["items"]:
-            if st.button(
-                f"{icon}  {name}",
-                key=f"nav::{name}",
-                width="stretch",
-                type="primary" if name == active else "secondary",
-            ):
-                st.session_state.active_page = name
-                st.rerun()
+        if g.get("collapsible") or g["items"][0][0] == "關於本專案":
+            continue
+        _nav_group(g)
+
+    # Supplementary modules (A / B / B+ / C) tucked into a collapsed expander;
+    # auto-open when one of their pages is active.
+    with st.expander("📦 補充模組（對照 / 歷史）", expanded=active in _SUPP_NAMES):
+        for g in NAV_GROUPS:
+            if g.get("collapsible"):
+                _nav_group(g)
+
+    # Bottom group (about).
+    for g in NAV_GROUPS:
+        if g["items"][0][0] == "關於本專案":
+            _nav_group(g)
 
 page = st.session_state.active_page
 

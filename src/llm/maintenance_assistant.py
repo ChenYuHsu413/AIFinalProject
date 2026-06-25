@@ -6,17 +6,33 @@ conservative, human-readable maintenance write-up: plain-language explanation,
 possible causes, recommended checks, priority, a work-order draft and a report
 summary.
 
-Uses the Anthropic SDK when ``ANTHROPIC_API_KEY`` is set; otherwise falls back
-to a deterministic template so the feature works fully offline.  All output is
-phrased conservatively ("可能 / 建議檢查 / 需由現場人員確認") — never "一定故障".
+Multi-provider with graceful degradation: the providers listed in
+``llm.providers`` are tried in order (Groq / OpenRouter / Gemini all expose
+OpenAI-compatible endpoints with free tiers; Anthropic via its SDK). If none is
+configured or reachable, it falls back to a deterministic offline template.
+OpenAI-compatible calls use only the standard library, so no extra runtime
+dependency is required. Output is phrased conservatively.
 """
 from __future__ import annotations
 
+import json
 import os
-from typing import Any, Dict, List, Optional
+import urllib.request
+from typing import Any, Dict, List, Optional, Tuple
 
 from src.servo.field_glossary import HEALTH_LABEL_ZH
 from src.utils.paths import load_config
+
+# Providers exposing an OpenAI-compatible /chat/completions endpoint.
+_OPENAI_COMPAT_URL = {
+    "groq": "https://api.groq.com/openai/v1/chat/completions",
+    "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+}
+_PROVIDER_LABEL = {
+    "groq": "Groq", "openrouter": "OpenRouter",
+    "gemini": "Gemini", "anthropic": "Anthropic",
+}
 
 _SYSTEM_PROMPT = (
     "你是一位伺服馬達與滾珠螺桿機構的維護助理。你會收到一個機器學習模型的「結構化輸出」"
@@ -29,19 +45,17 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _client():
-    """Return an Anthropic client, or None if unavailable (offline mode)."""
+def available_providers() -> List[str]:
+    """Configured providers whose API key env var is currently set, in order."""
     cfg = load_config().get("llm", {})
     if not cfg.get("enabled", True):
-        return None
-    if not os.environ.get(cfg.get("api_key_env", "ANTHROPIC_API_KEY")):
-        return None
-    try:
-        import anthropic  # type: ignore
-
-        return anthropic.Anthropic()
-    except Exception:
-        return None
+        return []
+    out = []
+    for prov in cfg.get("providers", []):
+        env = cfg.get(prov, {}).get("api_key_env", "")
+        if env and os.environ.get(env):
+            out.append(prov)
+    return out
 
 
 def _format_structured(prediction: Dict[str, Any],
@@ -67,19 +81,63 @@ def _format_structured(prediction: Dict[str, Any],
     return "\n".join(lines)
 
 
-def _call_llm(system: str, user: str) -> str:
-    client = _client()
-    if client is None:
-        raise RuntimeError("LLM 不可用")
-    cfg = load_config().get("llm", {})
+def _call_openai_compat(url: str, api_key: str, model: str,
+                        system: str, user: str, max_tokens: int) -> str:
+    body = json.dumps({
+        "model": model,
+        "max_tokens": max_tokens,
+        "messages": [{"role": "system", "content": system},
+                     {"role": "user", "content": user}],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body,
+        headers={"Authorization": f"Bearer {api_key}",
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=45) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    return data["choices"][0]["message"]["content"]
+
+
+def _call_anthropic(pcfg: dict, system: str, user: str, max_tokens: int) -> str:
+    import anthropic  # type: ignore
+
+    client = anthropic.Anthropic()
     # NOTE: temperature/top_p are rejected (400) on this model tier; do not send.
     resp = client.messages.create(
-        model=cfg.get("model", "claude-opus-4-8"),
-        max_tokens=int(cfg.get("max_tokens", 1200)),
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
-    return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        model=pcfg.get("model", "claude-opus-4-8"),
+        max_tokens=max_tokens, system=system,
+        messages=[{"role": "user", "content": user}])
+    return "".join(b.text for b in resp.content
+                   if getattr(b, "type", None) == "text")
+
+
+def _call_llm(system: str, user: str) -> Tuple[str, str]:
+    """Try each configured provider in order. Returns (text, provider).
+
+    Raises if no provider produced text (caller then uses the offline template).
+    """
+    cfg = load_config().get("llm", {})
+    if not cfg.get("enabled", True):
+        raise RuntimeError("LLM 已停用")
+    max_tokens = int(cfg.get("max_tokens", 1200))
+    for prov in cfg.get("providers", []):
+        pcfg = cfg.get(prov, {})
+        key = os.environ.get(pcfg.get("api_key_env", ""))
+        if not key:
+            continue
+        try:
+            if prov in _OPENAI_COMPAT_URL:
+                text = _call_openai_compat(_OPENAI_COMPAT_URL[prov], key,
+                                           pcfg.get("model", ""), system, user, max_tokens)
+            elif prov == "anthropic":
+                text = _call_anthropic(pcfg, system, user, max_tokens)
+            else:
+                continue
+            if text and text.strip():
+                return text, prov
+        except Exception:
+            continue  # try the next provider
+    raise RuntimeError("沒有可用的 LLM 供應商")
 
 
 # ---------------------------------------------------------------------------
@@ -87,12 +145,13 @@ def _call_llm(system: str, user: str) -> str:
 # ---------------------------------------------------------------------------
 def generate_report(prediction: Dict[str, Any],
                     chunks: Optional[List[Dict[str, Any]]] = None) -> Dict[str, str]:
-    """Full maintenance write-up. Returns {'text', 'source'} (source=llm|fallback)."""
+    """Full maintenance write-up. Returns {'text','source'} (source=provider|fallback)."""
     structured = _format_structured(prediction, chunks)
     try:
-        text = _call_llm(_SYSTEM_PROMPT,
-                         f"以下是模型的結構化輸出，請依系統指示產生完整維護建議：\n\n{structured}")
-        return {"text": text, "source": "llm"}
+        text, prov = _call_llm(
+            _SYSTEM_PROMPT,
+            f"以下是模型的結構化輸出，請依系統指示產生完整維護建議：\n\n{structured}")
+        return {"text": text, "source": prov}
     except Exception:
         return {"text": _fallback_report(prediction, chunks), "source": "fallback"}
 
@@ -102,10 +161,10 @@ def answer_question(question: str, prediction: Dict[str, Any],
     """Conservative Q&A grounded in the prediction + knowledge chunks."""
     structured = _format_structured(prediction, chunks)
     try:
-        text = _call_llm(
+        text, prov = _call_llm(
             _SYSTEM_PROMPT + "\n現在請只回答使用者的問題，保持保守措辭。",
             f"模型結構化輸出：\n{structured}\n\n使用者問題：{question}")
-        return {"text": text, "source": "llm"}
+        return {"text": text, "source": prov}
     except Exception:
         return {"text": _fallback_answer(question, prediction), "source": "fallback"}
 

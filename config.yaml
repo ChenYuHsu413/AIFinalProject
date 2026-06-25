@@ -274,10 +274,24 @@ servo:
 # ---------------------------------------------------------------------------
 llm:
   enabled: true
-  provider: anthropic
-  model: claude-opus-4-8             # temperature/top_p are rejected on this tier; do not send them
-  api_key_env: ANTHROPIC_API_KEY    # read from env; fallback template used if unset
   max_tokens: 1200
+  # Providers are tried IN ORDER; the first one whose API key env var is set wins.
+  # If none are configured/reachable, the assistant uses an offline template.
+  # Groq / OpenRouter / Gemini all expose OpenAI-compatible chat endpoints and
+  # offer free tiers — set the matching env var to enable one.
+  providers: [groq, openrouter, gemini, anthropic]
+  groq:
+    api_key_env: GROQ_API_KEY
+    model: llama-3.3-70b-versatile
+  openrouter:
+    api_key_env: OPENROUTER_API_KEY
+    model: meta-llama/llama-3.3-70b-instruct:free
+  gemini:
+    api_key_env: GEMINI_API_KEY
+    model: gemini-2.0-flash
+  anthropic:                          # optional; temperature/top_p rejected on this tier
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-opus-4-8
 
 # ---------------------------------------------------------------------------
 # Maintenance knowledge base + retrieval (RAG). Offline-first: local markdown
