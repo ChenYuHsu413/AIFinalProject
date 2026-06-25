@@ -95,7 +95,10 @@ def _call_openai_compat(url: str, api_key: str, model: str,
     req = urllib.request.Request(
         url, data=body,
         headers={"Authorization": f"Bearer {api_key}",
-                 "Content-Type": "application/json"})
+                 "Content-Type": "application/json",
+                 # A non-default UA avoids Cloudflare's "error 1010" block on
+                 # urllib's default agent (seen on Groq's edge).
+                 "User-Agent": "ServoHealthAI/0.2 (+maintenance-assistant)"})
     with urllib.request.urlopen(req, timeout=45) as r:
         data = json.loads(r.read().decode("utf-8"))
     return data["choices"][0]["message"]["content"]
