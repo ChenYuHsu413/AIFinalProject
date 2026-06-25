@@ -1,0 +1,53 @@
+{
+  "model": "logistic_regression",
+  "feature_set": "engineered",
+  "accuracy": 0.7483333333333333,
+  "macro_f1": 0.7483382912558307,
+  "labels": [
+    "LN",
+    "LO",
+    "MED",
+    "HI"
+  ],
+  "label_zh": {
+    "LN": "健康",
+    "LO": "輕度退化",
+    "MED": "中度退化",
+    "HI": "高度退化"
+  },
+  "confusion_matrix": [
+    [
+      1250,
+      248,
+      2,
+      0
+    ],
+    [
+      264,
+      1007,
+      228,
+      1
+    ],
+    [
+      2,
+      229,
+      1010,
+      259
+    ],
+    [
+      0,
+      3,
+      274,
+      1223
+    ]
+  ],
+  "per_model_macro_f1": {
+    "logistic_regression": 0.7482703320625161,
+    "decision_tree": 0.61393002609836,
+    "random_forest": 0.7301934691551786,
+    "gradient_boosting": 0.7203869624169104,
+    "mlp": 0.7195498937187447
+  },
+  "n": 6000,
+  "placeholder": true
+}

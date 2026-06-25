@@ -24,6 +24,14 @@ uvicorn[standard]>=0.27
 pydantic>=2.5
 python-multipart>=0.0.9
 
+# Module Servo — LLM maintenance assistant (optional; offline fallback works without it)
+anthropic>=0.40
+
+# Module Servo — knowledge-base crawler (optional; offline markdown works without it).
+# TF-IDF retrieval itself needs only scikit-learn (already in requirements.txt).
+requests>=2.31
+beautifulsoup4>=4.12
+
 # Testing
 pytest>=7.4
 

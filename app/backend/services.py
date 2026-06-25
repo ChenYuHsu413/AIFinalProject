@@ -72,3 +72,30 @@ def comparison_metrics() -> List[Dict[str, Any]]:
     if not path.exists():
         return []
     return pd.read_csv(path).to_dict(orient="records")
+
+
+# --- Module Servo (main line) -------------------------------------------------
+def servo_model_info() -> Dict[str, Any]:
+    from src.models.servo_predict import load_servo_models
+
+    b = load_servo_models()
+    return {
+        "feature_set": b.config.get("feature_set"),
+        "feature_columns": b.feature_columns,
+        "labels": b.config.get("labels"),
+        "clf_model": b.config.get("clf_model"),
+        "reg_model": b.config.get("reg_model"),
+        "clf_macro_f1": b.config.get("clf_macro_f1"),
+        "reg_r2": b.config.get("reg_r2"),
+        "placeholder": b.config.get("placeholder"),
+    }
+
+
+def servo_predict_one(features: Dict[str, Any]) -> Dict[str, Any]:
+    from src.models.servo_predict import load_servo_models, predict_servo
+
+    b = load_servo_models()
+    missing = [c for c in b.feature_columns if c not in features]
+    if missing:
+        raise ValueError(f"缺少必要特徵欄位：{missing}")
+    return predict_servo(features)

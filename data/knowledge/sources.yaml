@@ -1,0 +1,20 @@
+# Knowledge-base source whitelist for the optional crawler.
+#
+# The crawler ONLY fetches URLs listed here, and only after checking robots.txt.
+# Leave it empty / disabled to run fully offline from the local markdown docs in
+# this folder (the default for the demo).
+#
+# Each entry:
+#   url:      page to fetch (must be public + allowed by robots.txt)
+#   topic:    short tag stored with the retrieved chunks
+#   license:  note that the content is permitted for this use
+#
+# NOTE: no URLs are enabled by default — add your own vetted public pages and
+# set ``enabled: true`` before running the crawler. Respect each site's terms.
+enabled: false
+user_agent: "FinalProject-KB-Crawler/0.1 (educational; respects robots.txt)"
+request_delay_seconds: 2
+sources: []
+  # - url: https://example.org/servo-troubleshooting
+  #   topic: servo_troubleshooting
+  #   license: "public; verified allowed"

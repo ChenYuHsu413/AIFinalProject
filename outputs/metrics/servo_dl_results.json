@@ -1,0 +1,22 @@
+{
+  "method": "servo_dl_offline_baseline",
+  "placeholder": true,
+  "note": "sklearn MLP baseline + PCA 重建誤差（健康資料擬合）。真正的 1D-CNN / Autoencoder 需離線 torch、且需真實 PHM 時序資料，列為後續工作。",
+  "mlp_classification_macro_f1": 0.7325117758786274,
+  "mlp_regression": {
+    "mae": 0.131655754525069,
+    "r2": 0.7594783472936827
+  },
+  "reconstruction_error_by_class": {
+    "LN": 0.3011017010917305,
+    "LO": 0.4883331834773165,
+    "MED": 1.0048780017205603,
+    "HI": 1.8109313506764593
+  },
+  "labels": [
+    "LN",
+    "LO",
+    "MED",
+    "HI"
+  ]
+}

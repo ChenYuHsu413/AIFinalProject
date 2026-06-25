@@ -1,4 +1,10 @@
-# AI 伺服馬達故障風險預測與預測性維護建議系統
+# AI 伺服馬達健康狀態估測與智慧維護助理系統
+
+> **狀態（2026-06-25）**：主線已重構為 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，
+> 健康狀態估測 + 退化值回歸），並加入 **AI 訓練模擬器 / 馬達欄位解釋 / LLM 維護助理 /
+> 維修知識庫(RAG) / 深度學習離線 baseline**。原 Model A / B / B+ / C 保留為**對照與歷史
+> 補充模組**。目前 Servo 以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
+> 細節見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md)。
 
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
@@ -387,10 +393,17 @@ python -m src.models.predict
 streamlit run app/streamlit_app.py
 ```
 
-頁面（12 頁，依模組分組，含首頁總覽）：
+頁面（依模組分組，含首頁總覽）：
 
 **🏠 入口**
-- **首頁總覽** — 三模組入口磚與一頁式導覽。
+- **首頁總覽** — 以 Servo 主線為核心的一頁式導覽；補充模組（A/B/B+/C）入口磚。
+
+**🛰 模組 Servo · 伺服馬達健康（主線）**
+- **Servo 健康儀表板** — 健康狀態（LN/LO/MED/HI）、退化分數、風險、主要異常特徵、模型信心、建議處置。
+- **AI 訓練模擬器** — 選資料量 / 特徵組 / 演算法，小模型 vs Reference Model 對照 + 文字解釋；含深度學習離線結果（唯讀）。
+- **馬達欄位解釋** — 欄位中文說明、異常意義、特徵組組成。
+- **LLM 維護助理** — 由模型結構化輸出生成維修建議 / 工單草稿 / 報告（無 API Key 走離線範本）。
+- **維修知識庫** — 文件清單 + TF-IDF 關鍵字檢索（離線）。
 
 **🅰 模組 A · 靜態風險**
 - **手動單筆預測** — 填入欄位即可看到機率 / 健康分數 / 風險 / 維護建議。
