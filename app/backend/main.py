@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import List
 
 # Make ``src.*`` and ``app.*`` resolvable even when this file is launched
 # directly (uvicorn handles it via the dotted-module form, but we want a
@@ -93,6 +94,19 @@ async def batch_predict(file: UploadFile = File(...)):
 @app.get("/metrics", response_model=MetricsResponse)
 def metrics():
     return {"rows": services.comparison_metrics()}
+
+
+@app.post("/predict/batch", response_model=BatchPredictResponse)
+def predict_batch(records: List[PredictRequest]):
+    """JSON 批次預測（What-if 1D/2D sweep、風險地景格網用，取代多次單點呼叫）。"""
+    raw = [r.to_raw_record() for r in records]
+    try:
+        results = services.predict_batch_records(raw)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"count": len(results), "results": results}
 
 
 @app.post("/predict_full", response_model=FullPredictResponse)

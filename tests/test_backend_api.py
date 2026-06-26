@@ -143,3 +143,37 @@ def test_servo_reference_metrics():
     resp = client.get("/servo/reference_metrics")
     assert resp.status_code == 200
     assert set(resp.json()) == {"clf", "reg", "dl"}
+
+
+_SAMPLE_RECORD = {
+    "type": "L",
+    "air_temperature_K": 298.1,
+    "process_temperature_K": 308.6,
+    "rotational_speed_rpm": 1551,
+    "torque_Nm": 42.8,
+    "tool_wear_min": 108,
+}
+
+
+def test_predict_batch():
+    body = [
+        _SAMPLE_RECORD,
+        {**_SAMPLE_RECORD, "torque_Nm": 70.0, "tool_wear_min": 240},
+    ]
+    resp = client.post("/predict/batch", json=body)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 2
+    assert len(data["results"]) == 2
+    assert {"failure_probability", "risk_level"} <= set(data["results"][0])
+
+
+def test_predict_batch_empty():
+    resp = client.post("/predict/batch", json=[])
+    assert resp.status_code == 200
+    assert resp.json() == {"count": 0, "results": []}
+
+
+def test_predict_batch_validation_error():
+    resp = client.post("/predict/batch", json=[{"type": "X"}])
+    assert resp.status_code == 422

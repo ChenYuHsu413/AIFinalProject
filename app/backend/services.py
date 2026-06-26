@@ -67,6 +67,13 @@ def predict_batch_from_csv(content: bytes) -> List[Dict[str, Any]]:
     return predict_records(df[REQUIRED_INPUT_COLUMNS])
 
 
+def predict_batch_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Predict on a JSON list of raw records (What-if 1D/2D sweep, grids)."""
+    if not records:
+        return []
+    return predict_records(records)
+
+
 def comparison_metrics() -> List[Dict[str, Any]]:
     cfg = load_config()
     path = resolve(cfg["paths"]["metrics_csv"])
