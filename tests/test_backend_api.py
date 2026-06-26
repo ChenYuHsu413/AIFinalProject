@@ -306,6 +306,28 @@ def test_servo_fleet():
     assert {"feature", "z", "hint"} <= set(unit["topFeature"])
 
 
+def test_servo_alerts():
+    resp = client.get("/servo/alerts")
+    assert resp.status_code == 200
+    alerts = resp.json()
+    assert isinstance(alerts, list) and len(alerts) > 0
+    a = alerts[0]
+    assert {"id", "equipment", "type", "severity", "predictedState", "status"} <= set(a)
+    assert a["severity"] in {"info", "warning", "critical"}
+    assert a["status"] in {"open", "ack", "in_progress", "resolved"}
+
+
+def test_servo_work_orders():
+    resp = client.get("/servo/work_orders")
+    assert resp.status_code == 200
+    orders = resp.json()
+    assert isinstance(orders, list)
+    if orders:
+        w = orders[0]
+        assert {"id", "equipment", "title", "priority", "status"} <= set(w)
+        assert w["priority"] in {"low", "medium", "high"}
+
+
 def test_servo_reference_metrics():
     resp = client.get("/servo/reference_metrics")
     assert resp.status_code == 200

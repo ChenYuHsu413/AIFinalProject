@@ -51,7 +51,14 @@
 > 合成設備識別（id/名稱/位置/狀態）+ **真實參考模型**在代表性 demo 運轉段上算出的健康分數／狀態／
 > 風險／退化／信心／主要異常特徵（非真實 PHM 遙測）。前端新增 `useFleet()`（`lib/fleet.ts`）改打此
 > API、mock 當 fallback，Overview 與設備詳情消費之，並標示資料來源（參考模型 / mock）。新增
-> `test_servo_fleet`（API 測試）。告警／工單／遙測趨勢仍為標示清楚的 mock。
+> `test_servo_fleet`（API 測試）。
+>
+> **告警／工單也改接真模型（2026-06-26）**：新增後端 `GET /servo/alerts`、`GET /servo/work_orders`
+> （`services.servo_alerts/servo_work_orders`）——由**真機群衍生**：風險/狀態/異常特徵來自模型，
+> 告警類型與建議處置依 top feature 對應，工單由告警排程（IDs/排程屬示意性運維包裝）。前端新增
+> `useFleetOps()`（`lib/ops.ts`），Overview 與 `/alerts` 頁改打 API、mock 當 fallback 並標示來源；
+> 新增 `test_servo_alerts`、`test_servo_work_orders`。**仍為標示清楚的 mock**：設備識別、遙測趨勢、
+> 14 班次趨勢圖、KPI 趨勢 Badge（皆非真實 PHM 遙測）。
 >
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、

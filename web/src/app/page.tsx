@@ -31,8 +31,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ALERTS, fleetSummary, type Equipment } from "@/lib/mock";
+import { fleetSummary, type Equipment } from "@/lib/mock";
 import { useFleet } from "@/lib/fleet";
+import { useFleetOps } from "@/lib/ops";
 import { HEALTH_COLOR } from "@/lib/servo";
 import {
   apiGet,
@@ -51,7 +52,8 @@ const LEGACY: LegacyModel[] = [
 
 export default function Overview() {
   const { fleet, source } = useFleet();
-  const s = fleetSummary(fleet);
+  const { alerts } = useFleetOps();
+  const s = fleetSummary(fleet, alerts);
   const worst = [...fleet].sort((a, b) => a.healthScore - b.healthScore)[0];
 
   return (
@@ -166,7 +168,7 @@ export default function Overview() {
           desc="作用中與近期事件"
           action={{ label: "前往告警 / 工單", href: "/alerts" }}
         />
-        <AlertTable alerts={ALERTS.slice(0, 4)} />
+        <AlertTable alerts={alerts.slice(0, 4)} />
       </div>
 
       {/* legacy modules */}
