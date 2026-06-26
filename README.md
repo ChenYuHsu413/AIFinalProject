@@ -489,6 +489,10 @@ curl -X POST http://localhost:8000/predict \
   }'
 ```
 
+> **網頁改版規劃（2026-06-26）**：本服務將擴充為前端（Next.js）的穩定 API 後端，現有 9 個
+> endpoint 之外尚需補約 19 個缺口。完整缺口表、四階段計畫與執行順序見
+> [`docs/WEB_REVAMP_PLAN.md`](docs/WEB_REVAMP_PLAN.md)。
+
 ---
 
 ## 13. 輸出格式與維護建議規則

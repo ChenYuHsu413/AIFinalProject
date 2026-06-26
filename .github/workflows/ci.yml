@@ -27,21 +27,23 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
+        # requirements-dev.txt pulls in requirements.txt via its leading -r and
+        # adds the FastAPI backend + pytest (matches the Dockerfile install).
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install -r requirements-dev.txt
 
       - name: Syntax check (py_compile)
         # Cheap lint: every importable file must parse.
         run: python -m compileall -q src app tests scripts
 
       - name: Run pytest
-        # All 9 tests use synthetic data and pure rule functions, so the
-        # AI4I CSV is not required in CI.
+        # Tests use the committed processed features / metrics / model artifacts
+        # plus synthetic data; the large RAW datasets (AI4I CSV, IMS/XJTU/Paderborn
+        # raw) are not required — data-dependent tests adapt when they are absent.
         run: pytest -v --tb=short
 
   docker:
