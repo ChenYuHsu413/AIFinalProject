@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_TC } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { SidebarProvider } from "@/components/sidebar-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,15 +43,17 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <Header />
-            <main className="command-surface flex-1 overflow-y-auto">
-              {children}
-            </main>
+        <SidebarProvider>
+          <div className="flex h-screen">
+            <Sidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Header />
+              <main className="command-surface flex-1 overflow-y-auto">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </SidebarProvider>
       </body>
     </html>
   );

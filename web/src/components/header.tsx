@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink, Menu } from "lucide-react";
 
 import { apiGet, type Health, type ServoModelInfo } from "@/lib/api";
 import { NAV_GROUPS } from "@/lib/nav";
+import { useSidebar } from "@/components/sidebar-context";
 
 /** Derive a [section, page] breadcrumb trail from the current path. */
 function useCrumbs(): { label: string; href?: string }[] {
@@ -26,6 +27,7 @@ function useCrumbs(): { label: string; href?: string }[] {
 
 export function Header() {
   const crumbs = useCrumbs();
+  const { setMobileOpen } = useSidebar();
   const [health, setHealth] = useState<Health | null>(null);
   const [servo, setServo] = useState<ServoModelInfo | null>(null);
   const [err, setErr] = useState(false);
@@ -55,7 +57,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-background/60 backdrop-blur-md">
       {/* breadcrumbs */}
-      <nav className="flex items-center gap-1.5 px-4 text-sm">
+      <nav className="flex items-center gap-1.5 pl-2 pr-4 text-sm md:pl-4">
+        <button
+          type="button"
+          aria-label="開啟選單"
+          onClick={() => setMobileOpen(true)}
+          className="mr-1 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
         {crumbs.map((c, i) => {
           const last = i === crumbs.length - 1;
           return (

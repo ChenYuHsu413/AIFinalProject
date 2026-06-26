@@ -37,6 +37,10 @@
 > 設備排行→機群卡→系統狀態→告警→Legacy。保留專案暗色工業色盤（cyan/slate）。驗證：`tsc --noEmit`
 > 0 錯、新檔 ESLint 乾淨、全 13 路由皆 200。
 >
+> **響應式側欄（2026-06-26）**：新增 `sidebar-context`（`SidebarProvider`）；桌機可收合為 `w-16`
+> icon rail（tooltip + localStorage 記憶），手機由 `Header` 漢堡鈕開抽屜選單（遮罩 + 點連結自動關）。
+> 原本 sidebar 在 `md` 以下完全隱藏、無行動版導覽的缺口已補上。
+>
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、
 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。
