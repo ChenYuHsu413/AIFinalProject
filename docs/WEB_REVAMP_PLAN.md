@@ -124,10 +124,10 @@
 - [x] T6 `GET /knowledge/documents`、`GET /knowledge/search?q=`（包 `maintenance_rag`）（2026-06-26 完成，含測試；RAG 用函式內延遲 import 避免拖慢啟動）
 - [x] T7 `GET /servo/glossary`、`GET /servo/feature_sets`、`GET /servo/samples`、`GET /servo/reference_metrics`（2026-06-26 完成，含測試；靜態常數延遲 import、reference 含 dl baseline）
 
-**Stage 1.2 — 模組 A 補洞**
+**Stage 1.2 — 模組 A 補洞** ✅ 全數完成（2026-06-26）
 - [x] T8 `POST /predict/batch`（JSON list；給 What-if 1D/2D 用，取代 625 次單點呼叫）（2026-06-26 完成，含測試；空陣列回空結果、重用 BatchPredictResponse）
 - [x] T9 `POST /predict/explain`（SHAP；回 shap_values / feature_values / base_value）（2026-06-26 完成，含測試；非樹模型回 supported:false，shap 延遲 import）
-- [ ] T10 `GET /metrics/test_predictions`（回 y_true / y_proba 陣列，門檻運算放前端）
+- [x] T10 `GET /metrics/test_predictions`（回 y_true / y_proba 陣列，門檻運算放前端）（2026-06-26 完成，含測試；2000 列兩陣列）
 
 **Stage 1.3 — 大資料 / 重算類**
 - [ ] T11 `POST /ims/health_indicator`（換指標重算 HI/FPT）、`GET /ims/snapshot/{i}`（波形/FFT，server 降採樣）

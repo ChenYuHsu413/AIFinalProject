@@ -100,6 +100,21 @@ def comparison_metrics() -> List[Dict[str, Any]]:
     return pd.read_csv(path).to_dict(orient="records")
 
 
+def test_predictions() -> Dict[str, List]:
+    """Test-set ground truth + scores for the interactive threshold tuner.
+
+    Returns ``y_true`` / ``y_proba`` arrays; the confusion-matrix math runs on
+    the client. Empty arrays if evaluation has not been run."""
+    path = resolve(load_config()["paths"]["outputs_metrics"]) / "test_predictions.csv"
+    if not path.exists():
+        return {"y_true": [], "y_proba": []}
+    df = pd.read_csv(path)
+    return {
+        "y_true": df["y_true"].astype(int).tolist(),
+        "y_proba": df["y_proba"].astype(float).tolist(),
+    }
+
+
 def _read_json_or_empty(rel_path: str | Path) -> Dict[str, Any]:
     """Read a small project-relative JSON; empty dict if the file is missing."""
     path = resolve(rel_path)

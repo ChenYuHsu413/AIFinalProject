@@ -107,6 +107,12 @@ def metrics():
     return {"rows": services.comparison_metrics()}
 
 
+@app.get("/metrics/test_predictions")
+def metrics_test_predictions():
+    """測試集 y_true / y_proba 陣列（門檻調整器用，混淆矩陣運算在前端）。"""
+    return services.test_predictions()
+
+
 @app.post("/predict/batch", response_model=BatchPredictResponse)
 def predict_batch(records: List[PredictRequest]):
     """JSON 批次預測（What-if 1D/2D sweep、風險地景格網用，取代多次單點呼叫）。"""

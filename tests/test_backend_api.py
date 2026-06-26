@@ -188,3 +188,12 @@ def test_predict_explain():
         assert len(body["feature_names"]) == len(body["shap_values"])
         assert len(body["feature_values"]) == len(body["shap_values"])
         assert isinstance(body["base_value"], (int, float))
+
+
+def test_metrics_test_predictions():
+    resp = client.get("/metrics/test_predictions")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body) == {"y_true", "y_proba"}
+    assert len(body["y_true"]) == len(body["y_proba"]) > 0
+    assert set(body["y_true"]) <= {0, 1}
