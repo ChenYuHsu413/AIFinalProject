@@ -29,13 +29,18 @@ COPY requirements.txt requirements-dev.txt ./
 RUN pip install --upgrade pip \
  && pip install -r requirements-dev.txt
 
-# Application code + committed model artifacts (outputs/models/*.joblib).
-# IMS/XJTU raw datasets are NOT bundled; those endpoints degrade to
-# available:false, the rest (Servo / fleet / alerts / module A & C) work.
+# Application code + committed runtime data the backend reads at request time:
+#   - outputs/models, outputs/metrics  (models + eval JSONs)
+#   - data/processed/servo_*           (Servo features / demo / sample predictions —
+#                                        needed by /servo/simulate, /servo/samples, /servo/fleet)
+#   - data/knowledge/*.md              (knowledge base for /knowledge/*)
+# (The root .dockerignore keeps these in context; IMS/XJTU raw datasets are NOT
+#  bundled, so /ims/* and /xjtu/* degrade to available:false — the rest works.)
 COPY config.yaml ./
 COPY src/ ./src/
 COPY app/ ./app/
 COPY outputs/ ./outputs/
+COPY data/ ./data/
 
 EXPOSE 7860
 CMD ["uvicorn", "app.backend.main:app", "--host", "0.0.0.0", "--port", "7860"]

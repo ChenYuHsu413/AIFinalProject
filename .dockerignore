@@ -21,11 +21,19 @@ notebooks
 tests
 scripts
 
-# Auto-generated runtime artefacts (mounted as volumes instead)
-outputs
-data/raw/*.csv
-data/raw/*.zip
+# Auto-generated runtime artefacts. For docker-compose these are volume-mounted
+# (so excluded from the image), BUT the *committed* models / metrics / processed
+# servo data must stay in the build context so the Hugging Face image
+# (deploy/huggingface/Dockerfile, which has no volumes) can COPY them.
+# See docs/DEPLOYMENT.md §9.
+outputs/*
+!outputs/models
+!outputs/metrics
+data/raw
 data/processed/*
+!data/processed/servo_features.parquet
+!data/processed/servo_feature_demo.csv
+!data/processed/servo_sample_predictions.csv
 
 # Local logs
 *.log
