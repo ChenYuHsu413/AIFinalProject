@@ -22,7 +22,7 @@
 
 <p align="center">
   🚀 <strong>線上 Demo</strong>：
-  <a href="https://ai-final-project-hs27lq6zl-chen-yu-s-project.vercel.app/">Next.js Command Center（主前端）</a>
+  <a href="https://ai-final-project-one.vercel.app/">Next.js Command Center（主前端）</a>
   ·
   <a href="https://aifinalproject-test.streamlit.app/">Streamlit（對照 / fallback）</a>
 </p>
