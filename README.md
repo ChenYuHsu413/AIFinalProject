@@ -132,7 +132,7 @@ flowchart TB
 | Data Preparation            | `src/data/preprocess.py`、`src/features/feature_engineering.py`                     |
 | Modeling                    | `src/models/model_registry.py`、`src/models/train.py`                               |
 | Evaluation                  | `src/models/evaluate.py`、`outputs/metrics/`、`outputs/figures/`                    |
-| Deployment / Application    | `app/streamlit_app.py`、`app/backend/`                                              |
+| Deployment / Application    | `web/`（Next.js 主前端）、`app/backend/`（FastAPI）、`app/streamlit_app.py`（fallback）、`deploy/`、`docs/DEPLOYMENT.md` |
 
 ---
 
@@ -174,6 +174,10 @@ flowchart TB
 
 ## 4. 專案架構
 
+> **狀態（2026-06-26）**：新增 **Next.js 前端 `web/`**（AI Servo Motor Health Command Center，
+> 主要展示 UI）與 **`deploy/`**（nginx + systemd 部署範本）。後端 `app/backend/` 已擴充 Servo 主線、
+> 機群（`/servo/fleet`）、告警/工單（`/servo/alerts`、`/servo/work_orders`）、知識庫與 LLM 助理端點。
+
 ```
 project-root/
 ├── README.md
@@ -190,12 +194,16 @@ project-root/
 │   ├── README.md
 │   ├── raw/                 <-- ai4i2020.csv；模組 B/B+ 為 raw/ims、raw/xjtu（不進 git）
 │   └── processed/
-├── docs/                    # 模組 B/B+ 規劃、結果、資料評估、prompt log
+├── docs/                    # 模組規劃 / 結果 / 資料評估 / 網頁改版 / 部署
+│   ├── MODULE_SERVO_PLAN.md         # Servo 主線
 │   ├── MODULE_B_IMS_PLAN.md
 │   ├── MODULE_B_DL_PLAN.md
 │   ├── MODULE_B_RESULTS.md
 │   ├── MODULE_B_PLUS_XJTU_PLAN.md
-│   └── DATASET_EVALUATION.md
+│   ├── MODULE_C_PADERBORN_PLAN.md
+│   ├── DATASET_EVALUATION.md
+│   ├── WEB_REVAMP_PLAN.md           # 前端改版（Streamlit → Next.js）
+│   └── DEPLOYMENT.md                # GCP VM + nginx 部署 runbook
 ├── notebooks/
 │   └── 01_eda.ipynb
 ├── scripts/
@@ -239,15 +247,25 @@ project-root/
 │   ├── models/              # best_model.joblib、failure_type_model.joblib、MODEL_CARD.md
 │   └── reports/REPORT_OUTLINE.md
 ├── app/
-│   ├── streamlit_app.py
-│   └── backend/
+│   ├── streamlit_app.py     # Streamlit UI（fallback / 對照）
+│   └── backend/             # FastAPI：模組 A/B/B+/C + Servo 主線 + 機群/告警 + 知識庫/LLM
 │       ├── main.py
 │       ├── schemas.py
 │       └── services.py
+├── web/                     # Next.js 前端（AI Servo Motor Health Command Center，主要 UI）
+│   ├── src/app/             # Overview / servo/* / equipment/[id] / alerts / reports / module-*
+│   ├── src/components/      # dashboard/* + ui/* (shadcn) + sidebar / header
+│   ├── src/lib/             # api.ts（型別化 client）/ fleet.ts / ops.ts / mock.ts / servo.ts
+│   └── README.md
+├── deploy/                  # 部署範本（見 docs/DEPLOYMENT.md）
+│   ├── nginx/servo-command-center.conf
+│   └── systemd/servo-{backend,frontend}.service
 └── tests/
     ├── test_preprocess.py
     ├── test_features.py
-    └── test_predict.py
+    ├── test_predict.py
+    ├── test_backend_api.py        # API 端點測試（含 servo fleet/alerts/work_orders）
+    └── test_servo_*.py
 ```
 
 ---
@@ -391,13 +409,20 @@ python -m src.models.predict
 
 ---
 
-## 11. 啟動 Streamlit Dashboard
+## 11. 啟動 UI（Next.js 主前端 / Streamlit fallback）
+
+> **狀態（2026-06-26）**：主要展示 UI 已改為 **Next.js 前端「AI Servo Motor Health Command Center」**
+> （`web/`，深色工業風、以 Servo 為主線、A/B/B+/C 收於 Legacy）。Streamlit 保留為 fallback 與對照。
+> 前端啟動見 [`web/README.md`](web/README.md) 與 §16E；本機：
+> `cd web && NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev`（→ `http://localhost:3000`）。
+
+Streamlit（fallback）：
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-頁面（依模組分組，含首頁總覽）：
+兩個 UI 共用同一組 FastAPI 端點。頁面（依模組分組，含首頁總覽）：
 
 **🏠 入口**
 - **首頁總覽** — 以 Servo 主線為核心的一頁式導覽；補充模組（A/B/B+/C）入口磚。
@@ -464,15 +489,25 @@ cp .env.example .env   # 然後編輯 .env 填入任一金鑰
 uvicorn app.backend.main:app --host 0.0.0.0 --port 8000
 ```
 
-Swagger UI：`http://localhost:8000/docs`
+Swagger UI：`http://localhost:8000/docs`（完整端點清單）。常用端點：
 
 | 路由              | Method | 說明                                                  |
 | ----------------- | ------ | ----------------------------------------------------- |
 | `/health`         | GET    | 服務存活狀態與模型載入狀態                            |
 | `/model_info`     | GET    | 最佳模型名稱、特徵組合、特徵欄位、測試集指標          |
-| `/predict`        | POST   | 單筆預測（請求格式見 `PredictRequest`）               |
-| `/batch_predict`  | POST   | multipart CSV 上傳，回傳每列的預測                    |
+| `/predict`        | POST   | 模組 A 單筆預測（請求格式見 `PredictRequest`）        |
+| `/predict/batch`  | POST   | 模組 A JSON 批次（What-if sweep）                     |
+| `/batch_predict`  | POST   | 模組 A multipart CSV 上傳，回傳每列的預測             |
 | `/metrics`        | GET    | 訓練時產生的完整比較表                                |
+| `/ims/*`、`/xjtu/*`、`/paderborn/eval` | GET | 模組 B / B+ / C 結果（健康曲線、泛化、混淆矩陣）|
+| `/servo/predict`  | POST   | **Servo 主線**健康狀態 + 退化值估測                   |
+| `/servo/fleet`    | GET    | **機群**：合成設備識別 + 真模型在 demo 運轉段的健康輸出 |
+| `/servo/alerts`、`/servo/work_orders` | GET | 由真機群衍生的告警 / 工單           |
+| `/servo/simulate` | POST   | 瀏覽器端小模型即時訓練（訓練模擬器）                 |
+| `/servo/assistant/*`、`/knowledge/*` | GET/POST | LLM 維護助理 / 知識庫檢索       |
+
+> **狀態（2026-06-26）**：機群健康與告警由**真實參考模型**在代表性 demo 運轉段上即時計算
+> （非真實 PHM 遙測）；設備識別、遙測趨勢、工單排程為示意。前端據此呈現並標示資料來源。
 
 範例 curl：
 

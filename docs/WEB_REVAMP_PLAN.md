@@ -239,7 +239,12 @@
       [`docs/DEPLOYMENT.md`](DEPLOYMENT.md)（VM/venv/Node24/build/systemd/certbot/redeploy）、CI 新增
       `web` job（lint + tsc + `NEXT_PUBLIC_API_BASE_URL=/api` 的 prod build，已本機驗證 build 通過、22 路由）。
       **實際上線（VM 開立 + DNS + 憑證）待執行。**
-- [ ] T22 誠實性紅線文案驗收；同步 README §4/§11/§12 與本文件，補日期戳
+- [x] T22 誠實性紅線文案驗收；同步 README §4/§11/§12 與本文件，補日期戳
+      **完成（2026-06-26）：**README §1/§3 誠實性文案經查無紅線違反（AI4I 合成、IMS 單軌跡、Paderborn
+      試驗台真實+人工、非 RUL 皆如實）；§2 Deployment 列、§4 架構（補 `web/`、`deploy/`、新 docs）、
+      §11（標示 Next.js Command Center 為主前端、Streamlit 為 fallback）、§12（補 `/servo/fleet`、
+      `/servo/alerts`、`/servo/work_orders` 等端點 + 資料來源誠實性註記）皆已同步補戳；關於頁
+      新增 Servo placeholder 與機群/遙測資料來源聲明。各補充模組頁皆附對應誠實性 Note。
 
 ---
 

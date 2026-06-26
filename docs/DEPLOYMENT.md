@@ -16,6 +16,27 @@
 
 前端以 `NEXT_PUBLIC_API_BASE_URL=/api` build，所有 API 走 `/api/*`，由 nginx 去前綴轉到 uvicorn。
 
+## 0. 快速檢查清單
+
+- [ ] VM（Ubuntu 22.04+，≥ e2-medium）開好，防火牆放行 **80 / 443**
+- [ ] 安裝 `python3-venv`、`nginx`、`git`、**Node 24**
+- [ ] `git clone` repo（模型產物已隨 repo）
+- [ ] 後端：建 venv → `pip install -r requirements-dev.txt` → systemd `servo-backend` → `curl /health`
+- [ ] 前端：`NEXT_PUBLIC_API_BASE_URL=/api npm ci && npm run build` → systemd `servo-frontend`
+- [ ] nginx：套 `deploy/nginx/...conf`（改 `server_name`）→ `nginx -t` → reload
+- [ ] HTTPS：`certbot --nginx -d your.domain`
+- [ ] 驗收：外網開首頁、`/api/health`、`/api/servo/fleet` 皆正常
+
+### 連接埠與環境變數
+
+| 項目 | 值 | 備註 |
+| --- | --- | --- |
+| nginx | 80 / 443 | 唯一對外 |
+| FastAPI (uvicorn) | 127.0.0.1:**8000** | 僅本機；nginx `/api/` 轉入 |
+| Next.js (next start) | 127.0.0.1:**3000** | 僅本機；nginx `/` 轉入 |
+| `NEXT_PUBLIC_API_BASE_URL` | `/api` | **build-time**；務必 build 時帶上 |
+| `GROQ_API_KEY` 等 | （選用） | 後端 `.env`，LLM 助理；不設則用離線範本 |
+
 ## 1. VM 與系統需求
 
 - GCP Compute Engine，Ubuntu 22.04+，建議 **e2-medium（2 vCPU / 4GB）**以上（servo_reg 模型載入吃記憶體）。

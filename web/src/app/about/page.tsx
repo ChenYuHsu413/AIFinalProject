@@ -39,6 +39,7 @@ const TRACKS = [
 ];
 
 const DISCLAIMERS = [
+  "Servo 主線目前以 placeholder 合成資料訓練，非真實 PHM 伺服馬達資料；機群健康為參考模型在 demo 運轉段上的即時輸出，遙測趨勢 / 告警排程為示意。",
   "AI4I 2020 為合成資料，不得宣稱為真實伺服馬達資料。",
   "IMS Set 2 為單軌跡，其結果不可泛化到其他軸承 / 馬達；不在單軌跡上做深度 RUL 回歸。",
   "Paderborn 為真實 PMSM 試驗台訊號（MCSA 成立），但屬試驗台、非產線伺服馬達；含人工與真實兩種損傷，須如實呈現泛化落差；屬故障分類非 RUL；為子集 MVP。",
@@ -82,7 +83,7 @@ export default function AboutPage() {
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide">誠實性聲明（報告防禦）</h2>
       <div className="space-y-2">
         {DISCLAIMERS.map((d, i) => (
-          <Note key={i} tone={i === 4 ? "info" : "warn"}>
+          <Note key={i} tone={i === DISCLAIMERS.length - 1 ? "info" : "warn"}>
             {d}
           </Note>
         ))}
