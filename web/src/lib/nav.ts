@@ -25,20 +25,68 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+export type AccentKey = "violet" | "blue" | "emerald" | "amber" | "rose" | "slate";
+
 export interface NavGroup {
   /** Group heading; null for ungrouped top/bottom items. */
   title: string | null;
   items: NavItem[];
+  accent: AccentKey;
 }
+
+/** Literal Tailwind class strings per accent (kept literal so the JIT keeps them). */
+export const ACCENTS: Record<
+  AccentKey,
+  { chip: string; dot: string; hover: string; text: string }
+> = {
+  violet: {
+    chip: "bg-violet-100 text-violet-600",
+    dot: "bg-violet-500",
+    hover: "hover:border-violet-300 hover:bg-violet-50/60",
+    text: "text-violet-600",
+  },
+  blue: {
+    chip: "bg-blue-100 text-blue-600",
+    dot: "bg-blue-500",
+    hover: "hover:border-blue-300 hover:bg-blue-50/60",
+    text: "text-blue-600",
+  },
+  emerald: {
+    chip: "bg-emerald-100 text-emerald-600",
+    dot: "bg-emerald-500",
+    hover: "hover:border-emerald-300 hover:bg-emerald-50/60",
+    text: "text-emerald-600",
+  },
+  amber: {
+    chip: "bg-amber-100 text-amber-600",
+    dot: "bg-amber-500",
+    hover: "hover:border-amber-300 hover:bg-amber-50/60",
+    text: "text-amber-600",
+  },
+  rose: {
+    chip: "bg-rose-100 text-rose-600",
+    dot: "bg-rose-500",
+    hover: "hover:border-rose-300 hover:bg-rose-50/60",
+    text: "text-rose-600",
+  },
+  slate: {
+    chip: "bg-slate-100 text-slate-600",
+    dot: "bg-slate-400",
+    hover: "hover:border-slate-300 hover:bg-slate-50",
+    text: "text-slate-600",
+  },
+};
 
 /** Mirrors the Streamlit NAV_GROUPS so the two UIs stay in sync. */
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: null,
+    accent: "slate",
     items: [{ label: "首頁總覽", href: "/", icon: LayoutDashboard }],
   },
   {
     title: "模組 Servo · 伺服馬達健康（主線）",
+    accent: "violet",
     items: [
       { label: "Servo 健康儀表板", href: "/servo/dashboard", icon: Gauge },
       { label: "AI 訓練模擬器", href: "/servo/simulator", icon: FlaskConical },
@@ -49,6 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "模組 A · 靜態風險 (AI4I)",
+    accent: "blue",
     items: [
       { label: "手動單筆預測", href: "/module-a/predict", icon: Target },
       { label: "What-if 敏感度分析", href: "/module-a/what-if", icon: Lightbulb },
@@ -58,6 +107,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "模組 B · 動態健康度 (IMS)",
+    accent: "emerald",
     items: [
       { label: "健康度總覽", href: "/module-b/overview", icon: HeartPulse },
       { label: "RUL 預測", href: "/module-b/rul", icon: TrendingDown },
@@ -66,6 +116,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "模組 B+ · 多軌跡泛化 (XJTU)",
+    accent: "amber",
     items: [
       { label: "多軌跡泛化", href: "/module-b-plus/generalization", icon: Dna },
       { label: "B+ 延伸應用", href: "/module-b-plus/applications", icon: Rocket },
@@ -73,10 +124,12 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "模組 C · 馬達電流診斷 (Paderborn)",
+    accent: "rose",
     items: [{ label: "馬達電流故障診斷", href: "/module-c", icon: Zap }],
   },
   {
     title: null,
+    accent: "slate",
     items: [{ label: "關於本專案", href: "/about", icon: Info }],
   },
 ];

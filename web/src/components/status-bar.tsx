@@ -32,13 +32,18 @@ export function StatusBar() {
   const connected = !err && health !== null;
 
   return (
-    <header className="flex h-12 items-center justify-between border-b bg-background px-5">
+    <header className="flex h-12 items-center justify-between border-b bg-white/80 px-5 backdrop-blur">
       <div className="flex items-center gap-2 text-sm">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            err ? "bg-red-500" : connected ? "bg-emerald-500" : "bg-amber-400"
-          }`}
-        />
+        <span className="relative flex h-2.5 w-2.5">
+          {connected && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+          )}
+          <span
+            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
+              err ? "bg-red-500" : connected ? "bg-emerald-500" : "bg-amber-400"
+            }`}
+          />
+        </span>
         <span className="text-muted-foreground">
           {err ? "後端未連線" : connected ? "後端已連線" : "連線中…"}
         </span>

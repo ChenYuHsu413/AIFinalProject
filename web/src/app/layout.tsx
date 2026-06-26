@@ -35,7 +35,9 @@ export default function RootLayout({
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
             <StatusBar />
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <main className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-white">
+              {children}
+            </main>
           </div>
         </div>
       </body>
