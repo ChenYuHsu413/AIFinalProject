@@ -105,7 +105,8 @@
 - **Phase 0 — API 契約盤點**：✅ 完成（本文件第 3 節）。
 - **Phase 1 — 補完 FastAPI**：✅ 完成（2026-06-26）。T1–T15 全數補齊，新增約 25 個 endpoint、
   43 條 API 測試，全套 93 passed / 1 skipped（其中 API 測試 43 條）。由易到難、demo 全程不斷線。
-- **Phase 1.5 — 驗證閘**：把 Streamlit 改成「只透過 API 取資料」也能跑；跑得起來代表契約完整。
+- **Phase 1.5 — 驗證閘**：✅ 完成（2026-06-26）。改採 API 整合測試（`tests/test_backend_integration.py`）
+  驗證跨端點頁面流程與一致性，確認契約完整；未重構 Streamlit thin client（風險較低）。
 - **Phase 2 — Next.js 骨架 + 漸進搬頁**：App Router + TS + Tailwind + shadcn/ui；PNG 先 `<img>`，
   互動圖表逐張換 Recharts/Plotly.js；Streamlit 留 fallback。
 - **Phase 3 — 部署 + 收尾**：GCP Compute Engine VM；nginx 反向代理前置（`/api` → uvicorn/
@@ -146,8 +147,16 @@
       金鑰讀 server `.env`、回 `{text, source}`、無金鑰自動回退離線範本。**不串流**（SSE 留待 Phase 2）。
       純包裝既有 `maintenance_assistant`，未動供應商/模型邏輯，redline 的報告/問答分離 prompt 原樣保留。
 
-### Phase 1.5 — 驗證閘
-- [ ] T16 把 Streamlit 改成 thin client（只透過 API 取資料）或補一組 API 整合測試，確認契約完整
+### Phase 1.5 — 驗證閘 ✅ 完成（2026-06-26）
+- [x] T16 補一組 API 整合測試確認契約完整（採此法，而非重構 2075 行 Streamlit thin client，風險較低）。
+      `tests/test_backend_integration.py` 涵蓋真實**跨端點頁面流程與一致性**：
+      - Servo 儀表板鏈：`/servo/model_info` → `/servo/samples` → `/servo/predict` → `/servo/assistant/{report,qa}`
+        （證明真實 prediction 直接可餵 LLM 助理，正是先前 `top_features.z` 接縫）。
+      - 模組 A 鏈：`/predict_full` → `/predict/explain` + `/metrics/test_predictions`（門檻調整器資料）。
+      - 模組 B 一致性：`/ims/metrics` 的 `fpt_index` == `/ims/health_indicator`（同 b1_rms）重算結果。
+      - 模組 B+ 鏈：`/xjtu/rul_predictions` 某列 → `/maintenance/advice`；`generalization` 軸承數 == overlay 曲線數。
+      - 模組 C 一致性：`/paderborn/eval` 的 summary == `/metrics/summary?module=C`。
+      全套 99 passed / 1 skipped。**契約完整性確認：Phase 0 盤點的 19 個缺口全數補齊並驗證可組成各頁所需。**
 
 ### Phase 2 — Next.js 前端
 - [ ] T17 scaffold Next.js（App Router / TS / Tailwind / shadcn/ui）、API client、env 設定、CORS 對接
