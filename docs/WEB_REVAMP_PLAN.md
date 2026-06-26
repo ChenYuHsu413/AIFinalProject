@@ -107,9 +107,11 @@
   43 條 API 測試，全套 93 passed / 1 skipped（其中 API 測試 43 條）。由易到難、demo 全程不斷線。
 - **Phase 1.5 — 驗證閘**：✅ 完成（2026-06-26）。改採 API 整合測試（`tests/test_backend_integration.py`）
   驗證跨端點頁面流程與一致性，確認契約完整；未重構 Streamlit thin client（風險較低）。
-- **Phase 2 — Next.js 骨架 + 漸進搬頁**：🚧 進行中（2026-06-26 起）。T17 scaffold 完成
-  （`web/`，Next 16.2.9 + React 19 + Tailwind v4 + shadcn/ui，需 Node 24）。後續：T18 版面/導覽、
-  T19 逐頁搬、T20 圖表（PNG 先 `<img>`，互動圖表逐張換 Recharts/Plotly.js）；Streamlit 留 fallback。
+- **Phase 2 — Next.js 骨架 + 漸進搬頁**：🚧 進行中（2026-06-26 起）。T17 scaffold（`web/`，Next 16.2.9
+  + React 19 + Tailwind v4 + shadcn/ui，需 Node 24）、T18 版面/導覽/狀態列（亮色漸層品牌 +
+  可收合補充模組）皆完成；**T19 Servo 主線五頁全部完成**，補充模組 A/B/B+/C + 關於頁待辦。
+  Streamlit 全程留 fallback。本機開發：後端 `uvicorn ...:app`、前端 `cd web && npm run dev`，
+  `web/.env.local` 的 `NEXT_PUBLIC_API_BASE_URL` 指向後端（本機 8000 被占用時用 8010 等）。
 - **Phase 3 — 部署 + 收尾**：GCP Compute Engine VM；nginx 反向代理前置（`/api` → uvicorn/
   gunicorn 跑 FastAPI、`/` → Next.js node 程序），以 systemd/pm2 常駐；CI 更新；誠實性紅線
   文案驗收；docs 同步補日期戳。
@@ -169,8 +171,16 @@
       （2026-06-26 完成）：左側 grouped 側邊欄（`nav.ts` 鏡像 Streamlit NAV_GROUPS、lucide 圖示、active 高亮、
       誠實性 pill「決策輔助/不控制馬達」）+ 頂部狀態列（後端連線點 + 主線模型/macro-F1 + placeholder 合成資料警示）。
       建立全部 18 條路由（首頁總覽 + 16 個 stub + about），DRY `StubPage` 依 `usePathname` 顯示標籤；build 18 routes 通過。
-- [ ] T19 逐頁搬：Servo 儀表板 → 模組 A → 模組 B → 模組 B+ → 模組 C → LLM 助理 → 知識庫 → 關於頁
+- [~] T19 逐頁搬（進行中，2026-06-26）：**Servo 主線五頁全部完成** — 健康儀表板（`/servo/predict`
+      + samples，含一致性警告/真實標籤比對）、AI 訓練模擬器（`/servo/simulate` + options +
+      reference_metrics，CSS 混淆矩陣 + DL 唯讀區）、LLM 維護助理（`/servo/assistant/{report,qa,providers}`，
+      react-markdown 渲染 + 來源 badge + 離線 fallback）、馬達欄位解釋（`/servo/glossary` + feature_sets）、
+      維修知識庫（`/knowledge/{documents,search}`）。**待辦：補充模組 A / B / B+ / C 各頁、關於頁。**
+      共用 `components/ui-kit.tsx`（Card/Stat/Note/Bar/PageTitle）+ `lib/servo.ts` 色彩/標籤 map。
+      踩雷修正：`/servo/simulate` 回傳 `task` 為 `classification/regression`（非 `clf/reg`），clf/reg
+      判別改用結果欄位（`confusion_matrix` 存在＝分類）。
 - [ ] T20 PNG 圖先 `<img>` 顯示；互動圖表逐張換 Recharts / Plotly.js
+      （目前機率/特徵/比較/重建誤差皆以 CSS 橫條呈現；IMS/XJTU 曲線等待 T19 補充模組時再評估上圖表庫）
 
 ### Phase 3 — 部署 + 收尾
 - [ ] T21 GCP Compute Engine VM 佈署：nginx 反向代理（`/api`→FastAPI、`/`→Next.js）、
