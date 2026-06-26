@@ -116,7 +116,7 @@
 ### Phase 1 — 補完 FastAPI
 
 **Stage 1.1 — 靜態讀檔類 GET（最快，清掉一大半缺口）**
-- [ ] T1 `GET /figures/{name}` — `StaticFiles` 掛載 `outputs/figures/`
+- [x] T1 `GET /figures/{name}` — `StaticFiles` 掛載 `outputs/figures/`（2026-06-26 完成，含 API 測試）
 - [ ] T2 `GET /metrics/summary?module=` — 統一讀 `servo_*`、`ims_rul`、`xjtu_*`、`paderborn_eval` JSON
 - [ ] T3 `GET /paderborn/eval` — 讀 `paderborn_eval.json`
 - [ ] T4 `GET /xjtu/generalization`、`GET /xjtu/lobo_loco`、`GET /xjtu/domain_adapt`

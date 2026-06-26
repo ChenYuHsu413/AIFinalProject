@@ -18,8 +18,10 @@ if str(_ROOT) not in sys.path:
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.backend import services
+from src.utils.paths import load_config, resolve
 from app.backend.schemas import (
     BatchPredictResponse,
     FailureTypeMetricsResponse,
@@ -143,3 +145,12 @@ def servo_predict(req: ServoPredictRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# --- Static figures ----------------------------------------------------------
+# Serve the pre-rendered training / evaluation figures (outputs/figures/*.png)
+# as ``GET /figures/{name}`` so the frontend can ``<img src>`` them directly
+# instead of reading the filesystem.
+_figures_dir = resolve(load_config()["paths"]["outputs_figures"])
+_figures_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/figures", StaticFiles(directory=_figures_dir), name="figures")
