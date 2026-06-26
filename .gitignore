@@ -88,6 +88,10 @@ data/raw/servo/
 !outputs/metrics/model_comparison.csv
 !outputs/metrics/test_predictions.csv
 
+# EDA exploratory figures — regenerable via scripts/run_eda.py, not referenced
+# by any web/streamlit page, so re-ignore them (overrides the broad un-ignore above)
+outputs/figures/eda_*.png
+
 # Keep folder placeholders
 !**/.gitkeep
 
