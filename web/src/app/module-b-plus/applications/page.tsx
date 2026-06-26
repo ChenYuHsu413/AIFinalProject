@@ -100,6 +100,14 @@ export default function ModuleBPlusApplicationsPage() {
           </div>
         </div>
       )}
+
+      {ov && !ov.available && (
+        <Note tone="info">
+          HI 重疊圖需<b>原始振動資料</b>即時重算；雲端 demo 未打包該資料（約 21 GB）。
+          多軌跡泛化的彙整指標見「多軌跡泛化」頁（由已提交結果呈現）；完整重疊圖請在本機
+          （下載資料後）執行。
+        </Note>
+      )}
     </div>
   );
 }

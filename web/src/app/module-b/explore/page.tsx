@@ -48,7 +48,7 @@ export default function ModuleBExplorePage() {
   }, []);
 
   const curve =
-    hi?.points.map((p) => ({ t: p.timestamp.slice(5, 16), health: p.health })) ?? [];
+    hi?.points?.map((p) => ({ t: p.timestamp.slice(5, 16), health: p.health })) ?? [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 lg:px-6">
@@ -59,7 +59,14 @@ export default function ModuleBExplorePage() {
       <Note tone="warn" className="mb-6">單軌跡 IMS Set 2；指標切換僅供觀察，不代表可泛化。</Note>
       {err && <Note tone="danger" className="mb-6">無法載入指標，請確認後端已啟動。</Note>}
 
-      {hi && (
+      {hi && !hi.available && (
+        <Note tone="info">
+          互動健康指標需<b>原始振動資料</b>即時重算；雲端 demo 未打包該資料（約 21 GB）。
+          完整版（可切換指標、即時重算 FPT）請在本機（下載資料後）執行。
+        </Note>
+      )}
+
+      {hi && hi.available && (
         <>
           <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-sm">
             <label className="block">
