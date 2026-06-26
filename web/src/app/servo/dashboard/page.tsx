@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Bot, Loader2, Search } from "lucide-react";
+import { AlertTriangle, Bot, Loader2, Search, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, Note, PageTitle, Stat } from "@/components/ui-kit";
+import { Card, Note, PageTitle } from "@/components/ui-kit";
+import { HealthScoreGauge } from "@/components/dashboard/HealthScoreGauge";
+import { FeatureImportancePanel } from "@/components/dashboard/FeatureImportancePanel";
+import { TelemetryTrends } from "@/components/dashboard/TelemetryTrends";
+import { HealthBadge, RiskBadge } from "@/components/dashboard/badges";
 import {
   apiGet,
   apiPost,
@@ -12,13 +16,8 @@ import {
   type ServoPrediction,
   type ServoSample,
 } from "@/lib/api";
-import {
-  HEALTH_COLOR,
-  HEALTH_ORDER,
-  HEALTH_ZH,
-  RISK_COLOR,
-  RISK_ZH,
-} from "@/lib/servo";
+import { HEALTH_COLOR, HEALTH_ORDER, HEALTH_ZH } from "@/lib/servo";
+import { TELEMETRY } from "@/lib/mock";
 
 export default function ServoDashboardPage() {
   const [cols, setCols] = useState<string[] | null>(null);
@@ -59,20 +58,20 @@ export default function ServoDashboardPage() {
   const trueLabel = samples[idx]?.["ylabel"] as string | undefined;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-6xl px-6 py-8">
       <PageTitle
-        title="Servo 健康狀態儀表板"
+        title="Servo 健康儀表板"
         desc="輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、主要異常特徵與模型信心，並給出建議處置。"
       />
 
       {loadErr && (
-        <Note tone="danger">
+        <Note tone="danger" className="mb-6">
           無法載入 demo 樣本或模型資訊。請確認後端已啟動。
         </Note>
       )}
 
       {/* sample picker */}
-      <div className="mb-6 rounded-xl border bg-gradient-to-br from-sky-50 to-white p-5 shadow-sm">
+      <div className="mb-6 rounded-xl border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-sm">
         <h2 className="mb-3 text-sm font-semibold">選擇一筆運轉段</h2>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1">
@@ -82,7 +81,7 @@ export default function ServoDashboardPage() {
             <select
               value={idx}
               onChange={(e) => setIdx(Number(e.target.value))}
-              className="w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
             >
               {samples.map((s, i) => {
                 const l = String(s["ylabel"] ?? "?");
@@ -105,7 +104,15 @@ export default function ServoDashboardPage() {
         </div>
       </div>
 
-      {pred && <Result pred={pred} trueLabel={trueLabel} />}
+      {pred ? (
+        <Result pred={pred} trueLabel={trueLabel} />
+      ) : (
+        !loadErr && (
+          <div className="rounded-xl border border-dashed border-border/70 bg-card/40 p-12 text-center text-sm text-muted-foreground">
+            選一筆運轉段並按「估測健康狀態」即可看到健康分數、風險、異常特徵與建議處置。
+          </div>
+        )
+      )}
     </div>
   );
 }
@@ -118,6 +125,8 @@ function Result({
   trueLabel?: string;
 }) {
   const c = HEALTH_COLOR[pred.predicted_health_state] ?? HEALTH_COLOR.MED;
+  // Illustrative recent-telemetry window (mock until Servo Dataset streams real).
+  const telemetry = TELEMETRY["servo-a02"];
 
   return (
     <div className="space-y-6">
@@ -128,19 +137,21 @@ function Result({
         </Note>
       )}
 
-      {/* KPI cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="健康狀態" value={pred.health_state_zh} sub={`分類：${pred.predicted_health_state}`} valueClass={c.text} />
-        <Stat label="退化分數 DV" value={pred.degradation_score.toFixed(2)} sub="0=健康 · 1=高度退化" valueClass={c.text} />
-        <Stat label="健康分數" value={pred.health_score.toFixed(0)} sub="(1−DV)×100" valueClass={c.text} />
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <p className="text-xs text-muted-foreground">風險等級</p>
-          <span className={`mt-1 inline-block rounded-full px-3 py-1 text-sm font-semibold ${RISK_COLOR[pred.risk_level]}`}>
-            {RISK_ZH[pred.risk_level]} · {pred.risk_level}
-          </span>
-          <p className="mt-2 text-xs text-muted-foreground">
-            模型信心 <b className="text-foreground">{(pred.model_confidence * 100).toFixed(0)}%</b>
-          </p>
+      {/* Top: gauge + headline metrics */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border/70 bg-card/70 p-6 shadow-sm backdrop-blur-sm">
+          <HealthScoreGauge score={pred.health_score} />
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <HealthBadge state={pred.predicted_health_state} />
+            <RiskBadge level={pred.risk_level} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+          <MiniStat label="健康狀態" value={pred.health_state_zh} sub={`分類 ${pred.predicted_health_state}`} valueClass={c.text} />
+          <MiniStat label="退化分數 DV" value={pred.degradation_score.toFixed(2)} sub="0=健康 · 1=高度退化" valueClass={c.text} />
+          <MiniStat label="健康分數" value={pred.health_score.toFixed(0)} sub="(1−DV)×100" valueClass={c.text} />
+          <MiniStat label="模型信心" value={`${(pred.model_confidence * 100).toFixed(0)}%`} sub="classifier confidence" />
         </div>
       </div>
 
@@ -164,10 +175,15 @@ function Result({
                     <span className="font-medium">
                       {HEALTH_ZH[k]} ({k})
                     </span>
-                    <span className="text-muted-foreground">{(v * 100).toFixed(1)}%</span>
+                    <span className="text-muted-foreground">
+                      {(v * 100).toFixed(1)}%
+                    </span>
                   </div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                    <div className={`h-full rounded-full ${col.bar}`} style={{ width: `${v * 100}%` }} />
+                    <div
+                      className={`h-full rounded-full ${col.bar}`}
+                      style={{ width: `${v * 100}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -175,7 +191,9 @@ function Result({
           </div>
           {trueLabel && (
             <p className="mt-3 text-xs text-muted-foreground">
-              {trueLabel === pred.predicted_health_state ? "✅ 與真實標籤一致：" : "⚠ 與真實標籤不同："}
+              {trueLabel === pred.predicted_health_state
+                ? "✅ 與真實標籤一致："
+                : "⚠ 與真實標籤不同："}
               真實 {HEALTH_ZH[trueLabel] ?? trueLabel}（{trueLabel}）
             </p>
           )}
@@ -183,40 +201,39 @@ function Result({
 
         {/* top anomalous features */}
         <Card title="主要異常特徵">
-          <div className="space-y-3">
-            {pred.top_features.map((t) => {
-              const mag = Math.min(1, Math.abs(t.z) / 6);
-              const bar = Math.abs(t.z) > 3 ? "bg-red-500" : Math.abs(t.z) > 1.5 ? "bg-amber-500" : "bg-emerald-500";
-              return (
-                <div key={t.feature}>
-                  <div className="mb-0.5 flex justify-between text-xs">
-                    <span className="font-mono font-medium">{t.feature}</span>
-                    <span className="text-muted-foreground">z = {t.z}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className={`h-full rounded-full ${bar}`} style={{ width: `${mag * 100}%` }} />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.hint}</p>
-                </div>
-              );
-            })}
-          </div>
+          <FeatureImportancePanel features={pred.top_features} />
         </Card>
+      </div>
+
+      {/* telemetry trends (mock) */}
+      <div>
+        <div className="mb-2 flex items-end justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide">
+            感測器趨勢
+          </h2>
+          <span className="text-[11px] text-muted-foreground">
+            示意 mock · 待真實遙測串流
+          </span>
+        </div>
+        <TelemetryTrends data={telemetry} />
       </div>
 
       {/* maintenance advice */}
       <Card title="建議處置">
         <ul className="space-y-2">
           {pred.maintenance_advice.map((tip, i) => (
-            <li key={i} className="flex gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
-              <span className="text-primary">•</span>
+            <li
+              key={i}
+              className="flex gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-sm"
+            >
+              <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <span>{tip}</span>
             </li>
           ))}
         </ul>
       </Card>
 
-      <div className="flex items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800">
+      <div className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200">
         <Bot className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
           想要更完整的人話解釋與工單草稿？到側邊欄「LLM 維護助理」頁，它會接收這筆結果並產生維修建議。
@@ -226,3 +243,22 @@ function Result({
   );
 }
 
+function MiniStat({
+  label,
+  value,
+  sub,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${valueClass ?? ""}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}

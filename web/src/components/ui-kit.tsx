@@ -10,7 +10,7 @@ export function PageTitle({ title, desc }: { title: string; desc?: string }) {
   );
 }
 
-/** White rounded card with optional title. */
+/** Glass panel card with optional title (dark-industrial surface). */
 export function Card({
   title,
   children,
@@ -21,8 +21,17 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl border bg-white p-5 shadow-sm", className)}>
-      {title && <h2 className="mb-3 text-sm font-semibold">{title}</h2>}
+    <div
+      className={cn(
+        "rounded-xl border border-border/70 bg-card/70 p-5 shadow-sm backdrop-blur-sm",
+        className,
+      )}
+    >
+      {title && (
+        <h2 className="mb-3 text-sm font-semibold text-card-foreground">
+          {title}
+        </h2>
+      )}
       {children}
     </div>
   );
@@ -41,7 +50,7 @@ export function Stat({
   valueClass?: string;
 }) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn("mt-1 text-2xl font-bold", valueClass)}>{value}</p>
       {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
@@ -60,9 +69,9 @@ export function Note({
   className?: string;
 }) {
   const cls = {
-    info: "border-slate-200 bg-slate-50 text-slate-700",
-    warn: "border-amber-200 bg-amber-50 text-amber-800",
-    danger: "border-red-200 bg-red-50 text-red-800",
+    info: "border-sky-500/30 bg-sky-500/10 text-sky-200",
+    warn: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+    danger: "border-red-500/30 bg-red-500/10 text-red-200",
   }[tone];
   return (
     <div className={cn("rounded-lg border px-4 py-2.5 text-sm", cls, className)}>

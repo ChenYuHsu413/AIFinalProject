@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Package } from "lucide-react";
+import { Activity, ChevronRight, Package } from "lucide-react";
 
 import { ACCENTS, NAV_GROUPS, type NavGroup } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -26,25 +26,27 @@ export function Sidebar() {
   if (supp.length) blocks.push(<SupplementaryExpander key="supp" groups={supp} />);
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r bg-white md:flex">
-      <div className="flex items-center gap-2.5 border-b px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 text-sm font-bold text-white shadow-sm">
-          S
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-4">
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-sky-600 text-sm font-bold text-slate-950 shadow-[0_0_18px_-2px] shadow-cyan-500/50">
+          <Activity className="h-5 w-5" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold">伺服馬達健康監測</p>
-          <p className="text-xs text-muted-foreground">智慧維護助理系統</p>
+          <p className="text-sm font-semibold tracking-tight">Command Center</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Servo Motor Health
+          </p>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">{blocks}</nav>
 
-      <div className="border-t px-4 py-3 text-xs text-muted-foreground">
+      <div className="border-t border-sidebar-border px-4 py-3 text-xs text-muted-foreground">
         <div className="flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-emerald-700">
+          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
             決策輔助
           </span>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-300 ring-1 ring-inset ring-amber-500/30">
             不控制馬達
           </span>
         </div>
@@ -75,11 +77,18 @@ function GroupItems({ group }: { group: NavGroup }) {
             <Link
               href={item.href}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                active ? accent.active : cn("text-foreground/75", accent.tint),
+                "flex h-8 items-center gap-2.5 rounded-md px-2 text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
               )}
             >
-              <Icon className={cn("h-4 w-4 shrink-0", !active && accent.text)} />
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  active ? "text-primary" : accent.text,
+                )}
+              />
               <span className="truncate">{item.label}</span>
             </Link>
           </li>
@@ -133,7 +142,7 @@ function SupplementaryExpander({ groups }: { groups: NavGroup[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted"
+        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-sidebar-accent/60"
       >
         <Package className="h-3.5 w-3.5" />
         <span className="flex-1 text-left">補充模組（對照 / 歷史）</span>

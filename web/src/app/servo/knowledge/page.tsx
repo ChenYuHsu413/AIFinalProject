@@ -59,9 +59,9 @@ export default function KnowledgePage() {
         {docs.map((d) => (
           <div
             key={d.source}
-            className="flex items-start gap-3 rounded-xl border bg-white p-4 shadow-sm"
+            className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-500/30">
               <FileText className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -81,7 +81,7 @@ export default function KnowledgePage() {
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && searchKb()}
             placeholder="輸入症狀或關鍵字…"
-            className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
           <Button onClick={searchKb} disabled={busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -98,17 +98,17 @@ export default function KnowledgePage() {
         {hits && hits.length > 0 && (
           <div className="mt-4 space-y-2">
             {hits.map((h, i) => (
-              <details key={i} className="group rounded-lg border bg-white">
+              <details key={i} className="group rounded-lg border border-border/70 bg-card/70 backdrop-blur-sm">
                 <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-sm">
                   <span className="font-medium">{h.title || h.source}</span>
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
                     相關度 {h.score}
                   </span>
                   <span className="ml-auto text-muted-foreground transition-transform group-open:rotate-90">
                     ›
                   </span>
                 </summary>
-                <p className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                <p className="border-t border-border/70 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
                   {h.text}
                 </p>
               </details>

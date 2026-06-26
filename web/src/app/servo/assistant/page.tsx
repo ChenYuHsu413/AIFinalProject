@@ -116,7 +116,7 @@ export default function AssistantPage() {
       {loadErr && <Note tone="danger">無法載入助理資料，請確認後端已啟動。</Note>}
 
       {/* prediction context */}
-      <div className="mb-4 rounded-xl border bg-gradient-to-br from-stone-50 to-white p-5 shadow-sm">
+      <div className="mb-4 rounded-xl border border-border/70 bg-gradient-to-br from-violet-500/10 to-card/50 p-5 shadow-sm backdrop-blur-sm">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="text-sm font-semibold">目前的模型結果（助理輸入）</h2>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -128,7 +128,7 @@ export default function AssistantPage() {
                 setIdx(i);
                 runPredict(i, cols, samples);
               }}
-              className="rounded-lg border bg-white px-2 py-1.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
             >
               {samples.map((s, i) => {
                 const l = String(s["ylabel"] ?? "?");
@@ -205,7 +205,7 @@ export default function AssistantPage() {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && askQa()}
             placeholder="輸入問題…"
-            className="w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
           <Button onClick={askQa} disabled={!pred || qaBusy} variant="secondary" className="mt-2 w-full">
             {qaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircleQuestion className="h-4 w-4" />}
@@ -228,7 +228,9 @@ function SourceBadge({ source }: { source: string }) {
   return (
     <span
       className={`mb-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        fallback ? "bg-slate-100 text-slate-600" : "bg-emerald-100 text-emerald-700"
+        fallback
+          ? "bg-slate-500/15 text-slate-300 ring-1 ring-inset ring-slate-500/30"
+          : "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30"
       }`}
     >
       {fallback ? "⚪ 離線範本" : `🟢 ${PROVIDER_LABEL[source] ?? source}`}
@@ -238,7 +240,7 @@ function SourceBadge({ source }: { source: string }) {
 
 function Markdown({ text }: { text: string }) {
   return (
-    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-p:my-2 prose-li:my-0.5">
+    <div className="prose prose-sm prose-invert max-w-none prose-headings:font-semibold prose-p:my-2 prose-li:my-0.5">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   );

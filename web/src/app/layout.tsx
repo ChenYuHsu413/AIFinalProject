@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_TC } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
-import { StatusBar } from "@/components/status-bar";
+import { Header } from "@/components/header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,10 +14,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// 思源黑體（Source Han Sans / Noto Sans CJK 繁中版）— SIL OFL 1.1，免費可商用。
+// CJK 字檔較大，關閉 preload，由瀏覽器依 unicode-range 按需載入。
+const notoSansTC = Noto_Sans_TC({
+  variable: "--font-noto-sans-tc",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+  preload: false,
+});
+
 export const metadata: Metadata = {
-  title: "伺服馬達健康監測與智慧維護",
+  title: "AI Servo Motor Health Command Center",
   description:
-    "AI 伺服馬達故障風險預測與預測性維護建議系統 — FastAPI + Next.js 前端",
+    "AI 伺服馬達健康監控與智慧維護指揮中心 — FastAPI + Next.js 前端",
 };
 
 export default function RootLayout({
@@ -28,15 +38,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${notoSansTC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full" suppressHydrationWarning>
+      <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
         <div className="flex h-screen">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
-            <StatusBar />
-            <main className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-white">
+            <Header />
+            <main className="command-surface flex-1 overflow-y-auto">
               {children}
             </main>
           </div>
