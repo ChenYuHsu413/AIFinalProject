@@ -177,3 +177,14 @@ def test_predict_batch_empty():
 def test_predict_batch_validation_error():
     resp = client.post("/predict/batch", json=[{"type": "X"}])
     assert resp.status_code == 422
+
+
+def test_predict_explain():
+    resp = client.post("/predict/explain", json=_SAMPLE_RECORD)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "supported" in body
+    if body["supported"]:
+        assert len(body["feature_names"]) == len(body["shap_values"])
+        assert len(body["feature_values"]) == len(body["shap_values"])
+        assert isinstance(body["base_value"], (int, float))

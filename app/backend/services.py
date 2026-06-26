@@ -48,6 +48,24 @@ def predict_one_full(record: Dict[str, Any]) -> Dict[str, Any]:
     return predict_full(record)
 
 
+def predict_explain(record: Dict[str, Any]) -> Dict[str, Any]:
+    """SHAP explanation for a single record. ``supported`` is False when the
+    best model is not a tree the TreeExplainer can handle (mirrors the UI note)."""
+    from src.models.explain import explain_record, is_supported
+
+    if not is_supported():
+        return {"supported": False}
+    e = explain_record(record)
+    return {
+        "supported": True,
+        "feature_names": e.feature_names,
+        "feature_values": e.feature_values,
+        "shap_values": e.shap_values,
+        "base_value": e.base_value,
+        "model_output": e.model_output,
+    }
+
+
 def failure_type_metrics() -> List[Dict[str, Any]]:
     cfg = load_config()
     path = resolve(cfg["paths"]["failure_type_metrics"])

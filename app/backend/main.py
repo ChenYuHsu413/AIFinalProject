@@ -91,6 +91,17 @@ async def batch_predict(file: UploadFile = File(...)):
     return {"count": len(results), "results": results}
 
 
+@app.post("/predict/explain")
+def predict_explain(req: PredictRequest):
+    """單筆 SHAP 特徵貢獻解釋；非樹模型回 {"supported": false}。"""
+    try:
+        return services.predict_explain(req.to_raw_record())
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/metrics", response_model=MetricsResponse)
 def metrics():
     return {"rows": services.comparison_metrics()}
