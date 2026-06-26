@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -141,8 +142,11 @@ def _call_llm(system: str, user: str) -> Tuple[str, str]:
                 continue
             if text and text.strip():
                 return text, prov
-        except Exception:
-            continue  # try the next provider
+        except Exception as e:  # try the next provider
+            if os.environ.get("SERVO_LLM_DEBUG"):
+                print(f"[llm] {prov} 失敗（{type(e).__name__}: {e}），改試下一家。",
+                      file=sys.stderr)
+            continue
     raise RuntimeError("沒有可用的 LLM 供應商")
 
 
@@ -227,7 +231,7 @@ def _fallback_report(prediction: Dict[str, Any],
 系統依感測特徵推估目前健康狀態為 {zh}，風險 {risk}。建議依上述項目檢查並記錄結果；
 本結果為決策輔助，不代表確定故障。{kb}
 
-> （此內容由離線 fallback 範本產生；設定 ANTHROPIC_API_KEY 後可改用 LLM 生成更自然的敘述。）"""
+> （此內容由離線 fallback 範本產生；於 .env 設定任一供應商金鑰（建議免費的 GROQ_API_KEY）後可改用 LLM 生成更自然的敘述。）"""
 
 
 def _fallback_answer(question: str, prediction: Dict[str, Any]) -> str:
@@ -238,5 +242,5 @@ def _fallback_answer(question: str, prediction: Dict[str, Any]) -> str:
         f"針對你的問題「{question}」：\n\n"
         f"目前模型判斷為 **{zh}**，風險等級 **{risk}**，主要異常特徵為 {tops}。\n"
         "建議檢查潤滑、是否卡滯與負載是否異常；實際狀況**需由現場人員確認**。\n\n"
-        "> （離線 fallback 回答；設定 ANTHROPIC_API_KEY 後可獲得更完整的問答。）"
+        "> （離線 fallback 回答；於 .env 設定任一供應商金鑰（建議免費的 GROQ_API_KEY）後可獲得更完整的問答。）"
     )
