@@ -24,6 +24,8 @@ from fastapi.staticfiles import StaticFiles
 from app.backend import services
 from src.utils.paths import load_config, resolve
 from app.backend.schemas import (
+    AssistantQARequest,
+    AssistantReportRequest,
     BatchPredictResponse,
     FailureTypeMetricsResponse,
     FullPredictResponse,
@@ -329,6 +331,24 @@ def servo_simulate(req: ServoSimulateRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/servo/assistant/providers")
+def servo_assistant_providers():
+    """已設定的 LLM 供應商（依序嘗試；全空則用離線確定性範本）。"""
+    return services.assistant_providers()
+
+
+@app.post("/servo/assistant/report")
+def servo_assistant_report(req: AssistantReportRequest):
+    """依結構化預測 + 知識庫檢索產生完整維護報告；回 {text, source}。"""
+    return services.assistant_report(req.prediction)
+
+
+@app.post("/servo/assistant/qa")
+def servo_assistant_qa(req: AssistantQARequest):
+    """依結構化預測 + 知識庫檢索回答維修問題（不輸出整份報告）；回 {text, source}。"""
+    return services.assistant_qa(req.question, req.prediction)
 
 
 # --- Static figures ----------------------------------------------------------

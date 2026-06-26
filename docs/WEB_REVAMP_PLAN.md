@@ -3,7 +3,11 @@
 > **狀態（2026-06-26）**：Phase 0（API 契約盤點）完成。已掃描 `app/streamlit_app.py`
 > （2076 行）與既有 9 個 FastAPI endpoint，產出缺口表與四階段計畫。目標定位為**作品集 /
 > 履歷對外展示**，時程寬裕（一個月以上），採**漸進遷移**：先補完後端 API、保留 Streamlit
-> 當 fallback，再逐頁搬到 Next.js。本文件為規劃，**尚未動程式碼**。
+> 當 fallback，再逐頁搬到 Next.js。
+>
+> **進度（2026-06-26）**：**Phase 1（補完 FastAPI）已完成**——T1–T15 全數補齊，後端新增約
+> 25 個 endpoint 覆蓋模組 A/B/B+/C、Servo 主線、訓練模擬器、LLM 助理與知識庫；新增 43 條
+> API 測試，全套 90 passed / 1 skipped。下一步為 Phase 1.5 驗證閘（T16）與 Phase 2 Next.js。
 >
 > **技術選型已定案（2026-06-26）**：後端 **FastAPI**（維持現有 `app/backend/`）；前端
 > **Next.js（App Router）+ TypeScript + Tailwind + shadcn/ui**，以「盡可能好看 / 高度客製」為
@@ -99,7 +103,8 @@
 ## 4. 四階段計畫
 
 - **Phase 0 — API 契約盤點**：✅ 完成（本文件第 3 節）。
-- **Phase 1 — 補完 FastAPI**：補齊 19 個缺口 endpoint。由易到難，demo 不斷線。
+- **Phase 1 — 補完 FastAPI**：✅ 完成（2026-06-26）。T1–T15 全數補齊，新增約 25 個 endpoint、
+  43 條 API 測試，全套 90 passed / 1 skipped。由易到難、demo 全程不斷線。
 - **Phase 1.5 — 驗證閘**：把 Streamlit 改成「只透過 API 取資料」也能跑；跑得起來代表契約完整。
 - **Phase 2 — Next.js 骨架 + 漸進搬頁**：App Router + TS + Tailwind + shadcn/ui；PNG 先 `<img>`，
   互動圖表逐張換 Recharts/Plotly.js；Streamlit 留 fallback。
@@ -134,10 +139,12 @@
 - [x] T12 `GET /xjtu/health_overlay`、`GET /xjtu/rul_predictions`、`GET /xjtu/replay/{condition}/{bearing}`（預算 frames）（2026-06-26 完成，含測試；overlay 每曲線降採樣 ≤200 點、replay ≤100 frames 回結構化欄位不送 HTML、找不到軌跡回 404）
 - [x] T13 `POST /maintenance/advice`（包 `maintenance_advice()`）（2026-06-26 完成，含測試；回 asdict(Advice)，預設 alarm 30 / margin 0.3）
 
-**Stage 1.4 — 硬點（最後啃）**
+**Stage 1.4 — 硬點（最後啃）** ✅ 全數完成（2026-06-26）
 - [x] T14 `POST /servo/simulate`（+ `GET /servo/simulate/options`；`/servo/reference_metrics` 已於 T7 完成）（2026-06-26 完成，含測試；實測訓練 <0.4s → 採同步，無需背景任務）
-- [ ] T15 LLM 助理：`GET /servo/assistant/providers`、`POST /servo/assistant/report`、`POST /servo/assistant/qa`
-      — server 端金鑰、context 契約（帶 `servo_pred`）、SSE 串流
+- [x] T15 LLM 助理：`GET /servo/assistant/providers`、`POST /servo/assistant/report`、`POST /servo/assistant/qa`
+      （2026-06-26 完成，含測試）— **無狀態**（prediction 放 request body）、server 端 RAG 自動檢索、
+      金鑰讀 server `.env`、回 `{text, source}`、無金鑰自動回退離線範本。**不串流**（SSE 留待 Phase 2）。
+      純包裝既有 `maintenance_assistant`，未動供應商/模型邏輯，redline 的報告/問答分離 prompt 原樣保留。
 
 ### Phase 1.5 — 驗證閘
 - [ ] T16 把 Streamlit 改成 thin client（只透過 API 取資料）或補一組 API 整合測試，確認契約完整

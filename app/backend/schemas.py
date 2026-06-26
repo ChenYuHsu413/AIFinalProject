@@ -66,6 +66,15 @@ class HealthResponse(BaseModel):
     message: str | None = None
 
 
+class AssistantReportRequest(BaseModel):
+    prediction: dict = Field(..., description="Structured servo prediction (from /servo/predict).")
+
+
+class AssistantQARequest(BaseModel):
+    question: str
+    prediction: dict = Field(..., description="Structured servo prediction (from /servo/predict).")
+
+
 class ServoSimulateRequest(BaseModel):
     task: Literal["clf", "reg"]
     feature_set: str

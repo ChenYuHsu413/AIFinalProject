@@ -532,3 +532,29 @@ def servo_simulate(task: str, feature_set: str, algo: str, n: int) -> Dict[str, 
         task, FEATURE_SETS[feature_set]["label"], res["n_samples"]
     )
     return res
+
+
+# --- LLM maintenance assistant (server-side keys + RAG; stateless context) ----
+def assistant_providers() -> Dict[str, Any]:
+    """Configured LLM providers tried in order (empty -> deterministic fallback)."""
+    from src.llm.maintenance_assistant import available_providers
+
+    return {"providers": available_providers()}
+
+
+def assistant_report(prediction: Dict[str, Any]) -> Dict[str, str]:
+    """Full maintenance write-up grounded in the prediction + retrieved KB chunks."""
+    from src.knowledge.maintenance_rag import retrieve_for_prediction
+    from src.llm.maintenance_assistant import generate_report
+
+    chunks = retrieve_for_prediction(prediction)
+    return generate_report(prediction, chunks)
+
+
+def assistant_qa(question: str, prediction: Dict[str, Any]) -> Dict[str, str]:
+    """Conservative Q&A grounded in the prediction + retrieved KB chunks."""
+    from src.knowledge.maintenance_rag import retrieve_for_prediction
+    from src.llm.maintenance_assistant import answer_question
+
+    chunks = retrieve_for_prediction(prediction)
+    return answer_question(question, prediction, chunks)

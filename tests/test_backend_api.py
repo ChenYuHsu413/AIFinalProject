@@ -132,6 +132,55 @@ def test_maintenance_advice_requires_fields():
     assert resp.status_code == 422
 
 
+_PREDICTION = {
+    "predicted_health_state": "MED",
+    "health_state_zh": "中度退化",
+    "degradation_score": 0.55,
+    "risk_level": "Medium",
+    "top_features": [{"feature": "torque_rms", "hint": "扭矩 RMS 偏高", "z": 2.1}],
+}
+
+
+def _force_llm_fallback(monkeypatch):
+    """Force the deterministic offline template (local .env may hold real keys)."""
+    import src.llm.maintenance_assistant as ma
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("offline test")
+
+    monkeypatch.setattr(ma, "_call_llm", _boom)
+
+
+def test_assistant_providers():
+    resp = client.get("/servo/assistant/providers")
+    assert resp.status_code == 200
+    assert isinstance(resp.json()["providers"], list)
+
+
+def test_assistant_report(monkeypatch):
+    _force_llm_fallback(monkeypatch)
+    resp = client.post("/servo/assistant/report", json={"prediction": _PREDICTION})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["source"] == "fallback"
+    assert len(body["text"]) > 0
+
+
+def test_assistant_qa(monkeypatch):
+    _force_llm_fallback(monkeypatch)
+    resp = client.post("/servo/assistant/qa",
+                       json={"question": "現在需要立刻停機嗎？", "prediction": _PREDICTION})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["source"] == "fallback"
+    assert len(body["text"]) > 0
+
+
+def test_assistant_report_requires_prediction():
+    resp = client.post("/servo/assistant/report", json={})
+    assert resp.status_code == 422
+
+
 def test_ims_metrics():
     resp = client.get("/ims/metrics")
     assert resp.status_code == 200
