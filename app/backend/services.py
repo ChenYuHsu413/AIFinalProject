@@ -293,6 +293,29 @@ def xjtu_replay(condition: str, bearing: str) -> Dict[str, Any]:
     }
 
 
+def maintenance_advice(
+    health: float,
+    rul_hours: Optional[float],
+    past_fpt: bool,
+    *,
+    alarm_health: float = 30.0,
+    safety_margin: float = 0.3,
+    cost_unplanned: Optional[float] = None,
+    cost_planned: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Map current health / RUL / FPT to a risk level, window and rationale."""
+    from dataclasses import asdict
+
+    from src.models.maintenance_advice import maintenance_advice as _advice
+
+    adv = _advice(
+        health, rul_hours, past_fpt,
+        alarm_health=alarm_health, safety_margin=safety_margin,
+        cost_unplanned=cost_unplanned, cost_planned=cost_planned,
+    )
+    return asdict(adv)
+
+
 # --- Module B (IMS single-trajectory health curve) ---------------------------
 def ims_metrics() -> Dict[str, Any]:
     """IMS RUL metrics/meta: indicator, FPT index/time, lead time, near-failure errors."""

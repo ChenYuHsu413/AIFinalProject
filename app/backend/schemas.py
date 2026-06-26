@@ -64,3 +64,13 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "model_missing"]
     model_loaded: bool
     message: str | None = None
+
+
+class MaintenanceAdviceRequest(BaseModel):
+    health: float = Field(..., description="0..100 health score (100 = baseline-healthy).")
+    rul_hours: float | None = Field(None, description="Remaining-useful-life estimate; None if not estimable.")
+    past_fpt: bool = Field(..., description="Whether degradation onset (FPT) has been detected.")
+    alarm_health: float = 30.0
+    safety_margin: float = Field(0.3, ge=0.0, lt=1.0)
+    cost_unplanned: float | None = None
+    cost_planned: float | None = None

@@ -28,6 +28,7 @@ from app.backend.schemas import (
     FailureTypeMetricsResponse,
     FullPredictResponse,
     HealthResponse,
+    MaintenanceAdviceRequest,
     MetricsResponse,
     ModelInfoResponse,
     PredictRequest,
@@ -202,6 +203,16 @@ def xjtu_replay(condition: str, bearing: str):
         return services.xjtu_replay(condition, bearing)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/maintenance/advice")
+def maintenance_advice(req: MaintenanceAdviceRequest):
+    """依當下 health / RUL / FPT 給出風險等級、建議維護時窗與理由（含可選成本對照）。"""
+    return services.maintenance_advice(
+        req.health, req.rul_hours, req.past_fpt,
+        alarm_health=req.alarm_health, safety_margin=req.safety_margin,
+        cost_unplanned=req.cost_unplanned, cost_planned=req.cost_planned,
+    )
 
 
 @app.get("/ims/metrics")

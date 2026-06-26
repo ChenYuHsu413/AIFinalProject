@@ -109,6 +109,29 @@ def test_xjtu_replay_not_found():
     assert resp.status_code == 404
 
 
+def test_maintenance_advice_healthy():
+    resp = client.post("/maintenance/advice",
+                       json={"health": 95.0, "rul_hours": None, "past_fpt": False})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {"risk", "risk_label_zh", "suggested_window_hours", "rationale"} <= set(body)
+    assert body["risk"] == "green"
+
+
+def test_maintenance_advice_window_from_rul():
+    resp = client.post("/maintenance/advice",
+                       json={"health": 40.0, "rul_hours": 10.0, "past_fpt": True,
+                             "safety_margin": 0.3})
+    assert resp.status_code == 200
+    # suggested window = rul * (1 - safety_margin) = 10 * 0.7 = 7.0
+    assert resp.json()["suggested_window_hours"] == 7.0
+
+
+def test_maintenance_advice_requires_fields():
+    resp = client.post("/maintenance/advice", json={"health": 50.0})
+    assert resp.status_code == 422
+
+
 def test_ims_metrics():
     resp = client.get("/ims/metrics")
     assert resp.status_code == 200
