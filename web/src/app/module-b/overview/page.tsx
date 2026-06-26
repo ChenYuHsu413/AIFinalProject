@@ -39,7 +39,7 @@ export default function ModuleBOverviewPage() {
   }, []);
 
   const curve =
-    hi?.points.map((p, i) => ({ t: p.timestamp.slice(5, 16), health: p.health, i })) ?? [];
+    hi?.points?.map((p, i) => ({ t: p.timestamp.slice(5, 16), health: p.health, i })) ?? [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 lg:px-6">
@@ -75,6 +75,13 @@ export default function ModuleBOverviewPage() {
             健康分數隨運轉下降；越過 FPT 後退化加速，提供約 {m?.lead_time_days.toFixed(1)} 天的預警餘裕。
           </p>
         </div>
+      )}
+
+      {hi && !hi.available && (
+        <Note tone="info">
+          健康指標曲線需<b>原始振動資料</b>即時重算；雲端 demo 未打包該資料（約 21 GB）。
+          上方 RUL 指標由已提交結果呈現；完整互動曲線請在本機（下載資料後）執行。
+        </Note>
       )}
     </div>
   );
