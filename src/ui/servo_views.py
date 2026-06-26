@@ -108,6 +108,9 @@ def render_dashboard() -> None:
         pred = predict_servo(samples.iloc[idx])
         pred["_true_label"] = labels[idx] if idx < len(labels) else None
         st.session_state.servo_pred = pred
+        # new prediction invalidates any previously generated LLM outputs
+        st.session_state.pop("servo_llm_report", None)
+        st.session_state.pop("servo_llm_answer", None)
     pred = st.session_state.servo_pred
 
     state = pred["predicted_health_state"]
@@ -131,6 +134,9 @@ def render_dashboard() -> None:
             f"<div style='text-align:center;margin-top:10px;color:#64748b;font-size:.85rem;'>"
             f"模型信心 <b>{pred['model_confidence']*100:.0f}%</b></div>",
             unsafe_allow_html=True)
+
+    if pred.get("consistency_warning"):
+        style.note("⚠ " + pred["consistency_warning"], kind="danger")
 
     cL, cR = st.columns([1, 1])
     with cL:
@@ -338,6 +344,8 @@ def render_assistant() -> None:
         c2.metric("風險等級", _RISK_LABEL.get(pred["risk_level"], pred["risk_level"]))
         c3.metric("退化分數", f"{pred['degradation_score']:.2f}")
         st.caption("主要異常特徵：" + "、".join(t["feature"] for t in pred["top_features"]))
+        if pred.get("consistency_warning"):
+            style.note("⚠ " + pred["consistency_warning"], kind="danger")
 
     from src.llm.maintenance_assistant import _PROVIDER_LABEL, available_providers
 
@@ -365,7 +373,9 @@ def render_assistant() -> None:
                 chunks = search(
                     " ".join(t["feature"] for t in pred["top_features"]) + " 伺服馬達 滾珠螺桿",
                     top_k=3)
-                rep = generate_report(pred, chunks)
+                st.session_state.servo_llm_report = generate_report(pred, chunks)
+        rep = st.session_state.get("servo_llm_report")
+        if rep:
             st.caption(f"來源：{_badge(rep['source'])}")
             st.markdown(rep["text"])
     with cqa:
@@ -374,7 +384,9 @@ def render_assistant() -> None:
         if st.button("詢問助理", width="stretch"):
             with st.spinner("回答中…"):
                 chunks = search(q + " 伺服馬達 滾珠螺桿", top_k=3)
-                ans = answer_question(q, pred, chunks)
+                st.session_state.servo_llm_answer = answer_question(q, pred, chunks)
+        ans = st.session_state.get("servo_llm_answer")
+        if ans:
             st.caption(f"來源：{_badge(ans['source'])}")
             st.markdown(ans["text"])
 

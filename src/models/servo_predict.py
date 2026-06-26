@@ -12,6 +12,7 @@ and the LLM maintenance assistant::
       "degradation_score": 0.64,      # DV regressor output (0..1)
       "health_score": 36.0,           # (1 - DV) * 100
       "risk_level": "Medium",
+      "consistency_warning": null,    # set when clf state and DV risk disagree
       "top_features": [{"feature": "...", "z": 3.1, "hint": "..."}],
       "maintenance_advice": ["..."],
       "placeholder": true
@@ -70,6 +71,26 @@ def _risk_from_dv(dv: float, bands: Dict[str, float]) -> str:
     if dv < bands.get("medium_max", 0.66):
         return "Medium"
     return "High"
+
+
+_RISK_ORDER = {"Low": 0, "Medium": 1, "High": 2}
+
+
+def _consistency_warning(state: str, dv_risk: str) -> Optional[str]:
+    """Flag when the classifier's state and the DV regressor's risk strongly
+    disagree (>=2 tiers apart), e.g. state=HI but DV implies Low risk.
+
+    The state and the DV come from two INDEPENDENT models, so a large gap means
+    the structured output is internally contradictory. A 1-tier gap is expected
+    (4 health states map onto 3 risk tiers) and is not flagged.
+    """
+    expected = HEALTH_RISK_LEVEL.get(state)
+    if expected not in _RISK_ORDER or dv_risk not in _RISK_ORDER:
+        return None
+    if abs(_RISK_ORDER[expected] - _RISK_ORDER[dv_risk]) >= 2:
+        return (f"分類器判為「{HEALTH_LABEL_ZH.get(state, state)}」（對應風險 {expected}），"
+                f"但退化值推得風險為 {dv_risk}，兩模型結果明顯不一致，請以實測複核為準。")
+    return None
 
 
 def _top_features(row: pd.Series, cols: List[str], baseline: Dict[str, Dict[str, float]],
@@ -134,6 +155,7 @@ def predict_servo(record: Dict[str, Any] | pd.Series) -> Dict[str, Any]:
         "degradation_score": round(dv, 4),
         "health_score": round((1.0 - dv) * 100.0, 2),
         "risk_level": risk,
+        "consistency_warning": _consistency_warning(state, risk),
         "top_features": top,
         "maintenance_advice": _advice(state, top),
         "placeholder": bool(b.config.get("placeholder", True)),
