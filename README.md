@@ -570,6 +570,11 @@ curl -X POST http://localhost:8000/predict \
 
 ## 16. GCP VM 部署指引
 
+> **狀態（2026-06-26）**：**Next.js 前端 + FastAPI 後端**經 nginx 反向代理整合的完整部署
+> 步驟（systemd 常駐 + certbot HTTPS）已獨立成 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)，
+> 並附 `deploy/nginx/`、`deploy/systemd/` 範本（`/`→Next.js:3000、`/api/`→uvicorn:8000）。
+> 下方 §16 A–E 為較早的 FastAPI/Streamlit 單體部署說明，仍適用後端與 Streamlit fallback。
+
 ### A. 開立 VM
 
 1. 建立小型 VM（例：`e2-medium`），作業系統 Ubuntu 22.04 LTS。

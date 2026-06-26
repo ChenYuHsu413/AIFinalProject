@@ -232,8 +232,13 @@
       （目前機率/特徵/比較/重建誤差皆以 CSS 橫條呈現；IMS/XJTU 曲線等待 T19 補充模組時再評估上圖表庫）
 
 ### Phase 3 — 部署 + 收尾
-- [ ] T21 GCP Compute Engine VM 佈署：nginx 反向代理（`/api`→FastAPI、`/`→Next.js）、
+- [~] T21 GCP Compute Engine VM 佈署：nginx 反向代理（`/api`→FastAPI、`/`→Next.js）、
       systemd/pm2 常駐、HTTPS 憑證；更新 `.github/workflows/ci.yml`
+      **部署準備完成（2026-06-26）：**新增 `deploy/nginx/servo-command-center.conf`（`/`→:3000、
+      `/api/`→:8000 去前綴）、`deploy/systemd/servo-{backend,frontend}.service`、完整 runbook
+      [`docs/DEPLOYMENT.md`](DEPLOYMENT.md)（VM/venv/Node24/build/systemd/certbot/redeploy）、CI 新增
+      `web` job（lint + tsc + `NEXT_PUBLIC_API_BASE_URL=/api` 的 prod build，已本機驗證 build 通過、22 路由）。
+      **實際上線（VM 開立 + DNS + 憑證）待執行。**
 - [ ] T22 誠實性紅線文案驗收；同步 README §4/§11/§12 與本文件，補日期戳
 
 ---
