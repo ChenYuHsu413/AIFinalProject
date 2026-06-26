@@ -44,7 +44,8 @@
 > **設備詳情頁 + 真預測（2026-06-26）**：新增 `/equipment/[id]`，機群卡／排行點擊可 drill-down。
 > 頁面上半為該設備 mock 健康快照與遙測趨勢；下半把 mock 機群**橋接到真實參考模型**——挑一筆與
 > 該設備狀態相符（ylabel）的 demo 運轉段送入 `POST /servo/predict`，呈現實際模型輸出（機率／異常
-> 特徵／建議處置）。Header 麵包屑支援動態路由；mock 與真 API 區塊在 UI 上明確標示。
+> 特徵／建議處置）。Header 麵包屑支援動態路由；mock 與真 API 區塊在 UI 上明確標示。真預測區可
+> 「換一筆代表段重估」並顯示所用 demo #；告警表設備名可點進詳情頁。主題背景改為全黑（OLED）。
 >
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、

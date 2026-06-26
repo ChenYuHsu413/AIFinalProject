@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Bot, Loader2, MapPin, Wrench } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, MapPin, RefreshCw, Wrench } from "lucide-react";
 
 import { Card, Note, PageTitle } from "@/components/ui-kit";
 import { HealthScoreGauge } from "@/components/dashboard/HealthScoreGauge";
@@ -114,9 +114,25 @@ export default function EquipmentDetailPage() {
  * and shows the actual model output. (Mock unit → representative real reading.)
  */
 function RealPredictionSection({ state }: { state: string }) {
+  const [cols, setCols] = useState<string[]>([]);
+  const [matches, setMatches] = useState<{ row: ServoSample; idx: number }[]>([]);
+  const [pos, setPos] = useState(0);
   const [pred, setPred] = useState<ServoPrediction | null>(null);
   const [busy, setBusy] = useState(true);
   const [err, setErr] = useState(false);
+
+  async function predictRow(row: ServoSample, columns: string[]) {
+    setBusy(true);
+    try {
+      const features: Record<string, number> = {};
+      for (const col of columns) features[col] = Number(row[col]);
+      setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+    } catch {
+      setErr(true);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -125,23 +141,36 @@ function RealPredictionSection({ state }: { state: string }) {
           apiGet<ServoModelInfo>("/servo/model_info"),
           apiGet<ServoSample[]>("/servo/samples"),
         ]);
-        const match =
-          rows.find((r) => String(r["ylabel"]) === state) ??
-          rows[Math.floor(rows.length / 2)];
-        if (!match) {
+        const matched = rows
+          .map((row, idx) => ({ row, idx }))
+          .filter((m) => String(m.row["ylabel"]) === state);
+        const list = matched.length
+          ? matched
+          : [{ row: rows[Math.floor(rows.length / 2)], idx: Math.floor(rows.length / 2) }];
+        if (!list[0]?.row) {
           setErr(true);
+          setBusy(false);
           return;
         }
-        const features: Record<string, number> = {};
-        for (const col of info.feature_columns) features[col] = Number(match[col]);
-        setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+        setCols(info.feature_columns);
+        setMatches(list);
+        setPos(0);
+        await predictRow(list[0].row, info.feature_columns);
       } catch {
         setErr(true);
-      } finally {
         setBusy(false);
       }
     })();
   }, [state]);
+
+  function reroll() {
+    if (matches.length < 2 || busy) return;
+    const next = (pos + 1) % matches.length;
+    setPos(next);
+    predictRow(matches[next].row, cols);
+  }
+
+  const current = matches[pos];
 
   return (
     <>
@@ -154,7 +183,7 @@ function RealPredictionSection({ state }: { state: string }) {
         </span>
       </div>
 
-      {busy ? (
+      {busy && !pred ? (
         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/40 p-8 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> 以代表性運轉段估測中…
         </div>
@@ -170,10 +199,32 @@ function RealPredictionSection({ state }: { state: string }) {
             </Note>
           )}
 
-          <p className="text-xs text-muted-foreground">
-            以與本設備狀態相符的代表性 demo 運轉段（真實標籤 {HEALTH_ZH[state] ?? state}）
-            送入參考模型，下方為實際模型輸出。
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              以與本設備狀態相符的代表性 demo 運轉段
+              {current && (
+                <>
+                  （demo #{current.idx} · 真實標籤 {HEALTH_ZH[state] ?? state}）
+                </>
+              )}
+              送入參考模型，下方為實際模型輸出。
+            </p>
+            {matches.length > 1 && (
+              <button
+                type="button"
+                onClick={reroll}
+                disabled={busy}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card/60 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                換一筆代表段重估（{matches.length} 筆）
+              </button>
+            )}
+          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card title="各健康狀態機率">
