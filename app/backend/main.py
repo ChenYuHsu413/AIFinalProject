@@ -195,6 +195,24 @@ def ims_health_curve():
     return services.ims_health_curve()
 
 
+@app.get("/ims/health_indicator")
+def ims_health_indicator(indicator: str | None = None):
+    """切換健康指標即時重算健康曲線與退化起點（FPT）；未知指標回 400。"""
+    try:
+        return services.ims_health_indicator(indicator)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/ims/snapshot/{index}")
+def ims_snapshot(index: int):
+    """單一快照原始振動波形 + FFT 頻譜；無原始資料時回 available:false。"""
+    try:
+        return services.ims_snapshot(index)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/knowledge/documents")
 def knowledge_documents():
     """維修知識庫文件清單（source / title / preview / chars）。"""

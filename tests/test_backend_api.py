@@ -94,6 +94,42 @@ def test_ims_health_curve():
     assert any(p["rul_pred"] is None for p in points)
 
 
+def test_ims_health_indicator_default():
+    resp = client.get("/ims/health_indicator")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is True
+    assert body["indicator"] == "b1_rms"
+    assert len(body["candidates"]) > 0
+    assert isinstance(body["fpt_index"], int)
+    assert len(body["points"]) > 0
+    assert {"timestamp", "health"} <= set(body["points"][0])
+
+
+def test_ims_health_indicator_switch():
+    resp = client.get("/ims/health_indicator", params={"indicator": "b1_kurtosis"})
+    assert resp.status_code == 200
+    assert resp.json()["indicator"] == "b1_kurtosis"
+
+
+def test_ims_health_indicator_unknown():
+    resp = client.get("/ims/health_indicator", params={"indicator": "nope"})
+    assert resp.status_code == 400
+
+
+def test_ims_snapshot():
+    resp = client.get("/ims/snapshot/0")
+    assert resp.status_code == 200
+    body = resp.json()
+    if body["available"]:
+        assert len(body["waveform"]) > 0
+        assert {"freqs", "mags"} == set(body["spectrum"])
+        assert len(body["spectrum"]["freqs"]) == len(body["spectrum"]["mags"])
+        assert max(body["spectrum"]["freqs"]) <= 2000.0
+    else:
+        assert "reason" in body  # raw IMS data absent (e.g. cloud / CI)
+
+
 def test_knowledge_documents():
     resp = client.get("/knowledge/documents")
     assert resp.status_code == 200

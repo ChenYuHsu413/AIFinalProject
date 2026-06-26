@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 from src.models.predict import (
@@ -201,6 +202,92 @@ def ims_health_curve() -> List[Dict[str, Any]]:
         return []
     df = pd.read_csv(path)
     return json.loads(df.to_json(orient="records"))
+
+
+_IMS_INDICATOR_CANDIDATES = ("b1_rms", "b1_kurtosis", "b1_band_BPFO", "b1_crest_factor")
+
+
+def ims_health_indicator(indicator: Optional[str] = None) -> Dict[str, Any]:
+    """Recompute the health curve + degradation onset (FPT) for a chosen indicator.
+
+    Mirrors the Streamlit 'switch the health indicator, recompute FPT live'
+    interaction. ``available`` is False if the IMS feature table is not built."""
+    from src.models.rul_extrapolation import build_health_indicator, detect_fpt
+
+    cfg = load_config()["ims"]
+    path = resolve(cfg["processed_features"])
+    if not path.exists():
+        return {"available": False, "reason": "IMS 特徵表尚未建立。"}
+    df = pd.read_parquet(path).sort_index()
+    candidates = [c for c in _IMS_INDICATOR_CANDIDATES if c in df.columns]
+    ind = indicator or cfg["health_indicator"]
+    if ind not in df.columns:
+        raise ValueError(f"未知的 indicator：{ind!r}。可用：{candidates}")
+    hi, health, hi_base, hi_fail = build_health_indicator(
+        df[ind], cfg["hi_smooth_window"], cfg["baseline_n"], cfg["fail_percentile"]
+    )
+    fpt_idx = detect_fpt(hi, cfg["baseline_n"], cfg["fpt_n_sigma"], cfg["fpt_consecutive"])
+    ts = df.index
+    fpt_t = ts[fpt_idx]
+    return {
+        "available": True,
+        "indicator": ind,
+        "candidates": candidates,
+        "fpt_index": int(fpt_idx),
+        "fpt_time": str(fpt_t),
+        "lead_time_days": (ts[-1] - fpt_t).total_seconds() / 86400.0,
+        "hi_base": hi_base,
+        "hi_fail": hi_fail,
+        "alarm_health": float(cfg["alarm_health"]),
+        "points": [
+            {"timestamp": str(t), "health": float(h)}
+            for t, h in zip(ts, health.to_numpy())
+        ],
+    }
+
+
+def _downsample(arr: np.ndarray, n: int) -> np.ndarray:
+    """Evenly subsample ``arr`` to at most ``n`` points (keeps endpoints)."""
+    if arr.size <= n:
+        return arr
+    return arr[np.linspace(0, arr.size - 1, n).astype(int)]
+
+
+def ims_snapshot(index: int) -> Dict[str, Any]:
+    """Raw vibration waveform + FFT spectrum for one IMS snapshot.
+
+    Needs the 1.5 GB raw IMS dataset (not shipped); returns ``available: False``
+    when absent (e.g. the cloud demo). Waveform is downsampled and the spectrum
+    capped to 2 kHz to keep the payload small."""
+    cfg = load_config()["ims"]
+    raw_dir = resolve(cfg["raw_dir"])
+    if not raw_dir.exists():
+        return {
+            "available": False,
+            "reason": "原始波形需 1.5 GB IMS 原始資料（未隨專案上傳）；雲端 demo 不提供。",
+        }
+    from src.data.load_ims import list_ims_files, load_ims_file
+
+    files = list_ims_files(raw_dir)
+    if not 0 <= index < len(files):
+        raise ValueError(f"快照序號超出範圍 0..{len(files) - 1}")
+    ts_sel, path_sel = files[index]
+    ch = load_ims_file(path_sel)[:, cfg["target_bearing"] - 1]
+    fs = float(cfg["sampling_rate_hz"])
+    mag = np.abs(np.fft.rfft(ch))
+    freqs = np.fft.rfftfreq(ch.size, d=1.0 / fs)
+    keep = freqs <= 2000.0  # defect frequencies (BPFO/BPFI/BSF/FTF) are all < 300 Hz
+    return {
+        "available": True,
+        "index": index,
+        "n_snapshots": len(files),
+        "timestamp": str(ts_sel),
+        "target_bearing": int(cfg["target_bearing"]),
+        "sampling_rate_hz": fs,
+        "waveform": _downsample(ch, 2048).tolist(),
+        "spectrum": {"freqs": freqs[keep].tolist(), "mags": mag[keep].tolist()},
+        "defect_freqs": cfg["defect_freqs"],
+    }
 
 
 # --- Maintenance knowledge base (TF-IDF RAG) ---------------------------------
