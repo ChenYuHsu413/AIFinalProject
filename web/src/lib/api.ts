@@ -111,6 +111,17 @@ export interface ServoReferenceMetrics {
   };
 }
 
+/** GET /servo/assistant/providers. */
+export interface AssistantProviders {
+  providers: string[];
+}
+
+/** POST /servo/assistant/report | /qa → {text, source}. */
+export interface AssistantResponse {
+  text: string;
+  source: string;
+}
+
 /** Shape of GET /servo/model_info. */
 export interface ServoModelInfo {
   feature_set: string | null;
