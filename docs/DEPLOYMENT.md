@@ -174,9 +174,14 @@ sudo journalctl -u servo-frontend -f
 2. 把以下放進該 Space 的 git repo 根目錄：
    - `deploy/huggingface/Dockerfile`  → 改名為 **`Dockerfile`**
    - `deploy/huggingface/README.md`   → 放成 **`README.md`**（其 YAML frontmatter 已設 `app_port: 7860`）
-   - 後端程式碼：`src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`、
-     以及模型產物 `outputs/models/`（已隨本 repo 提交）
-   - 最快做法：把本專案 repo 整包推到 Space remote，再用上面兩個檔覆蓋根目錄的 `Dockerfile`/`README.md`。
+   - 後端程式碼：`src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`
+   - 模型與指標：`outputs/models/`、`outputs/metrics/`（已隨本 repo 提交）
+   - **執行期資料（缺了相關端點會 503）**：`data/processed/servo_features.parquet`、
+     `servo_feature_demo.csv`、`servo_sample_predictions.csv`（`/servo/simulate`、`/servo/samples`、
+     `/servo/fleet` 必需）與 `data/knowledge/`（`/knowledge/*`）
+   - 連同本 repo 的 `.dockerignore`（已調好讓上述已提交檔留在 build context；無此檔則 COPY 會抓不到）
+   - 最快做法：把本專案 repo 整包推到 Space remote（已提交的 `outputs/`、`data/processed/servo_*`、
+     `data/knowledge/` 會一起進去），再用上面兩個檔覆蓋根目錄的 `Dockerfile`/`README.md`。
 3. push 後 HF 會自動 build（約數分鐘）。完成後測：
    `curl https://<user>-<space>.hf.space/health` → `{"status":"ok",...}`。
 
