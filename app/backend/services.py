@@ -203,3 +203,36 @@ def servo_predict_one(features: Dict[str, Any]) -> Dict[str, Any]:
     if missing:
         raise ValueError(f"缺少必要特徵欄位：{missing}")
     return predict_servo(features)
+
+
+def servo_glossary() -> List[Dict[str, Any]]:
+    """Motor field glossary: name / zh / desc / meaning / anomaly."""
+    from src.servo.field_glossary import FIELD_DOCS
+
+    return FIELD_DOCS
+
+
+def servo_feature_sets() -> Dict[str, Any]:
+    """Available feature sets: key -> label / desc / columns."""
+    from src.features.servo_features import FEATURE_SETS
+
+    return FEATURE_SETS
+
+
+def servo_samples() -> List[Dict[str, Any]]:
+    """Demo sample rows the dashboard can select from (features + ylabel / DV)."""
+    path = resolve(load_config()["servo"]["sample_predictions"])
+    if not path.exists():
+        return []
+    df = pd.read_csv(path)
+    return json.loads(df.to_json(orient="records"))
+
+
+def servo_reference_metrics() -> Dict[str, Any]:
+    """Reference baselines for the training simulator: clf / reg / dl."""
+    cfg = load_config()["servo"]
+    return {
+        "clf": _read_json_or_empty(cfg["clf_metrics"]),
+        "reg": _read_json_or_empty(cfg["reg_metrics"]),
+        "dl": _read_json_or_empty(cfg["dl_metrics"]),
+    }

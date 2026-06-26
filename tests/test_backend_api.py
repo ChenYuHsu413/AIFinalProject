@@ -113,3 +113,33 @@ def test_knowledge_search():
 def test_knowledge_search_requires_q():
     resp = client.get("/knowledge/search")
     assert resp.status_code == 422
+
+
+def test_servo_glossary():
+    resp = client.get("/servo/glossary")
+    assert resp.status_code == 200
+    docs = resp.json()
+    assert isinstance(docs, list) and len(docs) > 0
+    assert {"name", "zh", "desc", "meaning", "anomaly"} <= set(docs[0])
+
+
+def test_servo_feature_sets():
+    resp = client.get("/servo/feature_sets")
+    assert resp.status_code == 200
+    sets = resp.json()
+    assert "engineered" in sets
+    assert {"label", "desc", "columns"} <= set(sets["engineered"])
+
+
+def test_servo_samples():
+    resp = client.get("/servo/samples")
+    assert resp.status_code == 200
+    rows = resp.json()
+    assert isinstance(rows, list) and len(rows) > 0
+    assert {"run_index", "ylabel", "DV"} <= set(rows[0])
+
+
+def test_servo_reference_metrics():
+    resp = client.get("/servo/reference_metrics")
+    assert resp.status_code == 200
+    assert set(resp.json()) == {"clf", "reg", "dl"}

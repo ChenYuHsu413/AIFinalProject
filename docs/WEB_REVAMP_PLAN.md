@@ -115,14 +115,14 @@
 
 ### Phase 1 — 補完 FastAPI
 
-**Stage 1.1 — 靜態讀檔類 GET（最快，清掉一大半缺口）**
+**Stage 1.1 — 靜態讀檔類 GET（最快，清掉一大半缺口）** ✅ 全數完成（2026-06-26）
 - [x] T1 `GET /figures/{name}` — `StaticFiles` 掛載 `outputs/figures/`（2026-06-26 完成，含 API 測試）
 - [x] T2 `GET /metrics/summary?module=` — 統一讀 `servo_*`、`ims_rul`、`xjtu_*`、`paderborn_eval` JSON（2026-06-26 完成，含測試；module=servo/B/Bplus/C，A 用 /metrics+/model_info）
 - [x] T3 `GET /paderborn/eval` — 讀 `paderborn_eval.json`（2026-06-26 完成，含測試；模組 C 整頁正規端點，回完整 method/features/results/summary）
 - [x] T4 `GET /xjtu/generalization`、`GET /xjtu/lobo_loco`、`GET /xjtu/domain_adapt`（2026-06-26 完成，含測試；抽 `_read_json_or_empty` helper DRY 掉讀檔模式）
 - [x] T5 `GET /ims/metrics`、`GET /ims/health_curve`（讀 `ims_rul_predictions.csv` + `ims_rul.json`）（2026-06-26 完成，含測試；兩支各司其職不重複 meta，CSV 的 NaN 以 `to_json` 轉成合法 null）
 - [x] T6 `GET /knowledge/documents`、`GET /knowledge/search?q=`（包 `maintenance_rag`）（2026-06-26 完成，含測試；RAG 用函式內延遲 import 避免拖慢啟動）
-- [ ] T7 `GET /servo/glossary`、`GET /servo/feature_sets`、`GET /servo/samples`、`GET /servo/reference_metrics`
+- [x] T7 `GET /servo/glossary`、`GET /servo/feature_sets`、`GET /servo/samples`、`GET /servo/reference_metrics`（2026-06-26 完成，含測試；靜態常數延遲 import、reference 含 dl baseline）
 
 **Stage 1.2 — 模組 A 補洞**
 - [ ] T8 `POST /predict/batch`（JSON list；給 What-if 1D/2D 用，取代 625 次單點呼叫）

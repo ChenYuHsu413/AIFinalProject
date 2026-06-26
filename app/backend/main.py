@@ -208,6 +208,30 @@ def servo_predict(req: ServoPredictRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.get("/servo/glossary")
+def servo_glossary():
+    """馬達欄位辭典（每筆 name / zh / desc / meaning / anomaly）。"""
+    return services.servo_glossary()
+
+
+@app.get("/servo/feature_sets")
+def servo_feature_sets():
+    """可用特徵組（key -> label / desc / columns）。"""
+    return services.servo_feature_sets()
+
+
+@app.get("/servo/samples")
+def servo_samples():
+    """儀表板可選的 demo 樣本列（特徵 + ylabel / DV）。"""
+    return services.servo_samples()
+
+
+@app.get("/servo/reference_metrics")
+def servo_reference_metrics():
+    """訓練模擬器的對照指標：clf / reg / dl（離線 baseline）。"""
+    return services.servo_reference_metrics()
+
+
 # --- Static figures ----------------------------------------------------------
 # Serve the pre-rendered training / evaluation figures (outputs/figures/*.png)
 # as ``GET /figures/{name}`` so the frontend can ``<img src>`` them directly
