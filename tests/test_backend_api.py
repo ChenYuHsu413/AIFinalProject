@@ -43,3 +43,11 @@ def test_metrics_summary_unknown_module_returns_400():
 def test_metrics_summary_requires_module():
     resp = client.get("/metrics/summary")
     assert resp.status_code == 422
+
+
+def test_paderborn_eval():
+    resp = client.get("/paderborn/eval")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {"method", "features", "results", "summary"} <= set(body)
+    assert {"baseline", "artificial_to_real"} <= set(body["results"])

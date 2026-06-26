@@ -107,6 +107,19 @@ def metrics_summary(module: str) -> Dict[str, Any]:
     return out
 
 
+def paderborn_eval() -> Dict[str, Any]:
+    """Full Paderborn (Module C) evaluation: method / features / results / summary.
+
+    Single source for the whole Module C page (baseline CV vs artificial→real
+    generalization + confusion matrices). Empty dict if the job has not run.
+    """
+    cfg = load_config()
+    path = resolve(cfg["paderborn"]["metrics"])
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 # --- Module Servo (main line) -------------------------------------------------
 def servo_model_info() -> Dict[str, Any]:
     from src.models.servo_predict import load_servo_models

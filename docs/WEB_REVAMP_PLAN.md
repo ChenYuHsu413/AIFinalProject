@@ -118,7 +118,7 @@
 **Stage 1.1 — 靜態讀檔類 GET（最快，清掉一大半缺口）**
 - [x] T1 `GET /figures/{name}` — `StaticFiles` 掛載 `outputs/figures/`（2026-06-26 完成，含 API 測試）
 - [x] T2 `GET /metrics/summary?module=` — 統一讀 `servo_*`、`ims_rul`、`xjtu_*`、`paderborn_eval` JSON（2026-06-26 完成，含測試；module=servo/B/Bplus/C，A 用 /metrics+/model_info）
-- [ ] T3 `GET /paderborn/eval` — 讀 `paderborn_eval.json`
+- [x] T3 `GET /paderborn/eval` — 讀 `paderborn_eval.json`（2026-06-26 完成，含測試；模組 C 整頁正規端點，回完整 method/features/results/summary）
 - [ ] T4 `GET /xjtu/generalization`、`GET /xjtu/lobo_loco`、`GET /xjtu/domain_adapt`
 - [ ] T5 `GET /ims/metrics`、`GET /ims/health_curve`（讀 `ims_rul_predictions.csv` + `ims_rul.json`）
 - [ ] T6 `GET /knowledge/documents`、`GET /knowledge/search?q=`（包 `maintenance_rag`）

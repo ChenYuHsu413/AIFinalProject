@@ -128,6 +128,12 @@ def metrics_summary(module: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.get("/paderborn/eval")
+def paderborn_eval():
+    """模組 C 完整評估：baseline CV vs 人工→真實泛化 + 混淆矩陣（含 summary）。"""
+    return services.paderborn_eval()
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 
