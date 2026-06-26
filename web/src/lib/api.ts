@@ -111,6 +111,32 @@ export interface ServoReferenceMetrics {
   };
 }
 
+/** One row of GET /servo/glossary. */
+export interface GlossaryEntry {
+  name: string;
+  zh: string;
+  desc: string;
+  meaning: string;
+  anomaly: string;
+}
+
+/** One doc from GET /knowledge/documents. */
+export interface KnowledgeDoc {
+  source: string;
+  title: string;
+  preview: string;
+  chars: string;
+}
+
+/** One hit from GET /knowledge/search. */
+export interface KnowledgeHit {
+  text: string;
+  score: string | number;
+  source: string;
+  title: string;
+  topic: string;
+}
+
 /** GET /servo/assistant/providers. */
 export interface AssistantProviders {
   providers: string[];
