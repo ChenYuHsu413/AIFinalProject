@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Bot, Loader2, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Card, Note, PageTitle, Stat } from "@/components/ui-kit";
 import {
   apiGet,
   apiPost,
@@ -59,7 +60,10 @@ export default function ServoDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
-      <PageHeader />
+      <PageTitle
+        title="Servo 健康狀態儀表板"
+        desc="輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、主要異常特徵與模型信心，並給出建議處置。"
+      />
 
       {loadErr && (
         <Note tone="danger">
@@ -102,18 +106,6 @@ export default function ServoDashboardPage() {
       </div>
 
       {pred && <Result pred={pred} trueLabel={trueLabel} />}
-    </div>
-  );
-}
-
-function PageHeader() {
-  return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold tracking-tight">Servo 健康狀態儀表板</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、
-        主要異常特徵與模型信心，並給出建議處置。
-      </p>
     </div>
   );
 }
@@ -234,49 +226,3 @@ function Result({
   );
 }
 
-function Stat({
-  label,
-  value,
-  sub,
-  valueClass,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  valueClass?: string;
-}) {
-  return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${valueClass ?? ""}`}>{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-    </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold">{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function Note({
-  tone,
-  children,
-}: {
-  tone: "warn" | "danger";
-  children: React.ReactNode;
-}) {
-  const cls =
-    tone === "danger"
-      ? "border-red-200 bg-red-50 text-red-800"
-      : "border-amber-200 bg-amber-50 text-amber-800";
-  return (
-    <div className={`mb-2 rounded-lg border px-4 py-2.5 text-sm ${cls}`}>
-      {children}
-    </div>
-  );
-}

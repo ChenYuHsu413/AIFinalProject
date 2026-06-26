@@ -67,6 +67,49 @@ export interface ServoPrediction {
   placeholder: boolean;
 }
 
+/** GET /servo/simulate/options. */
+export interface ServoSimulateOptions {
+  classifiers: string[];
+  regressors: string[];
+  algo_labels: Record<string, string>;
+}
+
+/** GET /servo/feature_sets. */
+export type ServoFeatureSets = Record<
+  string,
+  { label: string; desc: string; columns: string[] }
+>;
+
+/** POST /servo/simulate (clf fields when task="clf", reg fields when "reg"). */
+export interface ServoSimResult {
+  task: "clf" | "reg";
+  algo: string;
+  feature_set: string;
+  n_samples: number;
+  n_features: number;
+  train_time_s: number;
+  explanation: string[];
+  accuracy?: number;
+  macro_f1?: number;
+  labels?: string[];
+  confusion_matrix?: number[][];
+  mae?: number;
+  rmse?: number;
+  r2?: number;
+}
+
+/** GET /servo/reference_metrics. */
+export interface ServoReferenceMetrics {
+  clf: { macro_f1?: number; model?: string };
+  reg: { r2?: number; mae?: number; model?: string };
+  dl: {
+    note?: string;
+    mlp_classification_macro_f1?: number;
+    mlp_regression?: { r2?: number; mae?: number };
+    reconstruction_error_by_class?: Record<string, number>;
+  };
+}
+
 /** Shape of GET /servo/model_info. */
 export interface ServoModelInfo {
   feature_set: string | null;
