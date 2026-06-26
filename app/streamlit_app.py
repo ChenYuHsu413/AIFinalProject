@@ -17,6 +17,10 @@ if str(_ROOT) not in sys.path:
 
 import json
 
+from src.utils.env import load_dotenv
+
+load_dotenv()  # pick up LLM provider keys from .env before anything reads os.environ
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -59,6 +63,7 @@ from src.ui.charts import (
     xjtu_replay_animation,
     class_confusion_heatmap,
 )
+from src.ui import servo_views
 from src.utils.paths import load_config, resolve
 
 
@@ -66,8 +71,8 @@ from src.utils.paths import load_config, resolve
 # Page config + global styling
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="伺服馬達預測性維護原型系統",
-    page_icon="🔧",
+    page_title="AI 伺服馬達健康狀態估測與智慧維護助理系統",
+    page_icon="🛰",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -105,47 +110,74 @@ except FileNotFoundError:
 NAV_GROUPS = [
     {"title": None,
      "items": [("首頁總覽", "🏠")]},
-    {"title": "模組 A · 靜態風險 (AI4I)",
+    {"title": "模組 Servo · 伺服馬達健康（主線）",
+     "items": [("Servo 健康儀表板", "🛰"), ("AI 訓練模擬器", "🧪"),
+               ("馬達欄位解釋", "📖"), ("LLM 維護助理", "🤖"),
+               ("維修知識庫", "📚")]},
+    {"title": "模組 A · 靜態風險 (AI4I)", "collapsible": True,
      "items": [("手動單筆預測", "🎯"), ("What-if 敏感度分析", "💡"),
                ("批次 CSV 上傳", "📥"), ("模型評估結果", "📊")]},
-    {"title": "模組 B · 動態健康度 (IMS)",
+    {"title": "模組 B · 動態健康度 (IMS)", "collapsible": True,
      "items": [("健康度總覽", "💓"), ("RUL 預測", "📉"), ("互動探索", "🔍")]},
-    {"title": "模組 B+ · 多軌跡泛化 (XJTU)",
+    {"title": "模組 B+ · 多軌跡泛化 (XJTU)", "collapsible": True,
      "items": [("多軌跡泛化", "🧬"), ("B+ 延伸應用", "🚀")]},
-    {"title": "模組 C · 馬達電流診斷 (Paderborn)",
+    {"title": "模組 C · 馬達電流診斷 (Paderborn)", "collapsible": True,
      "items": [("馬達電流故障診斷", "⚡")]},
     {"title": None,
      "items": [("關於本專案", "ℹ️")]},
 ]
+# Supplementary (collapsible) page names — used to keep the expander open when one
+# of these pages is active.
+_SUPP_NAMES = {name for g in NAV_GROUPS if g.get("collapsible")
+               for name, _ in g["items"]}
 
 style.sidebar_brand(
-    emoji="🔧",
-    title="Predictive Maintenance",
-    subtitle="伺服馬達故障風險預測原型",
+    emoji="🛰",
+    title="Servo Health AI",
+    subtitle="伺服馬達健康估測與維護助理",
 )
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "首頁總覽"
 active = st.session_state.active_page
 
+def _nav_group(g: dict) -> None:
+    if g["title"]:
+        st.markdown(
+            f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
+            f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
+            f"{g['title']}</div>",
+            unsafe_allow_html=True,
+        )
+    for name, icon in g["items"]:
+        if st.button(
+            f"{icon}  {name}",
+            key=f"nav::{name}",
+            width="stretch",
+            type="primary" if name == active else "secondary",
+        ):
+            st.session_state.active_page = name
+            st.rerun()
+
+
 with st.sidebar:
+    # Top-level groups (home + Servo main line) render directly.
     for g in NAV_GROUPS:
-        if g["title"]:
-            st.markdown(
-                f"<div style='font-size:11px;font-weight:700;color:#94a3b8;"
-                f"letter-spacing:.04em;white-space:nowrap;margin:14px 4px 2px;'>"
-                f"{g['title']}</div>",
-                unsafe_allow_html=True,
-            )
-        for name, icon in g["items"]:
-            if st.button(
-                f"{icon}  {name}",
-                key=f"nav::{name}",
-                width="stretch",
-                type="primary" if name == active else "secondary",
-            ):
-                st.session_state.active_page = name
-                st.rerun()
+        if g.get("collapsible") or g["items"][0][0] == "關於本專案":
+            continue
+        _nav_group(g)
+
+    # Supplementary modules (A / B / B+ / C) tucked into a collapsed expander;
+    # auto-open when one of their pages is active.
+    with st.expander("📦 補充模組（對照 / 歷史）", expanded=active in _SUPP_NAMES):
+        for g in NAV_GROUPS:
+            if g.get("collapsible"):
+                _nav_group(g)
+
+    # Bottom group (about).
+    for g in NAV_GROUPS:
+        if g["items"][0][0] == "關於本專案":
+            _nav_group(g)
 
 page = st.session_state.active_page
 
@@ -154,7 +186,7 @@ style.sidebar_model_card(
     bundle.metrics["f1"], bundle.metrics["recall"],
 )
 style.sidebar_dataset_card(
-    "UCI AI4I 2020", "Synthetic · 10,000 筆 · 故障率 3.39%"
+    "PHM Servomotor Ballscrew", "主線 · 模擬退化資料 · 健康狀態 LN/LO/MED/HI"
 )
 style.sidebar_footer(
     '<span class="sf-pill">DECISION SUPPORT</span>'
@@ -171,10 +203,40 @@ style.sidebar_footer(
 # ---------------------------------------------------------------------------
 HEROES = {
     "首頁總覽": (
-        "Dashboard · One-page view",
-        "預測性維護原型系統 · 總覽",
-        "一頁看完模型、資料、排行榜與最近活動。"
-        "可從這裡跳到任何工作流：單筆預測、What-if、批次上傳、評估。",
+        "Servo Health · Smart Maintenance",
+        "AI 伺服馬達健康狀態估測與智慧維護助理系統",
+        "以伺服馬達退化資料為主線，結合 ML / 訓練模擬器 / LLM 維護助理 / 知識庫；"
+        "Model A / B / C 作為對照與歷史補充模組。",
+    ),
+    "Servo 健康儀表板": (
+        "Module Servo · Health Estimation",
+        "Servo 健康狀態儀表板",
+        "輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、"
+        "主要異常特徵與模型信心，並給出建議處置。",
+    ),
+    "AI 訓練模擬器": (
+        "Module Servo · Training Simulator",
+        "AI 訓練模擬器",
+        "選資料量 / 特徵組 / 演算法，在瀏覽器端訓練小模型，比較訓練時間、指標，"
+        "並對照離線 Reference Model —— 直觀理解資料量、特徵與模型如何影響結果。",
+    ),
+    "馬達欄位解釋": (
+        "Module Servo · Data Tutorial",
+        "馬達欄位解釋 / 資料教學",
+        "用白話說明伺服馬達常見訊號（扭矩、轉速、三相電流、D/Q 軸、位置誤差…）"
+        "及其異常意義，並說明各特徵組的組成。",
+    ),
+    "LLM 維護助理": (
+        "Module Servo · LLM Assistant",
+        "LLM 維護助理",
+        "接收模型的結構化輸出，生成保守的維修建議、可能原因、檢查項目、工單草稿與"
+        "報告摘要；無 API Key 時自動使用離線範本。",
+    ),
+    "維修知識庫": (
+        "Module Servo · Knowledge Base",
+        "維修知識庫 / RAG",
+        "伺服馬達與滾珠螺桿維修知識庫，支援關鍵字檢索（TF-IDF），並可依模型異常特徵"
+        "檢索相關片段供 LLM 引用。離線可用。",
     ),
     "手動單筆預測": (
         "Predict · Explain · Advise",
@@ -239,9 +301,9 @@ HEROES = {
     "關於本專案": (
         "About · Tech stack",
         "關於本專案",
-        "四軌並行的預測性維護原型：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 "
-        "RUL）、模組 B+（XJTU 多軸承 / 多工況泛化驗證）、模組 C（Paderborn 馬達電流故障分類）。"
-        "涵蓋訊號處理、退化建模、可解釋 ML 與端到端部署。",
+        "主線為模組 Servo（PHM 伺服馬達健康狀態估測 + 退化值回歸 + LLM 維護助理），另含四條對照 / "
+        "歷史軌道：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 RUL）、模組 B+（XJTU 多軸承 / "
+        "多工況泛化驗證）、模組 C（Paderborn 馬達電流故障分類）。涵蓋訊號處理、退化建模、可解釋 ML 與端到端部署。",
     ),
 }
 _eyebrow, _title, _subtitle = HEROES[page]
@@ -251,9 +313,14 @@ _REPO = "https://github.com/ChenYuHsu413/AIFinalProject"
 _MODULE_B_PAGES = {"健康度總覽", "RUL 預測", "互動探索"}
 _MODULE_BPLUS_PAGES = {"多軌跡泛化", "B+ 延伸應用"}
 _MODULE_C_PAGES = {"馬達電流故障診斷"}
+_SERVO_PAGES = {"Servo 健康儀表板", "AI 訓練模擬器", "馬達欄位解釋",
+                "LLM 維護助理", "維修知識庫"}
+_MODULE_A_PAGES = {"手動單筆預測", "What-if 敏感度分析", "批次 CSV 上傳", "模型評估結果"}
 
 
 def _page_module(p: str) -> str:
+    if p in _SERVO_PAGES or p == "首頁總覽":
+        return "Servo"
     if p in _MODULE_B_PAGES:
         return "B"
     if p in _MODULE_BPLUS_PAGES:
@@ -262,12 +329,14 @@ def _page_module(p: str) -> str:
         return "C"
     if p == "關於本專案":
         return "about"
-    return "A"  # 首頁總覽 + 模組 A
+    return "A"  # 模組 A 各頁
 
 
 _module = _page_module(page)
 
 _HERO_CHIPS = {
+    "Servo": ["PHM Ballscrew", "健康狀態 LN/LO/MED/HI", "DV 退化回歸",
+              "訓練模擬器", "LLM 維護助理", "RAG 知識庫"],
     "A": ["CRISP-DM", "10 模型 × 5 特徵組合", "SHAP", "Optuna", "Streamlit",
           "FastAPI", "Docker"],
     "B": ["IMS 軸承 run-to-failure", "20 kHz 振動", "時域 / 頻域特徵",
@@ -287,6 +356,13 @@ style.hero(
 
 # Action bar — links switch with the active module.
 _ACTIONS = {
+    "Servo": [
+        {"label": "GitHub Repo", "icon": "📁", "url": _REPO, "primary": True},
+        {"label": "模組 Servo 規劃", "icon": "🛰",
+         "url": f"{_REPO}/blob/main/docs/MODULE_SERVO_PLAN.md"},
+        {"label": "PHM Data Challenge", "icon": "📊",
+         "url": "https://www.phmsociety.org/competition/phm/"},
+    ],
     "A": [
         {"label": "FastAPI /docs", "icon": "📚",
          "url": "http://127.0.0.1:8000/docs", "primary": True},
@@ -341,7 +417,23 @@ def _tone_for(value: float) -> str:
     return "danger"
 
 
-if _module == "A":
+if _module == "Servo":
+    _sclf = _metric_json("servo_clf_eval.json")
+    _sreg = _metric_json("servo_reg_eval.json")
+    _ph = "placeholder 合成" if _sclf.get("placeholder", True) else "真實 PHM"
+    style.kpi_strip([
+        {"label": "健康分類 macro-F1",
+         "value": f"{_sclf.get('macro_f1', 0):.3f}",
+         "sub": f"Reference · {_sclf.get('model','?')}"},
+        {"label": "退化回歸 R²",
+         "value": f"{_sreg.get('r2', 0):.3f}",
+         "sub": "DV 退化值"},
+        {"label": "健康狀態", "value": "LN/LO/MED/HI",
+         "sub": "健康→高度退化"},
+        {"label": "資料來源", "value": "PHM Ballscrew",
+         "sub": _ph},
+    ])
+elif _module == "A":
     kpi_cols = st.columns(5)
     with kpi_cols[0]:
         style.metric_with_bar(
@@ -764,117 +856,115 @@ def render_advice(result: dict) -> None:
 # Page 0: dashboard / one-page overview
 # ---------------------------------------------------------------------------
 if page == "首頁總覽":
-    cfg = load_config()
-    metrics_csv = resolve(cfg["paths"]["metrics_csv"])
+    _sclf = _metric_json("servo_clf_eval.json")
+    _sreg = _metric_json("servo_reg_eval.json")
 
-    # ---- 3 module entry tiles (A / B / B+) ----
-    style.section("快速入口")
-    tile_targets = [
-        ("🅰", "模組 A · 單筆風險預測",
-         "AI4I 靜態特徵 → 故障機率 + SHAP 解釋 + 維護建議",
-         "手動單筆預測", "go-a"),
-        ("🅱", "模組 B · 健康度總覽",
-         "IMS 振動 → 健康指標、退化起點 (FPT)、RUL 外推",
-         "健康度總覽", "go-b"),
-        ("🅱➕", "模組 B+ · 多軌跡泛化",
-         "XJTU 15 軸承 × 3 工況 → 跨軸承 / 跨工況泛化驗證",
-         "多軌跡泛化", "go-bplus"),
+    # ---- Servo main-line quick entries ----
+    style.section("主線快速入口 · 伺服馬達健康")
+    servo_tiles = [
+        ("🛰", "Servo 健康儀表板",
+         "估測健康狀態、退化分數、風險與主要異常特徵", "Servo 健康儀表板", "go-sv-dash"),
+        ("🧪", "AI 訓練模擬器",
+         "選資料量 / 特徵 / 演算法，比較小模型 vs Reference", "AI 訓練模擬器", "go-sv-sim"),
+        ("🤖", "LLM 維護助理",
+         "把模型結果翻成維修建議與工單草稿（可離線）", "LLM 維護助理", "go-sv-llm"),
     ]
-    tile_cols = st.columns(3)
-    for col, (icon, title, sub, target_page, key) in zip(tile_cols, tile_targets):
+    for col, (icon, title, sub, target, key) in zip(st.columns(3), servo_tiles):
         with col:
             if style.dash_button_tile(icon, title, sub, key=key):
-                st.session_state.active_page = target_page
+                st.session_state.active_page = target
                 st.rerun()
 
     st.divider()
-
-    # ---- main 2-col grid ----
     cL, cR = st.columns([1.2, 1])
-
     with cL:
-        style.section("目前部署的模型")
-        with style.zone("sky", key="home-model"):
+        style.section("主線 Reference Model")
+        with style.zone("sky", key="home-servo-model"):
             mc1, mc2, mc3 = st.columns(3)
             with mc1:
-                style.big_stat("Recall", f"{m['recall']:.3f}",
-                               "故障命中率",
-                               tone=_tone_for(m['recall']))
+                style.big_stat("健康分類 macro-F1",
+                               f"{_sclf.get('macro_f1', 0):.3f}",
+                               f"{_sclf.get('model','?')}", tone="primary")
             with mc2:
-                style.big_stat("F1", f"{m['f1']:.3f}",
-                               "整體分數",
-                               tone=_tone_for(m['f1']))
+                style.big_stat("退化回歸 R²", f"{_sreg.get('r2', 0):.3f}",
+                               "DV 退化值", tone="primary")
             with mc3:
-                style.big_stat("PR-AUC", f"{m['pr_auc']:.3f}",
-                               "不平衡資料首選",
-                               tone=_tone_for(m['pr_auc']))
+                style.big_stat("健康狀態", "4 類", "LN/LO/MED/HI", tone="primary")
+            _ph = _sclf.get("placeholder", True)
             st.markdown(
                 f"<div style='color:#64748b;font-size:0.9rem;margin-top:10px;'>"
-                f"<b>{bundle.model_name}</b>　·　特徵組合 "
-                f"<code>{bundle.feature_set}</code>　·　共 "
-                f"{len(bundle.feature_columns)} 個特徵</div>",
+                f"資料：<b>PHM Servomotor-Driven Ballscrew</b>（模擬退化資料）　·　"
+                f"{'⚠ placeholder 合成資料訓練' if _ph else '真實 PHM 資料'}</div>",
                 unsafe_allow_html=True,
             )
-
-        if metrics_csv.exists():
-            style.section("Top 5 模型排行榜（依 F1）")
-            comp = pd.read_csv(metrics_csv)
-            st.plotly_chart(
-                leaderboard_bar(comp, metric="f1", top_n=5),
-                width='stretch',
-            )
+        style.section("這個系統包含什麼")
+        style.kpi_strip([
+            {"label": "ML 主線", "value": "Health + DV", "sub": "分類 + 回歸"},
+            {"label": "訓練模擬器", "value": "5 演算法", "sub": "教學展示"},
+            {"label": "LLM 助理", "value": "維護建議", "sub": "含 fallback"},
+            {"label": "知識庫", "value": "RAG", "sub": "TF-IDF 檢索"},
+        ])
 
     with cR:
-        style.section("資料集")
-        with style.zone("mint", key="home-dataset"):
-            style.kpi_strip([
-                {"label": "Rows", "value": "10,000",
-                 "sub": "AI4I 2020 全部"},
-                {"label": "Failure rate", "value": "3.39%",
-                 "sub": "嚴重不平衡"},
-            ])
-            style.kpi_strip([
-                {"label": "Type L", "value": "60.0%",
-                 "sub": "低成本變體"},
-                {"label": "Type M", "value": "30.0%",
-                 "sub": "中規格"},
-                {"label": "Type H", "value": "10.0%",
-                 "sub": "高規格"},
-            ])
-            st.caption(
-                "資料來源：UCI Machine Learning Repository。"
-                "由參數化過程模型產生，**不是**真實工廠紀錄。"
-            )
-
-        style.section("最近 What-if 活動")
-        if "wif_history" in st.session_state and st.session_state.wif_history:
-            history = st.session_state.wif_history
-            mini = sparkline(history[-30:], color=style.PRIMARY, height=120)
-            st.plotly_chart(mini, width='stretch')
-            st.caption(
-                f"已試 {len(history)} 步；"
-                f"目前 {history[-1]*100:.1f}%　·　"
-                f"歷史最高 {max(history)*100:.1f}%　·　"
-                f"歷史最低 {min(history)*100:.1f}%"
-            )
-        else:
-            style.note(
-                "去 <b>What-if 敏感度分析</b> 頁拖動滑桿，"
-                "之後這裡就會出現你最近的探索軌跡。",
+        style.section("資料與誠實性")
+        with style.zone("mint", key="home-servo-data"):
+            st.markdown(
+                "- 主線資料為 **PHM 伺服馬達滾珠螺桿退化資料**，較貼近伺服系統。\n"
+                "- 這是**模擬資料**，**不是**真實工廠實機 log。\n"
+                "- 任務為**健康狀態估測 + 退化值回歸**，`run_index` **不**等於 RUL，"
+                "不宣稱剩餘壽命。\n"
+                "- Model A（AI4I 合成）/ B（IMS）/ B+（XJTU）/ C（Paderborn）"
+                "為**對照與歷史補充**。"
             )
 
     st.divider()
+    style.section("補充模組（對照 / 歷史）")
+    supp = [
+        ("🅰", "模組 A · 靜態風險", "AI4I 故障機率 + SHAP", "手動單筆預測", "go-a"),
+        ("🅱", "模組 B · 動態健康度", "IMS 健康指標 / RUL 外推", "健康度總覽", "go-b"),
+        ("🅱➕", "模組 B+ · 多軌跡泛化", "XJTU 15 軸承 / 3 工況", "多軌跡泛化", "go-bplus"),
+        ("🅲", "模組 C · 馬達電流診斷", "Paderborn MCSA 故障分類", "馬達電流故障診斷", "go-c"),
+    ]
+    for col, (icon, title, sub, target, key) in zip(st.columns(4), supp):
+        with col:
+            if style.dash_button_tile(icon, title, sub, key=key):
+                st.session_state.active_page = target
+                st.rerun()
 
-    # ---- footer chips ----
+    st.divider()
     style.section("技術棧")
     style.kpi_strip([
-        {"label": "ML",     "value": "scikit-learn", "sub": "+ XGBoost / LightGBM"},
-        {"label": "Explain", "value": "SHAP",        "sub": "TreeExplainer"},
-        {"label": "Tune",   "value": "Optuna",      "sub": "TPE sampler"},
-        {"label": "UI",     "value": "Streamlit",   "sub": "+ Plotly + shadcn"},
-        {"label": "API",    "value": "FastAPI",     "sub": "8 endpoints"},
-        {"label": "Deploy", "value": "Docker",      "sub": "+ GitHub Actions CI"},
+        {"label": "ML",     "value": "scikit-learn", "sub": "分類 + 回歸"},
+        {"label": "LLM",    "value": "Anthropic",    "sub": "+ 離線 fallback"},
+        {"label": "RAG",    "value": "TF-IDF",       "sub": "離線知識庫"},
+        {"label": "UI",     "value": "Streamlit",    "sub": "+ Plotly"},
+        {"label": "API",    "value": "FastAPI",      "sub": "推論服務"},
+        {"label": "Deploy", "value": "Docker",       "sub": "+ GitHub CI"},
     ])
+
+
+# ---------------------------------------------------------------------------
+# Module Servo pages (project main line) — bodies live in src/ui/servo_views.py
+# ---------------------------------------------------------------------------
+elif page in _SERVO_PAGES:
+    try:
+        if page == "Servo 健康儀表板":
+            servo_views.render_dashboard()
+        elif page == "AI 訓練模擬器":
+            servo_views.render_simulator()
+        elif page == "馬達欄位解釋":
+            servo_views.render_glossary()
+        elif page == "LLM 維護助理":
+            servo_views.render_assistant()
+        elif page == "維修知識庫":
+            servo_views.render_knowledge()
+    except FileNotFoundError:
+        style.note(
+            "找不到 Servo 模型 / 資料。請先在終端執行："
+            "<br><code>python -m src.data.build_servo_dataset</code>"
+            "<br><code>python -m src.models.train_servo</code>",
+            kind="danger",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1813,12 +1903,15 @@ elif page == "馬達電流故障診斷":
 else:
     style.section("專案總覽")
     style.note(
-        "本系統是一套<b>四軌平行</b>的預測性維護原型："
+        "<b>主線為模組 Servo</b>：以 PHM 伺服馬達滾珠螺桿退化資料做健康狀態估測（LN/LO/MED/HI）"
+        "與退化值 (DV) 回歸，並串接 AI 訓練模擬器、馬達欄位解釋、LLM 維護助理與維修知識庫(RAG)。"
+        "（目前以 placeholder 合成資料運作，待真實 PHM 資料替換。）<br>"
+        "另保留<b>四條對照 / 歷史軌道</b>："
         "<b>模組 A</b> 以 AI4I 2020 製程快照做靜態故障風險分類；"
         "<b>模組 B</b> 以 IMS 軸承振動推導動態健康度與剩餘壽命 (RUL)；"
         "<b>模組 B+</b> 以 XJTU-SY 多軸承 / 多工況驗證健康監測的泛化能力；"
         "<b>模組 C</b> 以 Paderborn 馬達電流 (MCSA) + 振動做故障分類，驗證人工→真實故障泛化。"
-        "四軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
+        "各軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
     )
     c_l, c_r = st.columns(2)
     with c_l:
@@ -1826,6 +1919,7 @@ else:
             st.markdown(
                 """
                 ##### 系統定位 — 決策輔助
+                - **Servo（主線）**：伺服馬達健康狀態估測 + 退化值回歸 + 維護助理
                 - **A**：由運轉條件估計故障風險
                 - **B**：由振動推導健康退化與剩餘壽命
                 - **B+**：跨軸承 / 跨工況的泛化驗證
@@ -1833,7 +1927,7 @@ else:
 
                 ##### 不是
                 - 即時控制器
-                - 精準 RUL 預測器
+                - 精準 RUL 預測器（Servo 不宣稱 RUL）
                 - 已驗證的工廠系統
                 """
             )
@@ -1964,8 +2058,8 @@ else:
         {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
         {"label": "繪圖函式", "value": "19", "sub": "src/ui/charts.py"},
         {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "12", "sub": "首頁 1 + A 4 + B 3 + B+ 2 + C 1 + 關於 1"},
-        {"label": "單元測試", "value": "41 / 41", "sub": "全部通過"},
+        {"label": "Streamlit 頁面", "value": "17", "sub": "首頁 1 + Servo 5 + A 4 + B 3 + B+ 2 + C 1 + 關於 1"},
+        {"label": "單元測試", "value": "50 / 51", "sub": "50 通過 · 1 依環境跳過"},
     ])
     style.section("外部連結")
     st.markdown(

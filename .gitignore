@@ -30,9 +30,6 @@ outputs/.fastapi.log
 outputs/.batch_sample.csv
 *.log
 
-# Claude Code export transcripts (local only — may contain private context)
-conversation-*.txt
-
 # Raw dataset (must be downloaded by the user)
 data/raw/*.csv
 data/processed/*.csv
@@ -43,6 +40,8 @@ data/raw/ims/
 data/raw/xjtu/
 # Paderborn raw snapshots (Module C, ~20 GB .mat files) — never commit
 data/raw/paderborn/
+# Module Servo raw PHM time-series CSV(s) — downloaded by the user, never commit
+data/raw/servo/
 
 # Module B (IMS) processed artefacts — small, committed so the live demo works
 # without the 1.5 GB raw dataset (override the broad ignores above).
@@ -65,6 +64,17 @@ data/raw/paderborn/
 !outputs/metrics/paderborn_eval.json
 !outputs/metrics/paderborn_predictions.csv
 
+# Module Servo (main line) artefacts — committed so the cloud demo runs without
+# the raw PHM dataset (placeholder data until the real dataset is downloaded).
+!data/processed/servo_features.parquet
+!data/processed/servo_feature_demo.csv
+!data/processed/servo_sample_predictions.csv
+!outputs/models/servo_clf.joblib
+!outputs/models/servo_reg.joblib
+!outputs/metrics/servo_clf_eval.json
+!outputs/metrics/servo_reg_eval.json
+!outputs/metrics/servo_dl_results.json
+
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training
 # (override the broad ignores above). ims_rul.joblib stays ignored on purpose.
@@ -80,6 +90,9 @@ data/raw/paderborn/
 
 # Keep folder placeholders
 !**/.gitkeep
+
+# Secrets / local env (LLM provider keys) — keep .env.example committed
+.env
 
 # Streamlit
 .streamlit/secrets.toml

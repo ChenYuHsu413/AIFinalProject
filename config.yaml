@@ -234,3 +234,74 @@ paderborn:
   best_model: outputs/models/paderborn_clf.joblib
   metrics: outputs/metrics/paderborn_eval.json          # baseline CV vs artificial->real
   predictions: outputs/metrics/paderborn_predictions.csv
+
+# ---------------------------------------------------------------------------
+# Module Servo — PHM servomotor-driven ballscrew degradation (PROJECT MAIN LINE)
+# Health-state CLASSIFICATION (ylabel: LN/LO/MED/HI) + degradation-value (DV)
+# REGRESSION.  This is SIMULATION data, NOT a real factory servomotor log, and
+# run_index is NOT remaining-useful-life. See docs/MODULE_SERVO_PLAN.md.
+# Raw per-timestep CSV is NOT committed; only the aggregated feature table /
+# demo / model artifacts are. ``placeholder: true`` => artifacts were built from
+# SYNTHETIC data and must be retrained on the real PHM dataset.
+# ---------------------------------------------------------------------------
+servo:
+  raw_dir: data/raw/servo                                  # real PHM CSV(s) go here (not in git)
+  processed_features: data/processed/servo_features.parquet
+  feature_demo: data/processed/servo_feature_demo.csv      # small demo set for the training simulator
+  sample_predictions: data/processed/servo_sample_predictions.csv
+  clf_model: outputs/models/servo_clf.joblib               # reference health-state classifier
+  reg_model: outputs/models/servo_reg.joblib               # reference DV regressor
+  feature_config: outputs/models/servo_feature_config.json # feature set + columns + label map for inference
+  clf_metrics: outputs/metrics/servo_clf_eval.json
+  reg_metrics: outputs/metrics/servo_reg_eval.json
+  dl_metrics: outputs/metrics/servo_dl_results.json        # offline DL results (read-only on the cloud app)
+  labels: [LN, LO, MED, HI]
+  enabled_models: [logistic_regression, decision_tree, random_forest, gradient_boosting, mlp]
+  reference_feature_set: engineered
+  cv_folds: 5
+  random_state: 42
+  placeholder_runs_per_class: 1500   # synthetic runs per health class when no real data
+  # DV (0..1, higher = more degraded) -> risk bands. Calibrated on PLACEHOLDER
+  # data; MUST be recalibrated on the real DV distribution.
+  dv_risk:
+    low_max: 0.33
+    medium_max: 0.66
+  placeholder: true                  # set false after training on the real PHM dataset
+
+# ---------------------------------------------------------------------------
+# LLM maintenance assistant. Consumes STRUCTURED model output (never replaces
+# the model). Works WITHOUT an API key via a deterministic fallback template.
+# ---------------------------------------------------------------------------
+llm:
+  enabled: true
+  max_tokens: 1200
+  # Providers are tried IN ORDER; the first one whose API key env var is set wins.
+  # If none are configured/reachable, the assistant uses an offline template.
+  # Groq / OpenRouter / Gemini all expose OpenAI-compatible chat endpoints and
+  # offer free tiers — set the matching env var to enable one.
+  providers: [groq, openrouter, gemini, anthropic]
+  groq:
+    api_key_env: GROQ_API_KEY
+    model: llama-3.3-70b-versatile
+  openrouter:
+    api_key_env: OPENROUTER_API_KEY
+    model: meta-llama/llama-3.3-70b-instruct:free
+  gemini:
+    api_key_env: GEMINI_API_KEY
+    model: gemini-2.0-flash
+  anthropic:                          # optional; temperature/top_p rejected on this tier
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-opus-4-8
+
+# ---------------------------------------------------------------------------
+# Maintenance knowledge base + retrieval (RAG). Offline-first: local markdown
+# under knowledge_dir is always available; the crawler is optional and respects
+# robots.txt + the sources.yaml whitelist.
+# ---------------------------------------------------------------------------
+knowledge:
+  knowledge_dir: data/knowledge          # local markdown/text docs (offline source)
+  sources_yaml: data/knowledge/sources.yaml
+  index_path: data/processed/knowledge_index.joblib
+  chunk_chars: 600
+  chunk_overlap: 100
+  top_k: 4

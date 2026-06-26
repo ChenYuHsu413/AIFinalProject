@@ -1,4 +1,14 @@
-# AI 伺服馬達故障風險預測與預測性維護建議系統
+# AI 伺服馬達健康狀態估測與智慧維護助理系統
+
+> **狀態（2026-06-26）**：主線已重構為 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，
+> 健康狀態估測 + 退化值回歸），並加入 **AI 訓練模擬器 / 馬達欄位解釋 / LLM 維護助理 /
+> 維修知識庫(RAG) / 深度學習離線 baseline**。LLM 維護助理為**多供應商**（Groq / OpenRouter /
+> Gemini 免費模型 / Anthropic 依序嘗試，全失敗才用離線範本），金鑰以 `.env` 設定；側邊欄
+> 補充模組（A/B/B+/C）改為**可收合**（預設收合）。原 Model A/B/B+/C 保留為**對照與歷史補充**。
+> 目前 Servo 以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
+> 細節見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md)。
+> 近期修正：維修問答與維護報告改用獨立 prompt（問答不再吐整份報告）、分類器健康狀態與
+> 退化值風險矛盾時輸出 `consistency_warning`、LLM 助理頁的報告與問答結果各自保留不互相覆蓋。
 
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
@@ -387,10 +397,37 @@ python -m src.models.predict
 streamlit run app/streamlit_app.py
 ```
 
-頁面（12 頁，依模組分組，含首頁總覽）：
+頁面（依模組分組，含首頁總覽）：
 
 **🏠 入口**
-- **首頁總覽** — 三模組入口磚與一頁式導覽。
+- **首頁總覽** — 以 Servo 主線為核心的一頁式導覽；補充模組（A/B/B+/C）入口磚。
+
+**🛰 模組 Servo · 伺服馬達健康（主線）**
+- **Servo 健康儀表板** — 健康狀態（LN/LO/MED/HI）、退化分數、風險、主要異常特徵、模型信心、建議處置；分類器狀態與退化值風險明顯矛盾時顯示一致性警告。
+- **AI 訓練模擬器** — 選資料量 / 特徵組 / 演算法，小模型 vs Reference Model 對照 + 文字解釋；含深度學習離線結果（唯讀）。
+- **馬達欄位解釋** — 欄位中文說明、異常意義、特徵組組成。
+- **LLM 維護助理** — 由模型結構化輸出生成維修報告（含工單草稿），維修問答則針對單一提問簡答（兩者
+  prompt 獨立、結果各自保留）；**多供應商**（Groq / OpenRouter / Gemini 免費模型 / Anthropic 依序嘗試），
+  全失敗自動退回離線範本。金鑰見下方 `.env` 設定。
+- **維修知識庫** — 文件清單 + TF-IDF 關鍵字檢索（離線）。
+
+### LLM 金鑰設定（`.env`，選用）
+
+LLM 維護助理可離線運作（範本）；要使用真正的 LLM，把根目錄的 `.env.example` 複製成 `.env`，
+填入**任一家**免費供應商金鑰即可（助理依序嘗試，全失敗才用範本）：
+
+```bash
+cp .env.example .env   # 然後編輯 .env 填入任一金鑰
+```
+
+| 供應商 | 環境變數 | 取得金鑰 |
+| --- | --- | --- |
+| Groq | `GROQ_API_KEY` | <https://console.groq.com/keys> |
+| OpenRouter | `OPENROUTER_API_KEY` | <https://openrouter.ai/keys> |
+| Gemini | `GEMINI_API_KEY` | <https://aistudio.google.com/apikey> |
+| Anthropic（選用，非免費） | `ANTHROPIC_API_KEY` | <https://console.anthropic.com/settings/keys> |
+
+`.env` 不會進 git；供應商順序與模型可在 `config.yaml::llm` 調整。設定後重啟 Streamlit 生效。
 
 **🅰 模組 A · 靜態風險**
 - **手動單筆預測** — 填入欄位即可看到機率 / 健康分數 / 風險 / 維護建議。
@@ -706,7 +743,7 @@ docker compose up -d
 `.github/workflows/ci.yml` 在每次 push / PR 到 `main` 或 `master` 時自動：
 
 1. **語法檢查** — `python -m compileall src app tests scripts`
-2. **單元測試** — `pytest -v`（33 個測試，均使用合成資料，**不需要** AI4I CSV）
+2. **單元測試** — `pytest -v`（50 通過 / 1 依環境跳過，均使用合成資料，**不需要** AI4I CSV）
 3. **Docker build smoke test** — 用 buildx 建出映像並執行 `python -c "import ..."` 驗證模組可載入
 
 矩陣同時跑 **Python 3.11** 與 **3.12**。pip cache 由 `actions/setup-python` 提供，

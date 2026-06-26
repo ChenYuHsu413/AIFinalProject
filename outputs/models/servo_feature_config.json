@@ -1,0 +1,63 @@
+{
+  "feature_set": "engineered",
+  "feature_columns": [
+    "current_rms",
+    "torque_std",
+    "rotor_speed_std",
+    "position_error_mean",
+    "position_error_max",
+    "quadrature_rms",
+    "direct_rms"
+  ],
+  "labels": [
+    "LN",
+    "LO",
+    "MED",
+    "HI"
+  ],
+  "label_zh": {
+    "LN": "健康",
+    "LO": "輕度退化",
+    "MED": "中度退化",
+    "HI": "高度退化"
+  },
+  "dv_risk": {
+    "low_max": 0.33,
+    "medium_max": 0.66
+  },
+  "healthy_baseline": {
+    "current_rms": {
+      "mean": 3.124586862492795,
+      "std": 0.8557287166468778
+    },
+    "torque_std": {
+      "mean": 0.0670212675004102,
+      "std": 0.11515129491264041
+    },
+    "rotor_speed_std": {
+      "mean": 8.638500713238079,
+      "std": 21.717864444711626
+    },
+    "position_error_mean": {
+      "mean": -0.18134111207128129,
+      "std": 0.9091395516919468
+    },
+    "position_error_max": {
+      "mean": 0.5272362026638412,
+      "std": 1.9243348019262085
+    },
+    "quadrature_rms": {
+      "mean": 1.3211131066952946,
+      "std": 0.8230039998331061
+    },
+    "direct_rms": {
+      "mean": 0.41880686847934884,
+      "std": 0.18305048007011623
+    }
+  },
+  "clf_model": "logistic_regression",
+  "reg_model": "random_forest",
+  "clf_macro_f1": 0.7483382912558307,
+  "reg_r2": 0.7331948663791252,
+  "placeholder": true
+}

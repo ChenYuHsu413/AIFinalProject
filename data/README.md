@@ -1,4 +1,35 @@
-# 資料說明 — AI4I 2020 Predictive Maintenance Dataset
+# 模組 Servo（專案主線）— PHM Servomotor-Driven Ballscrew Degradation Dataset
+
+> **狀態（2026-06-25）**：主線資料。目前以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
+> 詳見 [`../docs/MODULE_SERVO_PLAN.md`](../docs/MODULE_SERVO_PLAN.md)。
+
+伺服馬達驅動滾珠螺桿機構的退化資料（**模擬資料，非真實工廠 log**）。任務為健康狀態
+分類（`ylabel`：LN/LO/MED/HI）與退化值回歸（`DV`）；`run_index` **不**等於 RUL。
+
+## 如何取得 / 放置
+
+1. 取得 PHM 伺服馬達滾珠螺桿退化資料（PHM Society Data Challenge）。
+2. 將逐時序 CSV 放到 `data/raw/servo/`（不進 git）。
+3. 重建：
+   ```bash
+   python -m src.data.build_servo_dataset   # 無原始資料時自動產生 placeholder
+   python -m src.models.train_servo
+   ```
+
+## 欄位（逐時序）
+
+`time, DV, rod_demand_pos, rod_actual_pos, torque, rotor_speed, i_3p_a, i_3p_b, i_3p_c,
+direct, quadrature, run_index, transitions, del_pos, ylabel`
+
+## 注意事項
+
+* **模擬資料，非真實實機 log。** 比軸承資料接近伺服系統，但須如實揭露。
+* **不進 git。** 原始 CSV 放 `data/raw/servo/`（已忽略）；只提交聚合特徵表、demo、模型與 metrics。
+* **不宣稱 RUL。** 僅做健康狀態估測與 DV 回歸。
+
+---
+
+# 資料說明 — AI4I 2020 Predictive Maintenance Dataset（補充模組 A）
 
 為避免授權與檔案大小問題，本資料夾**預設不包含資料集**。
 

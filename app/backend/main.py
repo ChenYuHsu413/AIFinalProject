@@ -32,11 +32,11 @@ from app.backend.schemas import (
 )
 
 app = FastAPI(
-    title="AI 伺服馬達預測性維護 API",
-    version="0.1.0",
+    title="AI 伺服馬達健康狀態估測與智慧維護助理 API",
+    version="0.2.0",
     description=(
-        "以 UCI AI4I 2020（合成資料集）建立的預測性維護原型 API。"
-        "提供故障機率預測、健康分數，以及依規則產生的維護建議。"
+        "主線：以 PHM 伺服馬達滾珠螺桿退化（模擬）資料估測健康狀態與退化值"
+        "（/servo/*）。補充：UCI AI4I 2020 合成資料的靜態故障風險（/predict 等）。"
         "本服務僅作為維護決策輔助，不會直接控制馬達。"
     ),
 )
@@ -111,3 +111,35 @@ def predict_full(req: PredictRequest):
 @app.get("/failure_type_metrics", response_model=FailureTypeMetricsResponse)
 def failure_type_metrics():
     return {"rows": services.failure_type_metrics()}
+
+
+# --- Module Servo (project main line) ----------------------------------------
+from pydantic import BaseModel  # noqa: E402
+
+
+class ServoPredictRequest(BaseModel):
+    """Aggregated feature row for the reference health/DV models.
+
+    ``features`` maps each required feature column (see /servo/model_info) to a
+    numeric value.
+    """
+    features: dict
+
+
+@app.get("/servo/model_info")
+def servo_model_info():
+    try:
+        return services.servo_model_info()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.post("/servo/predict")
+def servo_predict(req: ServoPredictRequest):
+    """伺服馬達健康狀態估測（健康狀態分類 + DV 退化回歸）。"""
+    try:
+        return services.servo_predict_one(req.features)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
