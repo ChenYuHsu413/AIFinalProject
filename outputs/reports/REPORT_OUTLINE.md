@@ -2,6 +2,10 @@
 
 > 此大綱作為書面或簡報報告的骨架使用。文中提到的數字與圖表都由訓練與評估
 > 腳本產生，分別儲存於 `outputs/figures/` 與 `outputs/metrics/`。
+>
+> **完整書面報告（2026-06-27）**：本大綱已展開為含 Servo 主線、模組 C、前端 Command Center 與
+> 部署的完整報告，見 [`docs/FINAL_REPORT.md`](../../docs/FINAL_REPORT.md)（填入真實指標）。
+> 下方大綱保留為 A/B/B+ 的原始骨架。
 
 ## 1. 摘要
 一段文字摘要：問題、資料集（AI4I 2020 合成資料）、方法（CRISP-DM）、最佳模型、
