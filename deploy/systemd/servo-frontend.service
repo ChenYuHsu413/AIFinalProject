@@ -1,0 +1,30 @@
+# AI Servo Command Center — Next.js frontend (next start)
+#
+# Install:
+#   sudo cp deploy/systemd/servo-frontend.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now servo-frontend
+#
+# IMPORTANT: NEXT_PUBLIC_API_BASE_URL is inlined at BUILD time, not runtime.
+# You MUST build with it set, before starting the service:
+#   cd /home/ubuntu/FinalProject/web
+#   NEXT_PUBLIC_API_BASE_URL=/api npm ci && NEXT_PUBLIC_API_BASE_URL=/api npm run build
+# The Environment line below is belt-and-suspenders (used by server components).
+
+[Unit]
+Description=Servo Command Center - Next.js frontend (next start)
+After=network.target servo-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/FinalProject/web
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=NEXT_PUBLIC_API_BASE_URL=/api
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

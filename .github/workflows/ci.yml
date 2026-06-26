@@ -46,6 +46,39 @@ jobs:
         # raw) are not required — data-dependent tests adapt when they are absent.
         run: pytest -v --tb=short
 
+  web:
+    name: web (lint + typecheck + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Production build
+        # NEXT_PUBLIC_API_BASE_URL is inlined at build time; prod uses /api
+        # (nginx reverse-proxies /api -> uvicorn). See docs/DEPLOYMENT.md.
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: /api
+
   docker:
     name: docker build smoke test
     runs-on: ubuntu-latest

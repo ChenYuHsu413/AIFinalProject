@@ -1,0 +1,27 @@
+# AI Servo Command Center — FastAPI backend (uvicorn)
+#
+# Install:
+#   sudo cp deploy/systemd/servo-backend.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now servo-backend
+#
+# Adjust User / WorkingDirectory / paths to match your VM layout.
+
+[Unit]
+Description=Servo Command Center - FastAPI backend (uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/FinalProject
+Environment=PYTHONUNBUFFERED=1
+# Optional: LLM provider keys etc. (keep .env out of git).
+EnvironmentFile=-/home/ubuntu/FinalProject/.env
+ExecStart=/home/ubuntu/FinalProject/.venv/bin/uvicorn app.backend.main:app \
+          --host 127.0.0.1 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
