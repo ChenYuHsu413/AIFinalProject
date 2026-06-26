@@ -165,7 +165,10 @@
       需 **Node 24**（`nvm use 24.14.0`；Node 18 太舊跑不動，見 [[node-toolchain-on-c-drive]]）。shadcn/ui 已 init；
       `src/lib/api.ts` 型別化 client（base URL 走 `NEXT_PUBLIC_API_BASE_URL`，prod 用 `/api` 給 nginx 代理）；
       最小首頁打 `/health` 驗證前後端串通；`web/build` 通過。後端已設 `allow_origins=["*"]`，CORS 對接 OK。
-- [ ] T18 共用版面 + 導覽 + 模型狀態列（接 `/health`、`/model_info`、`/servo/model_info`）
+- [x] T18 共用版面 + 導覽 + 模型狀態列（接 `/health`、`/model_info`、`/servo/model_info`）
+      （2026-06-26 完成）：左側 grouped 側邊欄（`nav.ts` 鏡像 Streamlit NAV_GROUPS、lucide 圖示、active 高亮、
+      誠實性 pill「決策輔助/不控制馬達」）+ 頂部狀態列（後端連線點 + 主線模型/macro-F1 + placeholder 合成資料警示）。
+      建立全部 18 條路由（首頁總覽 + 16 個 stub + about），DRY `StubPage` 依 `usePathname` 顯示標籤；build 18 routes 通過。
 - [ ] T19 逐頁搬：Servo 儀表板 → 模組 A → 模組 B → 模組 B+ → 模組 C → LLM 助理 → 知識庫 → 關於頁
 - [ ] T20 PNG 圖先 `<img>` 顯示；互動圖表逐張換 Recharts / Plotly.js
 

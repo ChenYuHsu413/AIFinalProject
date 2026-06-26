@@ -42,3 +42,15 @@ export interface Health {
   model_loaded: boolean;
   message: string | null;
 }
+
+/** Shape of GET /servo/model_info. */
+export interface ServoModelInfo {
+  feature_set: string | null;
+  feature_columns: string[];
+  labels: string[] | null;
+  clf_model: string | null;
+  reg_model: string | null;
+  clf_macro_f1: number | null;
+  reg_r2: number | null;
+  placeholder: boolean | null;
+}
