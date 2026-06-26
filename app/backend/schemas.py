@@ -66,6 +66,13 @@ class HealthResponse(BaseModel):
     message: str | None = None
 
 
+class ServoSimulateRequest(BaseModel):
+    task: Literal["clf", "reg"]
+    feature_set: str
+    algo: str
+    n: int = Field(..., gt=0, description="Sample size to train on (clamped to the table size).")
+
+
 class MaintenanceAdviceRequest(BaseModel):
     health: float = Field(..., description="0..100 health score (100 = baseline-healthy).")
     rul_hours: float | None = Field(None, description="Remaining-useful-life estimate; None if not estimable.")

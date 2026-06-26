@@ -239,6 +239,46 @@ def test_servo_reference_metrics():
     assert set(resp.json()) == {"clf", "reg", "dl"}
 
 
+def test_servo_simulate_options():
+    resp = client.get("/servo/simulate/options")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {"classifiers", "regressors", "algo_labels"} <= set(body)
+    assert len(body["classifiers"]) > 0
+
+
+def test_servo_simulate_classification():
+    resp = client.post("/servo/simulate", json={
+        "task": "clf", "feature_set": "engineered", "algo": "random_forest", "n": 400,
+    })
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {"macro_f1", "accuracy", "confusion_matrix", "explanation"} <= set(body)
+    assert isinstance(body["explanation"], list)
+
+
+def test_servo_simulate_regression():
+    resp = client.post("/servo/simulate", json={
+        "task": "reg", "feature_set": "engineered", "algo": "random_forest", "n": 400,
+    })
+    assert resp.status_code == 200
+    assert {"r2", "mae", "rmse", "explanation"} <= set(resp.json())
+
+
+def test_servo_simulate_bad_algo():
+    resp = client.post("/servo/simulate", json={
+        "task": "clf", "feature_set": "engineered", "algo": "nope", "n": 400,
+    })
+    assert resp.status_code == 400
+
+
+def test_servo_simulate_bad_task():
+    resp = client.post("/servo/simulate", json={
+        "task": "xxx", "feature_set": "engineered", "algo": "random_forest", "n": 400,
+    })
+    assert resp.status_code == 422
+
+
 _SAMPLE_RECORD = {
     "type": "L",
     "air_temperature_K": 298.1,

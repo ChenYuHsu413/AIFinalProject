@@ -495,3 +495,40 @@ def servo_reference_metrics() -> Dict[str, Any]:
         "reg": _read_json_or_empty(cfg["reg_metrics"]),
         "dl": _read_json_or_empty(cfg["dl_metrics"]),
     }
+
+
+def servo_simulate_options() -> Dict[str, Any]:
+    """Algorithm choices for the training simulator (clf / reg names + labels)."""
+    from src.models import servo_simulator as sim
+
+    return {
+        "classifiers": list(sim.CLASSIFIER_NAMES),
+        "regressors": list(sim.REGRESSOR_NAMES),
+        "algo_labels": sim.ALGO_LABELS,
+    }
+
+
+def servo_simulate(task: str, feature_set: str, algo: str, n: int) -> Dict[str, Any]:
+    """Train a small clf/reg model in-process and return its metrics + notes.
+
+    Fast on the demo feature table (<0.4s), so this runs synchronously."""
+    from src.features.servo_features import FEATURE_SETS
+    from src.models import servo_simulator as sim
+
+    path = resolve(load_config()["servo"]["processed_features"])
+    if not path.exists():
+        raise FileNotFoundError("伺服特徵表尚未建立。")
+    if feature_set not in FEATURE_SETS:
+        raise ValueError(f"未知的 feature_set：{feature_set!r}。可用：{list(FEATURE_SETS)}")
+    valid_algos = sim.CLASSIFIER_NAMES if task == "clf" else sim.REGRESSOR_NAMES
+    if algo not in valid_algos:
+        raise ValueError(f"未知的 algo：{algo!r}。可用：{list(valid_algos)}")
+
+    df = pd.read_parquet(path)
+    n = min(n, len(df))
+    runner = sim.run_classification if task == "clf" else sim.run_regression
+    res = runner(df, feature_set, algo, n)
+    res["explanation"] = sim.explain_result(
+        task, FEATURE_SETS[feature_set]["label"], res["n_samples"]
+    )
+    return res

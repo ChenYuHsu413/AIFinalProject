@@ -33,6 +33,7 @@ from app.backend.schemas import (
     ModelInfoResponse,
     PredictRequest,
     PredictResponse,
+    ServoSimulateRequest,
 )
 
 app = FastAPI(
@@ -311,6 +312,23 @@ def servo_samples():
 def servo_reference_metrics():
     """訓練模擬器的對照指標：clf / reg / dl（離線 baseline）。"""
     return services.servo_reference_metrics()
+
+
+@app.get("/servo/simulate/options")
+def servo_simulate_options():
+    """訓練模擬器可選的演算法（分類 / 回歸名稱 + 中文標籤）。"""
+    return services.servo_simulate_options()
+
+
+@app.post("/servo/simulate")
+def servo_simulate(req: ServoSimulateRequest):
+    """瀏覽器端小模型即時訓練（同步，<0.4s），回指標、混淆矩陣與說明。"""
+    try:
+        return services.servo_simulate(req.task, req.feature_set, req.algo, req.n)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # --- Static figures ----------------------------------------------------------

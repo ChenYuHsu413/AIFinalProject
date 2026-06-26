@@ -135,7 +135,7 @@
 - [x] T13 `POST /maintenance/advice`（包 `maintenance_advice()`）（2026-06-26 完成，含測試；回 asdict(Advice)，預設 alarm 30 / margin 0.3）
 
 **Stage 1.4 — 硬點（最後啃）**
-- [ ] T14 `POST /servo/simulate` + `GET /servo/reference_metrics` — 決定同步時限 vs 背景任務
+- [x] T14 `POST /servo/simulate`（+ `GET /servo/simulate/options`；`/servo/reference_metrics` 已於 T7 完成）（2026-06-26 完成，含測試；實測訓練 <0.4s → 採同步，無需背景任務）
 - [ ] T15 LLM 助理：`GET /servo/assistant/providers`、`POST /servo/assistant/report`、`POST /servo/assistant/qa`
       — server 端金鑰、context 契約（帶 `servo_pred`）、SSE 串流
 
