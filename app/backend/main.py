@@ -310,6 +310,15 @@ def servo_samples():
     return services.servo_samples()
 
 
+@app.get("/servo/fleet")
+def servo_fleet():
+    """Command Center 機群：合成設備識別 + 真實參考模型在代表性 demo 運轉段上的健康輸出。"""
+    try:
+        return services.servo_fleet()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
 @app.get("/servo/reference_metrics")
 def servo_reference_metrics():
     """訓練模擬器的對照指標：clf / reg / dl（離線 baseline）。"""

@@ -487,6 +487,63 @@ def servo_samples() -> List[Dict[str, Any]]:
     return json.loads(df.to_json(orient="records"))
 
 
+# Synthetic equipment identities for the Command Center fleet view. The health
+# of each unit is NOT hard-coded — it is computed by running the *real* reference
+# model (servo_predict_one) over a representative demo run that matches the unit's
+# intended state. So identities are demo, but the health/risk/features are real
+# model output on demo data (not real PHM telemetry).
+_FLEET_UNITS = [
+    {"id": "servo-a01", "name": "Servo-A01", "location": "產線 1 · X 軸", "status": "running", "target": "LN", "uptime": 1840, "updated": "12 秒前"},
+    {"id": "servo-a02", "name": "Servo-A02", "location": "產線 1 · Y 軸", "status": "running", "target": "LO", "uptime": 2210, "updated": "8 秒前"},
+    {"id": "servo-a03", "name": "Servo-A03", "location": "產線 2 · Z 軸", "status": "warning", "target": "MED", "uptime": 3050, "updated": "5 秒前"},
+    {"id": "servo-testbench", "name": "Servo-TestBench", "location": "實驗台 · 加速壽命", "status": "maintenance", "target": "HI", "uptime": 5120, "updated": "3 秒前"},
+]
+
+
+def servo_fleet() -> List[Dict[str, Any]]:
+    """Demo fleet whose health is computed by the real reference model.
+
+    For each synthetic unit, pick a demo run matching its target state and run it
+    through servo_predict_one; surface the model's health score / state / risk /
+    degradation / confidence / top anomalous feature.
+    """
+    rows = servo_samples()
+    if not rows:
+        return []
+    cols = servo_model_info()["feature_columns"]
+
+    fleet: List[Dict[str, Any]] = []
+    for u in _FLEET_UNITS:
+        match = next(
+            (r for r in rows if str(r.get("ylabel")) == u["target"]),
+            rows[len(rows) // 2],
+        )
+        features = {c: match[c] for c in cols if c in match}
+        pred = servo_predict_one(features)
+        top = (pred.get("top_features") or [{}])[0]
+        fleet.append(
+            {
+                "id": u["id"],
+                "name": u["name"],
+                "location": u["location"],
+                "status": u["status"],
+                "healthScore": round(pred["health_score"]),
+                "state": pred["predicted_health_state"],
+                "risk": pred["risk_level"],
+                "degradation": round(pred["degradation_score"], 2),
+                "confidence": round(pred["model_confidence"], 2),
+                "topFeature": {
+                    "feature": top.get("feature", "-"),
+                    "z": top.get("z", 0),
+                    "hint": top.get("hint", ""),
+                },
+                "uptimeHours": u["uptime"],
+                "lastUpdated": u["updated"],
+            }
+        )
+    return fleet
+
+
 def servo_reference_metrics() -> Dict[str, Any]:
     """Reference baselines for the training simulator: clf / reg / dl."""
     cfg = load_config()["servo"]

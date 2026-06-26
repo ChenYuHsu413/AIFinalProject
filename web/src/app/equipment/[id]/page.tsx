@@ -10,7 +10,8 @@ import { HealthScoreGauge } from "@/components/dashboard/HealthScoreGauge";
 import { FeatureImportancePanel } from "@/components/dashboard/FeatureImportancePanel";
 import { TelemetryTrends } from "@/components/dashboard/TelemetryTrends";
 import { HealthBadge, RiskBadge, StatusDot } from "@/components/dashboard/badges";
-import { FLEET, TELEMETRY } from "@/lib/mock";
+import { TELEMETRY } from "@/lib/mock";
+import { useFleet } from "@/lib/fleet";
 import {
   apiGet,
   apiPost,
@@ -22,7 +23,8 @@ import { HEALTH_COLOR, HEALTH_ORDER, HEALTH_ZH } from "@/lib/servo";
 
 export default function EquipmentDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const unit = FLEET.find((u) => u.id === id);
+  const { fleet } = useFleet();
+  const unit = fleet.find((u) => u.id === id);
 
   if (!unit) {
     return (

@@ -47,6 +47,12 @@
 > 特徵／建議處置）。Header 麵包屑支援動態路由；mock 與真 API 區塊在 UI 上明確標示。真預測區可
 > 「換一筆代表段重估」並顯示所用 demo #；告警表設備名可點進詳情頁。主題背景改為全黑（OLED）。
 >
+> **機群改接後端真模型（2026-06-26）**：新增後端 `GET /servo/fleet`（`services.servo_fleet`）——
+> 合成設備識別（id/名稱/位置/狀態）+ **真實參考模型**在代表性 demo 運轉段上算出的健康分數／狀態／
+> 風險／退化／信心／主要異常特徵（非真實 PHM 遙測）。前端新增 `useFleet()`（`lib/fleet.ts`）改打此
+> API、mock 當 fallback，Overview 與設備詳情消費之，並標示資料來源（參考模型 / mock）。新增
+> `test_servo_fleet`（API 測試）。告警／工單／遙測趨勢仍為標示清楚的 mock。
+>
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、
 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。

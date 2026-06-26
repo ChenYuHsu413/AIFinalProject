@@ -31,7 +31,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ALERTS, FLEET, fleetSummary } from "@/lib/mock";
+import { ALERTS, fleetSummary, type Equipment } from "@/lib/mock";
+import { useFleet } from "@/lib/fleet";
 import { HEALTH_COLOR } from "@/lib/servo";
 import {
   apiGet,
@@ -49,8 +50,9 @@ const LEGACY: LegacyModel[] = [
 ];
 
 export default function Overview() {
-  const s = fleetSummary();
-  const worst = [...FLEET].sort((a, b) => a.healthScore - b.healthScore)[0];
+  const { fleet, source } = useFleet();
+  const s = fleetSummary(fleet);
+  const worst = [...fleet].sort((a, b) => a.healthScore - b.healthScore)[0];
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:px-6">
@@ -121,18 +123,22 @@ export default function Overview() {
         <div className="lg:col-span-2">
           <FleetHealthChart />
         </div>
-        <EquipmentRankCard />
+        <EquipmentRankCard fleet={fleet} />
       </section>
 
       {/* fleet health */}
       <div>
         <SectionHeader
           title="設備健康總覽"
-          desc="各伺服馬達即時健康狀態（mock，待 Servo Dataset 模組接真實遙測）"
+          desc={
+            source === "model"
+              ? "各設備健康由參考模型即時計算（後端 /servo/fleet）"
+              : "mock fallback（後端未連線；待 /servo/fleet）"
+          }
           action={{ label: "Servo 健康儀表板", href: "/servo/dashboard" }}
         />
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {FLEET.map((u) => (
+          {fleet.map((u) => (
             <EquipmentHealthCard key={u.id} unit={u} />
           ))}
         </section>
@@ -208,8 +214,8 @@ function SectionHeader({
 }
 
 /** "Recent sales"-style ranking list adapted to equipment health. */
-function EquipmentRankCard() {
-  const ranked = [...FLEET].sort((a, b) => a.healthScore - b.healthScore);
+function EquipmentRankCard({ fleet }: { fleet: Equipment[] }) {
+  const ranked = [...fleet].sort((a, b) => a.healthScore - b.healthScore);
   return (
     <Card className="@container/card">
       <CardHeader>

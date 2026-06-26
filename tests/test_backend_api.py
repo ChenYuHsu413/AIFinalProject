@@ -282,6 +282,30 @@ def test_servo_samples():
     assert {"run_index", "ylabel", "DV"} <= set(rows[0])
 
 
+def test_servo_fleet():
+    resp = client.get("/servo/fleet")
+    assert resp.status_code == 200
+    fleet = resp.json()
+    assert isinstance(fleet, list) and len(fleet) > 0
+    unit = fleet[0]
+    assert {
+        "id",
+        "name",
+        "status",
+        "healthScore",
+        "state",
+        "risk",
+        "degradation",
+        "confidence",
+        "topFeature",
+    } <= set(unit)
+    # health is real model output: score in range, state/risk from the model
+    assert 0 <= unit["healthScore"] <= 100
+    assert unit["state"] in {"LN", "LO", "MED", "HI"}
+    assert unit["risk"] in {"Low", "Medium", "High"}
+    assert {"feature", "z", "hint"} <= set(unit["topFeature"])
+
+
 def test_servo_reference_metrics():
     resp = client.get("/servo/reference_metrics")
     assert resp.status_code == 200
