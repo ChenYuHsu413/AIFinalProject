@@ -28,7 +28,7 @@ export default function StubPage() {
           {item?.label ?? "頁面"}
         </h1>
       </div>
-      <div className="mt-6 rounded-xl border border-dashed bg-white p-10 text-center text-muted-foreground shadow-sm">
+      <div className="mt-6 rounded-xl border border-dashed border-border/70 bg-card/50 p-10 text-center text-muted-foreground shadow-sm backdrop-blur-sm">
         <p className="text-sm">
           此頁規劃於 Phase 2（T19）由 Streamlit 逐步搬移；後端 API 已就緒。
         </p>

@@ -58,20 +58,19 @@ export default function SimulatorPage() {
     [task, opts],
   );
 
-  // keep algo valid whenever the task (and thus the list) changes
-  useEffect(() => {
-    if (algos.length && !algos.includes(algo)) setAlgo(algos[0]);
-  }, [algos, algo]);
+  // Derive a valid algo for the current task's list during render — no effect,
+  // no cascading re-render. `algo` keeps the user's explicit pick when still valid.
+  const effectiveAlgo = algos.includes(algo) ? algo : (algos[0] ?? "");
 
   async function train() {
-    if (!algo) return;
+    if (!effectiveAlgo) return;
     setBusy(true);
     try {
       setRes(
         await apiPost<ServoSimResult>("/servo/simulate", {
           task,
           feature_set: fs,
-          algo,
+          algo: effectiveAlgo,
           n,
         }),
       );
@@ -95,7 +94,7 @@ export default function SimulatorPage() {
       )}
 
       {/* controls */}
-      <div className="mb-4 rounded-xl border bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+      <div className="mb-4 rounded-xl border border-border/70 bg-gradient-to-br from-emerald-500/10 to-card/50 p-5 shadow-sm backdrop-blur-sm">
         <h2 className="mb-3 text-sm font-semibold">選擇訓練設定</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="資料量">
@@ -123,7 +122,7 @@ export default function SimulatorPage() {
             </Select>
           </Field>
           <Field label="演算法">
-            <Select value={algo} onChange={setAlgo}>
+            <Select value={effectiveAlgo} onChange={setAlgo}>
               {algos.map((a) => (
                 <option key={a} value={a}>
                   {opts?.algo_labels[a] ?? a}
@@ -137,7 +136,7 @@ export default function SimulatorPage() {
             特徵組「{featureSets[fs].label}」：{featureSets[fs].desc}
           </p>
         )}
-        <Button onClick={train} disabled={busy || !algo} className="mt-4 w-full">
+        <Button onClick={train} disabled={busy || !effectiveAlgo} className="mt-4 w-full">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
           開始訓練（後端小模型）
         </Button>
@@ -301,8 +300,8 @@ function ConfusionMatrix({ labels, cm }: { labels: string[]; cm: number[][] }) {
                     key={j}
                     className="h-9 w-9 rounded text-center font-medium"
                     style={{
-                      backgroundColor: `rgba(79,70,229,${a * 0.85})`,
-                      color: a > 0.5 ? "white" : "#334155",
+                      backgroundColor: `rgba(34,211,238,${a * 0.8})`,
+                      color: a > 0.45 ? "#0b1220" : "#cbd5e1",
                     }}
                   >
                     {v}
@@ -326,18 +325,18 @@ function DlPanel({ dl }: { dl?: ServoReferenceMetrics["dl"] }) {
   const recMax = Math.max(1e-9, ...recOrder.map((l) => rec[l]));
 
   return (
-    <div className="rounded-xl border bg-white shadow-sm">
+    <div className="rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-2 px-5 py-3 text-sm font-medium"
       >
-        <Brain className="h-4 w-4 text-fuchsia-500" />
+        <Brain className="h-4 w-4 text-fuchsia-400" />
         深度學習離線結果（唯讀）
         <ChevronRight className={cn("ml-auto h-4 w-4 transition-transform", open && "rotate-90")} />
       </button>
       {open && (
-        <div className="border-t px-5 py-4">
+        <div className="border-t border-border/70 px-5 py-4">
           {dl.note && <p className="mb-3 text-xs text-muted-foreground">{dl.note}</p>}
           <div className="grid gap-3 sm:grid-cols-3">
             <Stat label="MLP 分類 macro-F1" value={dl.mlp_classification_macro_f1.toFixed(3)} />
@@ -390,7 +389,7 @@ function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
     >
       {children}
     </select>

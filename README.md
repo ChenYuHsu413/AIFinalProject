@@ -660,14 +660,27 @@ ExecStart=/home/ubuntu/FinalProject/.venv/bin/streamlit run \
 
 在 GCP 防火牆放行 `8501`，或以 Nginx 反向代理。
 
-### E. 前端（選用）
+### E. 前端 — Next.js Command Center
 
-若另外建立 React / Vue / Next.js 前端：
+> **狀態（2026-06-26）**：已建立 `web/`（Next.js App Router + TypeScript + Tailwind v4 +
+> shadcn）暗色工業風前端 **AI Servo Motor Health Command Center**，以 Servo 主線為主角、
+> 模組 A/B/B+/C 收於 Legacy。Servo 五頁接真 API；機群/告警/工單暫為 mock。詳見
+> [`docs/WEB_REVAMP_PLAN.md`](docs/WEB_REVAMP_PLAN.md)。
 
-1. `npm run build` 產生 `dist/`（或 `out/`）。
-2. 由 Nginx 提供靜態檔案。
-3. 設定 `/api/*` 反向代理到 `http://127.0.0.1:8000/`。
-4. 在前端設定 `VITE_API_BASE_URL`（或對應變數）為 `/api`。
+本機開發：
+
+```bash
+cd web
+npm install
+# 指向本機 FastAPI（見 §12）
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev   # → http://localhost:3000
+```
+
+部署（GCP VM + Nginx）：
+
+1. `cd web && npm run build && npm run start`（Next.js node 程序，預設 port 3000）。
+2. Nginx 將前端站台與 `/api/*` 反向代理到 `http://127.0.0.1:8000/`。
+3. 設定 `NEXT_PUBLIC_API_BASE_URL` 為部署來源或 `/api`。
 
 ---
 

@@ -66,9 +66,9 @@ export default function GlossaryPage() {
       <h2 className="mb-3 text-sm font-semibold">特徵組說明</h2>
       <div className="space-y-2">
         {Object.entries(featureSets).map(([key, spec]) => (
-          <details key={key} className="group rounded-xl border bg-white shadow-sm">
+          <details key={key} className="group rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm">
             <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium">
-              <span className="text-violet-600">{spec.label}</span>
+              <span className="text-violet-300">{spec.label}</span>
               <span className="text-xs text-muted-foreground">
                 （{key}）— {spec.columns.length} 個特徵
               </span>
@@ -76,7 +76,7 @@ export default function GlossaryPage() {
                 ›
               </span>
             </summary>
-            <div className="border-t px-5 py-3">
+            <div className="border-t border-border/70 px-5 py-3">
               <p className="text-sm text-muted-foreground">{spec.desc}</p>
               <p className="mt-2 rounded-lg bg-muted px-3 py-2 font-mono text-xs">
                 {spec.columns.join(", ") || "（運動 + 電流 + 位置追隨的聯集）"}

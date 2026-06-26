@@ -16,6 +16,31 @@
 > 下開發（venv 建在 D:\，避免還原卡清空 C:\）。課程雖教 Django，但本專案無 DB/admin 需求，
 > FastAPI 更合身，故不改用 Django。
 
+> **視覺改版（2026-06-26）**：Phase 2 前端進入**工業監控視覺改版**，定位升級為
+> **AI Servo Motor Health Command Center（伺服馬達健康監控與智慧維護指揮中心）**。已完成
+> 骨架（深色工業主題 token、token 化 `ui-kit`/`sidebar`/`status-bar`、新 IA 加入「運維中心 →
+> 告警/工單、報表中心」）、**Overview 監控首頁**（KPI 列／設備健康卡／系統狀態島／告警預覽／
+> Legacy 入口）、**Servo 健康儀表板重設計**（HealthScoreGauge＋風險標籤＋感測器趨勢圖＋特徵面板），
+> 以及 **/alerts、/reports** 新頁。新增相依 **recharts**。新增 `lib/mock.ts` 集中 mock（機群／告警／
+> 工單／遙測），介面對齊未來真 API 形狀，待 Servo Dataset 模組接真實資料即可抽換。Servo
+> 既有五頁的 API 串接邏輯不動；模組 A/B/B+/C 保留為 Legacy 對照、移出首頁主視覺。
+> Phase 5（Simulator／Glossary／Knowledge／Assistant 暗色化）亦已完成：移除四頁殘留的
+> `bg-white`／`from-*-50`／白底 `<select>`／淺色 chip，混淆矩陣改 cyan 色階、LLM 報告 Markdown
+> 加 `prose-invert`，並修 stub 頁白底。
+>
+> **視覺語言對齊 Kiranism（2026-06-26）**：以 `Kiranism/next-shadcn-dashboard-starter` 為**風格
+> 參考（非整包導入）**，抓取其 `app-sidebar`／overview `layout`／`header` 原始碼後萃取 dashboard
+> 語彙，重建為本專案版：新增真 shadcn `ui/card`（data-slot）與 `ui/badge` 原語、`MetricCard` 改為
+> dashboard-01 KPI 樣式（描述→大號 `tabular-nums` 數字→角落 trend Badge→footer 趨勢兩行 + 卡片頂部
+> `from-primary/5` 漸層）、新增麵包屑 `Header`（sticky/translucent，取代舊 StatusBar）、Sidebar 改 shadcn
+> 中性 `bg-sidebar-accent` active 樣式、Overview 重排為 heading→KPI→Hero 面積圖（`FleetHealthChart`）+
+> 設備排行→機群卡→系統狀態→告警→Legacy。保留專案暗色工業色盤（cyan/slate）。驗證：`tsc --noEmit`
+> 0 錯、新檔 ESLint 乾淨、全 13 路由皆 200。
+>
+> **響應式側欄（2026-06-26）**：新增 `sidebar-context`（`SidebarProvider`）；桌機可收合為 `w-16`
+> icon rail（tooltip + localStorage 記憶），手機由 `Header` 漢堡鈕開抽屜選單（遮罩 + 點連結自動關）。
+> 原本 sidebar 在 `md` 以下完全隱藏、無行動版導覽的缺口已補上。
+>
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、
 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。
