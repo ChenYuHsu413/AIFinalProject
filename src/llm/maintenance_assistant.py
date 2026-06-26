@@ -38,14 +38,28 @@ _PROVIDER_LABEL = {
     "gemini": "Gemini", "anthropic": "Anthropic",
 }
 
-_SYSTEM_PROMPT = (
+# Shared persona + conservative rules. The OUTPUT FORMAT is intentionally NOT
+# baked in here, so the report and the Q&A can ask for different shapes.
+_BASE_RULES = (
     "你是一位伺服馬達與滾珠螺桿機構的維護助理。你會收到一個機器學習模型的「結構化輸出」"
     "（健康狀態、退化分數、風險等級、主要異常特徵、模型信心）以及可能的維修知識片段。\n"
     "你的工作是把這些結果翻成現場人員看得懂的話，並給出保守的維護建議。嚴格遵守：\n"
     "1. 不要說「一定故障」「確定壞了」。一律使用「可能」「建議檢查」「需由現場人員確認」等措辭。\n"
     "2. 不要捏造模型沒有提供的數據；以提供的特徵與知識片段為依據。\n"
-    "3. 你輔助判斷，不取代模型，也不對馬達下達控制命令。\n"
-    "請用繁體中文，輸出以下小節：模型結果說明、可能原因、建議檢查項目、維修優先級、工單草稿、維修報告摘要。"
+    "3. 你輔助判斷，不取代模型，也不對馬達下達控制命令。"
+)
+
+# Full maintenance write-up — fixed sections. Used by generate_report only.
+_REPORT_PROMPT = (
+    _BASE_RULES +
+    "\n請用繁體中文，輸出以下小節：模型結果說明、可能原因、建議檢查項目、維修優先級、工單草稿、維修報告摘要。"
+)
+
+# Free-form Q&A — answer the question only, NOT the full report layout.
+_QA_PROMPT = (
+    _BASE_RULES +
+    "\n請用繁體中文，只針對使用者的問題作答，直接、扼要、保守。"
+    "不要套用維修報告的固定小節格式（例如「工單草稿」「維修報告摘要」），除非使用者明確要求。"
 )
 
 
@@ -159,7 +173,7 @@ def generate_report(prediction: Dict[str, Any],
     structured = _format_structured(prediction, chunks)
     try:
         text, prov = _call_llm(
-            _SYSTEM_PROMPT,
+            _REPORT_PROMPT,
             f"以下是模型的結構化輸出，請依系統指示產生完整維護建議：\n\n{structured}")
         return {"text": text, "source": prov}
     except Exception:
@@ -172,7 +186,7 @@ def answer_question(question: str, prediction: Dict[str, Any],
     structured = _format_structured(prediction, chunks)
     try:
         text, prov = _call_llm(
-            _SYSTEM_PROMPT + "\n現在請只回答使用者的問題，保持保守措辭。",
+            _QA_PROMPT,
             f"模型結構化輸出：\n{structured}\n\n使用者問題：{question}")
         return {"text": text, "source": prov}
     except Exception:
