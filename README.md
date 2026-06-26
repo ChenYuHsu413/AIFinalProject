@@ -13,6 +13,7 @@
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![Vercel](https://img.shields.io/badge/Vercel-Command%20Center-000?logo=vercel)](https://ai-final-project-hs27lq6zl-chen-yu-s-project.vercel.app/)
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aifinalproject-test.streamlit.app/)
 
 <p align="center">
@@ -20,7 +21,10 @@
 </p>
 
 <p align="center">
-  🚀 <strong>線上 Demo</strong>：<a href="https://aifinalproject-test.streamlit.app/">https://aifinalproject-test.streamlit.app/</a>
+  🚀 <strong>線上 Demo</strong>：
+  <a href="https://ai-final-project-hs27lq6zl-chen-yu-s-project.vercel.app/">Next.js Command Center（主前端）</a>
+  ·
+  <a href="https://aifinalproject-test.streamlit.app/">Streamlit（對照 / fallback）</a>
 </p>
 
 > **專案定位**：端到端**預測性維護原型**，由三軌組成——模組 A（UCI **AI4I 2020** 靜態
