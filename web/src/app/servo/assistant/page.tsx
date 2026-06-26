@@ -60,7 +60,6 @@ export default function AssistantPage() {
         setLoadErr(true);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function runPredict(i: number, c: string[], rows: ServoSample[]) {

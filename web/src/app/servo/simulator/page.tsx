@@ -58,20 +58,19 @@ export default function SimulatorPage() {
     [task, opts],
   );
 
-  // keep algo valid whenever the task (and thus the list) changes
-  useEffect(() => {
-    if (algos.length && !algos.includes(algo)) setAlgo(algos[0]);
-  }, [algos, algo]);
+  // Derive a valid algo for the current task's list during render — no effect,
+  // no cascading re-render. `algo` keeps the user's explicit pick when still valid.
+  const effectiveAlgo = algos.includes(algo) ? algo : (algos[0] ?? "");
 
   async function train() {
-    if (!algo) return;
+    if (!effectiveAlgo) return;
     setBusy(true);
     try {
       setRes(
         await apiPost<ServoSimResult>("/servo/simulate", {
           task,
           feature_set: fs,
-          algo,
+          algo: effectiveAlgo,
           n,
         }),
       );
@@ -123,7 +122,7 @@ export default function SimulatorPage() {
             </Select>
           </Field>
           <Field label="演算法">
-            <Select value={algo} onChange={setAlgo}>
+            <Select value={effectiveAlgo} onChange={setAlgo}>
               {algos.map((a) => (
                 <option key={a} value={a}>
                   {opts?.algo_labels[a] ?? a}
@@ -137,7 +136,7 @@ export default function SimulatorPage() {
             特徵組「{featureSets[fs].label}」：{featureSets[fs].desc}
           </p>
         )}
-        <Button onClick={train} disabled={busy || !algo} className="mt-4 w-full">
+        <Button onClick={train} disabled={busy || !effectiveAlgo} className="mt-4 w-full">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
           開始訓練（後端小模型）
         </Button>
