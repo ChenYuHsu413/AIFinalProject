@@ -12,7 +12,7 @@ export function EquipmentHealthCard({ unit }: { unit: Equipment }) {
   const c = HEALTH_COLOR[unit.state];
   return (
     <Link
-      href="/servo/dashboard"
+      href={`/equipment/${unit.id}`}
       className="group relative block overflow-hidden rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       {/* left status rail */}

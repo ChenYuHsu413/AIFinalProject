@@ -1,0 +1,258 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Bot, Loader2, MapPin, Wrench } from "lucide-react";
+
+import { Card, Note, PageTitle } from "@/components/ui-kit";
+import { HealthScoreGauge } from "@/components/dashboard/HealthScoreGauge";
+import { FeatureImportancePanel } from "@/components/dashboard/FeatureImportancePanel";
+import { TelemetryTrends } from "@/components/dashboard/TelemetryTrends";
+import { HealthBadge, RiskBadge, StatusDot } from "@/components/dashboard/badges";
+import { FLEET, TELEMETRY } from "@/lib/mock";
+import {
+  apiGet,
+  apiPost,
+  type ServoModelInfo,
+  type ServoPrediction,
+  type ServoSample,
+} from "@/lib/api";
+import { HEALTH_COLOR, HEALTH_ORDER, HEALTH_ZH } from "@/lib/servo";
+
+export default function EquipmentDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const unit = FLEET.find((u) => u.id === id);
+
+  if (!unit) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-12">
+        <Note tone="warn">
+          找不到設備 <code className="font-mono">{id}</code>。
+          <Link href="/" className="ml-2 font-medium text-primary hover:underline">
+            回總覽
+          </Link>
+        </Note>
+      </div>
+    );
+  }
+
+  const c = HEALTH_COLOR[unit.state];
+  const telemetry = TELEMETRY[unit.id] ?? [];
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6">
+      <Link
+        href="/"
+        className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        回總覽
+      </Link>
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <PageTitle title={unit.name} />
+          <p className="-mt-5 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+            {unit.location}
+          </p>
+        </div>
+        <StatusDot status={unit.status} />
+      </div>
+
+      {/* mock health snapshot */}
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide">健康快照</h2>
+        <span className="text-[11px] text-muted-foreground">示意 mock</span>
+      </div>
+      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border/70 bg-card/70 p-6 shadow-sm backdrop-blur-sm">
+          <HealthScoreGauge score={unit.healthScore} />
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <HealthBadge state={unit.state} />
+            <RiskBadge level={unit.risk} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+          <MiniStat label="退化分數 DV" value={unit.degradation.toFixed(2)} sub="0=健康 · 1=高度退化" valueClass={c.text} />
+          <MiniStat label="模型信心" value={`${(unit.confidence * 100).toFixed(0)}%`} sub="confidence" />
+          <MiniStat label="運轉時數" value={unit.uptimeHours.toLocaleString()} sub="hours" />
+          <MiniStat label="狀態更新" value={unit.lastUpdated} sub="last telemetry" />
+          <div className="col-span-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm">
+            <p className="text-xs text-muted-foreground">
+              主要異常特徵{" "}
+              <span className="font-mono font-medium text-foreground">
+                {unit.topFeature.feature}
+              </span>{" "}
+              (z={unit.topFeature.z})
+            </p>
+            <p className="mt-1 text-sm">{unit.topFeature.hint}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* telemetry trends (mock) */}
+      <div className="mb-2 flex items-end justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide">感測器趨勢</h2>
+        <span className="text-[11px] text-muted-foreground">示意 mock · 待真實遙測串流</span>
+      </div>
+      <div className="mb-6">
+        <TelemetryTrends data={telemetry} />
+      </div>
+
+      {/* real model prediction */}
+      <RealPredictionSection state={unit.state} />
+    </div>
+  );
+}
+
+/**
+ * Bridges the mock fleet to the *real* reference model: picks a demo sample whose
+ * ground-truth label matches this unit's state, runs it through POST /servo/predict,
+ * and shows the actual model output. (Mock unit → representative real reading.)
+ */
+function RealPredictionSection({ state }: { state: string }) {
+  const [pred, setPred] = useState<ServoPrediction | null>(null);
+  const [busy, setBusy] = useState(true);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [info, rows] = await Promise.all([
+          apiGet<ServoModelInfo>("/servo/model_info"),
+          apiGet<ServoSample[]>("/servo/samples"),
+        ]);
+        const match =
+          rows.find((r) => String(r["ylabel"]) === state) ??
+          rows[Math.floor(rows.length / 2)];
+        if (!match) {
+          setErr(true);
+          return;
+        }
+        const features: Record<string, number> = {};
+        for (const col of info.feature_columns) features[col] = Number(match[col]);
+        setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+      } catch {
+        setErr(true);
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [state]);
+
+  return (
+    <>
+      <div className="mb-2 flex items-end justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide">
+          參考模型預測
+        </h2>
+        <span className="text-[11px] text-emerald-300">
+          接真 API · /servo/predict
+        </span>
+      </div>
+
+      {busy ? (
+        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/40 p-8 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> 以代表性運轉段估測中…
+        </div>
+      ) : err || !pred ? (
+        <Note tone="danger">
+          無法取得模型預測，請確認後端已啟動（/servo/predict）。
+        </Note>
+      ) : (
+        <div className="space-y-4">
+          {pred.placeholder && (
+            <Note tone="warn">
+              模型以 <b>placeholder 合成資料</b> 訓練，僅供流程展示。
+            </Note>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            以與本設備狀態相符的代表性 demo 運轉段（真實標籤 {HEALTH_ZH[state] ?? state}）
+            送入參考模型，下方為實際模型輸出。
+          </p>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="各健康狀態機率">
+              <div className="space-y-2.5">
+                {HEALTH_ORDER.filter((k) => k in pred.health_state_proba).map(
+                  (k) => {
+                    const v = pred.health_state_proba[k] ?? 0;
+                    const col = HEALTH_COLOR[k];
+                    return (
+                      <div key={k}>
+                        <div className="mb-0.5 flex justify-between text-xs">
+                          <span className="font-medium">
+                            {HEALTH_ZH[k]} ({k})
+                          </span>
+                          <span className="text-muted-foreground">
+                            {(v * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full rounded-full ${col.bar}`}
+                            style={{ width: `${v * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </Card>
+
+            <Card title="主要異常特徵（模型）">
+              <FeatureImportancePanel features={pred.top_features} />
+            </Card>
+          </div>
+
+          <Card title="建議處置">
+            <ul className="space-y-2">
+              {pred.maintenance_advice.map((tip, i) => (
+                <li
+                  key={i}
+                  className="flex gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-sm"
+                >
+                  <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Link
+            href="/servo/assistant"
+            className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200 transition-colors hover:bg-violet-500/15"
+          >
+            <Bot className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>到「LLM 維護助理」用這筆結果生成完整維修建議與工單草稿。</span>
+          </Link>
+        </div>
+      )}
+    </>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  sub,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${valueClass ?? ""}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}

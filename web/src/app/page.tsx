@@ -222,7 +222,7 @@ function EquipmentRankCard() {
           return (
             <Link
               key={u.id}
-              href="/servo/dashboard"
+              href={`/equipment/${u.id}`}
               className="flex items-center gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-muted/40"
             >
               <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.chip}`}>

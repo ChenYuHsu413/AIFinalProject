@@ -41,6 +41,11 @@
 > icon rail（tooltip + localStorage 記憶），手機由 `Header` 漢堡鈕開抽屜選單（遮罩 + 點連結自動關）。
 > 原本 sidebar 在 `md` 以下完全隱藏、無行動版導覽的缺口已補上。
 >
+> **設備詳情頁 + 真預測（2026-06-26）**：新增 `/equipment/[id]`，機群卡／排行點擊可 drill-down。
+> 頁面上半為該設備 mock 健康快照與遙測趨勢；下半把 mock 機群**橋接到真實參考模型**——挑一筆與
+> 該設備狀態相符（ylabel）的 demo 運轉段送入 `POST /servo/predict`，呈現實際模型輸出（機率／異常
+> 特徵／建議處置）。Header 麵包屑支援動態路由；mock 與真 API 區塊在 UI 上明確標示。
+>
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、
 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。
