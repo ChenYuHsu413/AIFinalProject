@@ -107,8 +107,9 @@
   43 條 API 測試，全套 93 passed / 1 skipped（其中 API 測試 43 條）。由易到難、demo 全程不斷線。
 - **Phase 1.5 — 驗證閘**：✅ 完成（2026-06-26）。改採 API 整合測試（`tests/test_backend_integration.py`）
   驗證跨端點頁面流程與一致性，確認契約完整；未重構 Streamlit thin client（風險較低）。
-- **Phase 2 — Next.js 骨架 + 漸進搬頁**：App Router + TS + Tailwind + shadcn/ui；PNG 先 `<img>`，
-  互動圖表逐張換 Recharts/Plotly.js；Streamlit 留 fallback。
+- **Phase 2 — Next.js 骨架 + 漸進搬頁**：🚧 進行中（2026-06-26 起）。T17 scaffold 完成
+  （`web/`，Next 16.2.9 + React 19 + Tailwind v4 + shadcn/ui，需 Node 24）。後續：T18 版面/導覽、
+  T19 逐頁搬、T20 圖表（PNG 先 `<img>`，互動圖表逐張換 Recharts/Plotly.js）；Streamlit 留 fallback。
 - **Phase 3 — 部署 + 收尾**：GCP Compute Engine VM；nginx 反向代理前置（`/api` → uvicorn/
   gunicorn 跑 FastAPI、`/` → Next.js node 程序），以 systemd/pm2 常駐；CI 更新；誠實性紅線
   文案驗收；docs 同步補日期戳。
@@ -159,8 +160,11 @@
       全套 99 passed / 1 skipped。**契約完整性確認：Phase 0 盤點的 19 個缺口全數補齊並驗證可組成各頁所需。**
 
 ### Phase 2 — Next.js 前端
-- [ ] T17 scaffold Next.js（App Router / TS / Tailwind / shadcn/ui）、API client、env 設定、CORS 對接
-      （node_modules / venv 建在 D:\，避免還原卡清空 C:\）
+- [x] T17 scaffold Next.js（App Router / TS / Tailwind / shadcn/ui）、API client、env 設定、CORS 對接
+      （2026-06-26 完成）：前端在 `web/`（D:\，避還原卡）。實裝 **Next.js 16.2.9 + React 19 + Tailwind v4**，
+      需 **Node 24**（`nvm use 24.14.0`；Node 18 太舊跑不動，見 [[node-toolchain-on-c-drive]]）。shadcn/ui 已 init；
+      `src/lib/api.ts` 型別化 client（base URL 走 `NEXT_PUBLIC_API_BASE_URL`，prod 用 `/api` 給 nginx 代理）；
+      最小首頁打 `/health` 驗證前後端串通；`web/build` 通過。後端已設 `allow_origins=["*"]`，CORS 對接 OK。
 - [ ] T18 共用版面 + 導覽 + 模型狀態列（接 `/health`、`/model_info`、`/servo/model_info`）
 - [ ] T19 逐頁搬：Servo 儀表板 → 模組 A → 模組 B → 模組 B+ → 模組 C → LLM 助理 → 知識庫 → 關於頁
 - [ ] T20 PNG 圖先 `<img>` 顯示；互動圖表逐張換 Recharts / Plotly.js
