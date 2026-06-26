@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -161,6 +161,21 @@ def ims_health_curve() -> List[Dict[str, Any]]:
         return []
     df = pd.read_csv(path)
     return json.loads(df.to_json(orient="records"))
+
+
+# --- Maintenance knowledge base (TF-IDF RAG) ---------------------------------
+def knowledge_documents() -> List[Dict[str, Any]]:
+    """List local KB documents (source, title, preview, chars)."""
+    from src.knowledge.maintenance_rag import list_documents
+
+    return list_documents()
+
+
+def knowledge_search(query: str, top_k: Optional[int] = None) -> List[Dict[str, Any]]:
+    """TF-IDF keyword search over the KB; each hit has text/score/source/title/topic."""
+    from src.knowledge.maintenance_rag import search
+
+    return search(query, top_k=top_k)
 
 
 # --- Module Servo (main line) -------------------------------------------------

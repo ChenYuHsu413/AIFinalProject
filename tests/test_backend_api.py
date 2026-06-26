@@ -92,3 +92,24 @@ def test_ims_health_curve():
     }
     # Pre-degradation rul_pred is NaN in the CSV -> must serialize as JSON null.
     assert any(p["rul_pred"] is None for p in points)
+
+
+def test_knowledge_documents():
+    resp = client.get("/knowledge/documents")
+    assert resp.status_code == 200
+    docs = resp.json()
+    assert isinstance(docs, list) and len(docs) > 0
+    assert {"source", "title", "preview", "chars"} <= set(docs[0])
+
+
+def test_knowledge_search():
+    resp = client.get("/knowledge/search", params={"q": "過熱 溫度 警報", "top_k": 2})
+    assert resp.status_code == 200
+    hits = resp.json()
+    assert isinstance(hits, list) and 0 < len(hits) <= 2
+    assert {"text", "score", "source", "title", "topic"} <= set(hits[0])
+
+
+def test_knowledge_search_requires_q():
+    resp = client.get("/knowledge/search")
+    assert resp.status_code == 422

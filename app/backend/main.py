@@ -164,6 +164,18 @@ def ims_health_curve():
     return services.ims_health_curve()
 
 
+@app.get("/knowledge/documents")
+def knowledge_documents():
+    """維修知識庫文件清單（source / title / preview / chars）。"""
+    return services.knowledge_documents()
+
+
+@app.get("/knowledge/search")
+def knowledge_search(q: str, top_k: int | None = None):
+    """知識庫 TF-IDF 關鍵字搜尋；每筆結果含 text / score / source / title / topic。"""
+    return services.knowledge_search(q, top_k=top_k)
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 
