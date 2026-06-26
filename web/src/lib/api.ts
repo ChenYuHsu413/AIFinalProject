@@ -43,6 +43,30 @@ export interface Health {
   message: string | null;
 }
 
+/** One demo sample row from GET /servo/samples (features + ground-truth ylabel/DV). */
+export type ServoSample = Record<string, number | string>;
+
+export interface ServoTopFeature {
+  feature: string;
+  z: number;
+  hint: string;
+}
+
+/** Shape of POST /servo/predict. */
+export interface ServoPrediction {
+  predicted_health_state: string;
+  health_state_zh: string;
+  health_state_proba: Record<string, number>;
+  model_confidence: number;
+  degradation_score: number;
+  health_score: number;
+  risk_level: "Low" | "Medium" | "High";
+  consistency_warning: string | null;
+  top_features: ServoTopFeature[];
+  maintenance_advice: string[];
+  placeholder: boolean;
+}
+
 /** Shape of GET /servo/model_info. */
 export interface ServoModelInfo {
   feature_set: string | null;
