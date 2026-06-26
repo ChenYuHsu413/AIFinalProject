@@ -143,6 +143,26 @@ def xjtu_domain_adapt() -> Dict[str, Any]:
     return _read_json_or_empty(load_config()["xjtu"]["domain_adapt"]["da_metrics"])
 
 
+# --- Module B (IMS single-trajectory health curve) ---------------------------
+def ims_metrics() -> Dict[str, Any]:
+    """IMS RUL metrics/meta: indicator, FPT index/time, lead time, near-failure errors."""
+    return _read_json_or_empty(load_config()["ims"]["rul_metrics"])
+
+
+def ims_health_curve() -> List[Dict[str, Any]]:
+    """IMS health/RUL timeseries: timestamp, rul_true, rul_pred, health, is_degrading.
+
+    Meta (FPT index, lead time) is served separately by /ims/metrics. ``to_json``
+    turns the pre-degradation NaN ``rul_pred`` into valid JSON ``null``. Empty
+    list if the RUL extrapolation job has not run.
+    """
+    path = resolve(load_config()["ims"]["rul_predictions"])
+    if not path.exists():
+        return []
+    df = pd.read_csv(path)
+    return json.loads(df.to_json(orient="records"))
+
+
 # --- Module Servo (main line) -------------------------------------------------
 def servo_model_info() -> Dict[str, Any]:
     from src.models.servo_predict import load_servo_models

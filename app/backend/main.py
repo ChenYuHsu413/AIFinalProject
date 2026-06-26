@@ -152,6 +152,18 @@ def xjtu_domain_adapt():
     return services.xjtu_domain_adapt()
 
 
+@app.get("/ims/metrics")
+def ims_metrics():
+    """模組 B（IMS）RUL 指標/中繼資料（健康指標、FPT、提前量、近失效誤差）。"""
+    return services.ims_metrics()
+
+
+@app.get("/ims/health_curve")
+def ims_health_curve():
+    """模組 B（IMS）健康/RUL 時間序列；中繼資料另見 /ims/metrics。"""
+    return services.ims_health_curve()
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 

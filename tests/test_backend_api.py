@@ -72,3 +72,23 @@ def test_xjtu_domain_adapt():
     resp = client.get("/xjtu/domain_adapt")
     assert resp.status_code == 200
     assert {"results", "summary"} <= set(resp.json())
+
+
+def test_ims_metrics():
+    resp = client.get("/ims/metrics")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "metrics" in body
+    assert "lead_time_days" in body
+
+
+def test_ims_health_curve():
+    resp = client.get("/ims/health_curve")
+    assert resp.status_code == 200
+    points = resp.json()
+    assert isinstance(points, list) and len(points) > 0
+    assert set(points[0]) == {
+        "timestamp", "rul_true", "rul_pred", "health", "is_degrading",
+    }
+    # Pre-degradation rul_pred is NaN in the CSV -> must serialize as JSON null.
+    assert any(p["rul_pred"] is None for p in points)
