@@ -7,7 +7,7 @@
 >
 > **進度（2026-06-26）**：**Phase 1（補完 FastAPI）已完成**——T1–T15 全數補齊，後端新增約
 > 25 個 endpoint 覆蓋模組 A/B/B+/C、Servo 主線、訓練模擬器、LLM 助理與知識庫；新增 43 條
-> API 測試，全套 90 passed / 1 skipped。下一步為 Phase 1.5 驗證閘（T16）與 Phase 2 Next.js。
+> API 測試，全套 93 passed / 1 skipped（其中 API 測試 43 條）。下一步為 Phase 1.5 驗證閘（T16）與 Phase 2 Next.js。
 >
 > **技術選型已定案（2026-06-26）**：後端 **FastAPI**（維持現有 `app/backend/`）；前端
 > **Next.js（App Router）+ TypeScript + Tailwind + shadcn/ui**，以「盡可能好看 / 高度客製」為
@@ -104,7 +104,7 @@
 
 - **Phase 0 — API 契約盤點**：✅ 完成（本文件第 3 節）。
 - **Phase 1 — 補完 FastAPI**：✅ 完成（2026-06-26）。T1–T15 全數補齊，新增約 25 個 endpoint、
-  43 條 API 測試，全套 90 passed / 1 skipped。由易到難、demo 全程不斷線。
+  43 條 API 測試，全套 93 passed / 1 skipped（其中 API 測試 43 條）。由易到難、demo 全程不斷線。
 - **Phase 1.5 — 驗證閘**：把 Streamlit 改成「只透過 API 取資料」也能跑；跑得起來代表契約完整。
 - **Phase 2 — Next.js 骨架 + 漸進搬頁**：App Router + TS + Tailwind + shadcn/ui；PNG 先 `<img>`，
   互動圖表逐張換 Recharts/Plotly.js；Streamlit 留 fallback。
