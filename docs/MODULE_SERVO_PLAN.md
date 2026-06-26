@@ -10,7 +10,8 @@
 > PHM 資料後重訓。Model A / B / B+ / C 保留為對照與歷史補充模組。
 
 本文件相對連結：[`README.md`](../README.md)、[`data/README.md`](../data/README.md)、
-[`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。
+[`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)、
+[`WEB_REVAMP_PLAN.md`](WEB_REVAMP_PLAN.md)（前後端分離改版規劃）。
 
 ## 1. 定位與誠實性紅線
 
