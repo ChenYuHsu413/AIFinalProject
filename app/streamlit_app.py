@@ -301,9 +301,9 @@ HEROES = {
     "關於本專案": (
         "About · Tech stack",
         "關於本專案",
-        "四軌並行的預測性維護原型：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 "
-        "RUL）、模組 B+（XJTU 多軸承 / 多工況泛化驗證）、模組 C（Paderborn 馬達電流故障分類）。"
-        "涵蓋訊號處理、退化建模、可解釋 ML 與端到端部署。",
+        "主線為模組 Servo（PHM 伺服馬達健康狀態估測 + 退化值回歸 + LLM 維護助理），另含四條對照 / "
+        "歷史軌道：模組 A（AI4I 靜態風險分類）、模組 B（IMS 振動健康度與 RUL）、模組 B+（XJTU 多軸承 / "
+        "多工況泛化驗證）、模組 C（Paderborn 馬達電流故障分類）。涵蓋訊號處理、退化建模、可解釋 ML 與端到端部署。",
     ),
 }
 _eyebrow, _title, _subtitle = HEROES[page]
@@ -1903,12 +1903,15 @@ elif page == "馬達電流故障診斷":
 else:
     style.section("專案總覽")
     style.note(
-        "本系統是一套<b>四軌平行</b>的預測性維護原型："
+        "<b>主線為模組 Servo</b>：以 PHM 伺服馬達滾珠螺桿退化資料做健康狀態估測（LN/LO/MED/HI）"
+        "與退化值 (DV) 回歸，並串接 AI 訓練模擬器、馬達欄位解釋、LLM 維護助理與維修知識庫(RAG)。"
+        "（目前以 placeholder 合成資料運作，待真實 PHM 資料替換。）<br>"
+        "另保留<b>四條對照 / 歷史軌道</b>："
         "<b>模組 A</b> 以 AI4I 2020 製程快照做靜態故障風險分類；"
         "<b>模組 B</b> 以 IMS 軸承振動推導動態健康度與剩餘壽命 (RUL)；"
         "<b>模組 B+</b> 以 XJTU-SY 多軸承 / 多工況驗證健康監測的泛化能力；"
         "<b>模組 C</b> 以 Paderborn 馬達電流 (MCSA) + 振動做故障分類，驗證人工→真實故障泛化。"
-        "四軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
+        "各軌的物理量、感測器與目標皆不同，無法併成單一模型，故以獨立軌道呈現。",
     )
     c_l, c_r = st.columns(2)
     with c_l:
@@ -1916,6 +1919,7 @@ else:
             st.markdown(
                 """
                 ##### 系統定位 — 決策輔助
+                - **Servo（主線）**：伺服馬達健康狀態估測 + 退化值回歸 + 維護助理
                 - **A**：由運轉條件估計故障風險
                 - **B**：由振動推導健康退化與剩餘壽命
                 - **B+**：跨軸承 / 跨工況的泛化驗證
@@ -1923,7 +1927,7 @@ else:
 
                 ##### 不是
                 - 即時控制器
-                - 精準 RUL 預測器
+                - 精準 RUL 預測器（Servo 不宣稱 RUL）
                 - 已驗證的工廠系統
                 """
             )
@@ -2054,8 +2058,8 @@ else:
         {"label": "比較模型組合", "value": "40", "sub": "model_comparison.csv"},
         {"label": "繪圖函式", "value": "19", "sub": "src/ui/charts.py"},
         {"label": "FastAPI 端點", "value": "7", "sub": "health / predict / metrics 等"},
-        {"label": "Streamlit 頁面", "value": "12", "sub": "首頁 1 + A 4 + B 3 + B+ 2 + C 1 + 關於 1"},
-        {"label": "單元測試", "value": "41 / 41", "sub": "全部通過"},
+        {"label": "Streamlit 頁面", "value": "17", "sub": "首頁 1 + Servo 5 + A 4 + B 3 + B+ 2 + C 1 + 關於 1"},
+        {"label": "單元測試", "value": "50 / 51", "sub": "50 通過 · 1 依環境跳過"},
     ])
     style.section("外部連結")
     st.markdown(
