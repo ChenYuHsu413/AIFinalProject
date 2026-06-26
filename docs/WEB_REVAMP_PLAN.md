@@ -153,7 +153,7 @@
   驗證跨端點頁面流程與一致性，確認契約完整；未重構 Streamlit thin client（風險較低）。
 - **Phase 2 — Next.js 骨架 + 漸進搬頁**：🚧 進行中（2026-06-26 起）。T17 scaffold（`web/`，Next 16.2.9
   + React 19 + Tailwind v4 + shadcn/ui，需 Node 24）、T18 版面/導覽/狀態列（亮色漸層品牌 +
-  可收合補充模組）皆完成；**T19 Servo 主線五頁全部完成**，補充模組 A/B/B+/C + 關於頁待辦。
+  可收合補充模組）皆完成；**T19 全部頁面完成**（Servo 五頁 + 補充模組 A/B/B+/C 各頁 + 關於頁，2026-06-26）。
   Streamlit 全程留 fallback。本機開發：後端 `uvicorn ...:app`、前端 `cd web && npm run dev`，
   `web/.env.local` 的 `NEXT_PUBLIC_API_BASE_URL` 指向後端（本機 8000 被占用時用 8010 等）。
 - **Phase 3 — 部署 + 收尾**：GCP Compute Engine VM；nginx 反向代理前置（`/api` → uvicorn/
@@ -215,11 +215,16 @@
       （2026-06-26 完成）：左側 grouped 側邊欄（`nav.ts` 鏡像 Streamlit NAV_GROUPS、lucide 圖示、active 高亮、
       誠實性 pill「決策輔助/不控制馬達」）+ 頂部狀態列（後端連線點 + 主線模型/macro-F1 + placeholder 合成資料警示）。
       建立全部 18 條路由（首頁總覽 + 16 個 stub + about），DRY `StubPage` 依 `usePathname` 顯示標籤；build 18 routes 通過。
-- [~] T19 逐頁搬（進行中，2026-06-26）：**Servo 主線五頁全部完成** — 健康儀表板（`/servo/predict`
+- [x] T19 逐頁搬（2026-06-26 完成）：**Servo 主線五頁 + 補充模組 A/B/B+/C 各頁 + 關於頁全部完成** — 健康儀表板（`/servo/predict`
       + samples，含一致性警告/真實標籤比對）、AI 訓練模擬器（`/servo/simulate` + options +
       reference_metrics，CSS 混淆矩陣 + DL 唯讀區）、LLM 維護助理（`/servo/assistant/{report,qa,providers}`，
       react-markdown 渲染 + 來源 badge + 離線 fallback）、馬達欄位解釋（`/servo/glossary` + feature_sets）、
-      維修知識庫（`/knowledge/{documents,search}`）。**待辦：補充模組 A / B / B+ / C 各頁、關於頁。**
+      維修知識庫（`/knowledge/{documents,search}`）。**補充模組各頁（2026-06-26 完成）：**
+      A — predict / what-if（`/predict/batch` sweep）/ batch（`/batch_predict` CSV）/ evaluation（`/model_info`+
+      `/metrics`+`/failure_type_metrics`）；B（IMS）— overview / rul / explore（`/ims/*`，HI 曲線 + 指標切換）；
+      B+（XJTU）— generalization（`/xjtu/generalization`+`/xjtu/domain_adapt`）/ applications（`/xjtu/health_overlay`
+      多軸承 HI 重疊）；C — Paderborn（`/paderborn/eval`，人工→真實泛化頭條 + baseline/真實雙混淆矩陣）；
+      關於頁（三軌定位 + 誠實性聲明）。新增 `ConfusionMatrix` 共用元件；各頁皆附對應誠實性註記。
       共用 `components/ui-kit.tsx`（Card/Stat/Note/Bar/PageTitle）+ `lib/servo.ts` 色彩/標籤 map。
       踩雷修正：`/servo/simulate` 回傳 `task` 為 `classification/regression`（非 `clf/reg`），clf/reg
       判別改用結果欄位（`confusion_matrix` 存在＝分類）。
