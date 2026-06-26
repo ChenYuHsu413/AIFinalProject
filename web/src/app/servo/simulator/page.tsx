@@ -147,7 +147,7 @@ export default function SimulatorPage() {
 
       {res ? (
         <div className="mt-6">
-          {res.task === "clf" ? (
+          {res.confusion_matrix ? (
             <ClfResult res={res} ref_={ref?.clf} algoLabel={opts?.algo_labels[res.algo] ?? res.algo} />
           ) : (
             <RegResult res={res} ref_={ref?.reg} algoLabel={opts?.algo_labels[res.algo] ?? res.algo} />

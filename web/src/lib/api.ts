@@ -80,9 +80,10 @@ export type ServoFeatureSets = Record<
   { label: string; desc: string; columns: string[] }
 >;
 
-/** POST /servo/simulate (clf fields when task="clf", reg fields when "reg"). */
+/** POST /servo/simulate. ``task`` echoes the backend ("classification"/"regression");
+ *  discriminate clf vs reg by the presence of confusion_matrix / r2, not this string. */
 export interface ServoSimResult {
-  task: "clf" | "reg";
+  task: string;
   algo: string;
   feature_set: string;
   n_samples: number;
