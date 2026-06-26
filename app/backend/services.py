@@ -5,6 +5,7 @@ Kept deliberately small so unit tests can target it directly.
 from __future__ import annotations
 
 import io
+import json
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -72,6 +73,38 @@ def comparison_metrics() -> List[Dict[str, Any]]:
     if not path.exists():
         return []
     return pd.read_csv(path).to_dict(orient="records")
+
+
+# Per-module KPI metric sources: module key -> {response key: (config section, path key)}.
+# Module A's KPI strip is already served by /metrics + /model_info, so it is not listed here.
+_METRICS_SUMMARY_SOURCES: Dict[str, Dict[str, tuple]] = {
+    "servo": {"clf": ("servo", "clf_metrics"), "reg": ("servo", "reg_metrics")},
+    "B": {"ims_rul": ("ims", "rul_metrics")},
+    "Bplus": {
+        "generalization": ("xjtu", "gen_metrics"),
+        "lobo": ("xjtu", "lobo_metrics"),
+        "loco": ("xjtu", "loco_metrics"),
+    },
+    "C": {"paderborn": ("paderborn", "metrics")},
+}
+
+
+def metrics_summary(module: str) -> Dict[str, Any]:
+    """Return the raw KPI metric JSON(s) for a module's overview strip.
+
+    Missing files map to an empty dict (same as the Streamlit reader) so the
+    frontend can render placeholders before the offline jobs have run.
+    """
+    sources = _METRICS_SUMMARY_SOURCES.get(module)
+    if sources is None:
+        allowed = ", ".join(_METRICS_SUMMARY_SOURCES)
+        raise ValueError(f"未知的 module：{module!r}。可用：{allowed}")
+    cfg = load_config()
+    out: Dict[str, Any] = {}
+    for key, (section, path_key) in sources.items():
+        path = resolve(cfg[section][path_key])
+        out[key] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return out
 
 
 # --- Module Servo (main line) -------------------------------------------------

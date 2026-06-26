@@ -115,6 +115,19 @@ def failure_type_metrics():
     return {"rows": services.failure_type_metrics()}
 
 
+@app.get("/metrics/summary")
+def metrics_summary(module: str):
+    """各模組總覽 KPI 所需的原始指標 JSON。
+
+    ``module`` 取值：``servo`` / ``B`` / ``Bplus`` / ``C``。
+    （模組 A 的 KPI 由 ``/metrics`` 與 ``/model_info`` 提供。）
+    """
+    try:
+        return services.metrics_summary(module)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 
