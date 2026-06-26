@@ -183,6 +183,27 @@ def xjtu_domain_adapt():
     return services.xjtu_domain_adapt()
 
 
+@app.get("/xjtu/rul_predictions")
+def xjtu_rul_predictions():
+    """模組 B+ E2 每軸承 RUL/健康預測表（維護建議輸入）。"""
+    return services.xjtu_rul_predictions()
+
+
+@app.get("/xjtu/health_overlay")
+def xjtu_health_overlay():
+    """模組 B+ 15 軸承健康指標疊圖（vs 壽命%）+ FPT 標記；特徵表缺回 available:false。"""
+    return services.xjtu_health_overlay()
+
+
+@app.get("/xjtu/replay/{condition}/{bearing}")
+def xjtu_replay(condition: str, bearing: str):
+    """模組 B+ E3 單軸承串流回放預算 frames（≤100）；找不到軌跡回 404。"""
+    try:
+        return services.xjtu_replay(condition, bearing)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @app.get("/ims/metrics")
 def ims_metrics():
     """模組 B（IMS）RUL 指標/中繼資料（健康指標、FPT、提前量、近失效誤差）。"""

@@ -131,7 +131,7 @@
 
 **Stage 1.3 — 大資料 / 重算類**
 - [x] T11 `GET /ims/health_indicator?indicator=`（換指標重算 HI/FPT；改用 GET，讀取 idempotent）、`GET /ims/snapshot/{index}`（波形降採樣到 2048 點、頻譜封頂 2 kHz）（2026-06-26 完成，含測試；snapshot 需 1.5GB 原始資料，缺檔回 available:false，雲端 demo 不提供、CI 無資料時測試自適應）
-- [ ] T12 `GET /xjtu/health_overlay`、`GET /xjtu/rul_predictions`、`GET /xjtu/replay/{condition}/{bearing}`（預算 frames）
+- [x] T12 `GET /xjtu/health_overlay`、`GET /xjtu/rul_predictions`、`GET /xjtu/replay/{condition}/{bearing}`（預算 frames）（2026-06-26 完成，含測試；overlay 每曲線降採樣 ≤200 點、replay ≤100 frames 回結構化欄位不送 HTML、找不到軌跡回 404）
 - [ ] T13 `POST /maintenance/advice`（包 `maintenance_advice()`）
 
 **Stage 1.4 — 硬點（最後啃）**

@@ -184,6 +184,115 @@ def xjtu_domain_adapt() -> Dict[str, Any]:
     return _read_json_or_empty(load_config()["xjtu"]["domain_adapt"]["da_metrics"])
 
 
+def xjtu_rul_predictions() -> List[Dict[str, Any]]:
+    """Per-bearing RUL/health prediction table (E2 maintenance-advice input)."""
+    path = resolve(load_config()["xjtu"]["rul_predictions"])
+    if not path.exists():
+        return []
+    return json.loads(pd.read_csv(path).to_json(orient="records"))
+
+
+def xjtu_health_overlay() -> Dict[str, Any]:
+    """Smoothed health-indicator curves (vs % of life) for all bearings + FPT markers.
+
+    Each curve is downsampled to <=200 points; coloured by condition on the
+    client. ``available`` is False if the XJTU feature table is not built."""
+    xj = load_config()["xjtu"]
+    feat_path = resolve(xj["processed_features"])
+    if not feat_path.exists():
+        return {"available": False, "reason": "XJTU 特徵表尚未建立。"}
+    feat = pd.read_parquet(feat_path)
+    summary_path = resolve(xj["gen_summary"])
+    fpt_by: Dict[tuple, int] = {}
+    if summary_path.exists():
+        s = pd.read_csv(summary_path)
+        fpt_by = {(r["condition"], r["bearing"]): int(r["fpt_index"]) for _, r in s.iterrows()}
+    ind, sw = xj["health_indicator"], xj["hi_smooth_window"]
+    curves, markers = [], []
+    for (cond, bearing), g in feat.groupby(["condition", "bearing"], sort=False):
+        g = g.sort_values("minute")
+        hi = g[ind].rolling(sw, min_periods=1).median().to_numpy()
+        n = len(g)
+        life_pct = np.linspace(0, 100, n)
+        idx = np.linspace(0, n - 1, min(200, n)).astype(int)
+        curves.append({"condition": cond, "bearing": bearing,
+                       "life_pct": life_pct[idx].tolist(), "hi": hi[idx].tolist()})
+        fi = min(fpt_by.get((cond, bearing), 0), n - 1)
+        markers.append({"condition": cond, "bearing": bearing,
+                        "life_pct": float(life_pct[fi]), "hi": float(hi[fi])})
+    return {"available": True, "curves": curves, "fpt_markers": markers}
+
+
+def xjtu_replay(condition: str, bearing: str) -> Dict[str, Any]:
+    """Precomputed streaming-replay frames for one bearing (<=100 frames).
+
+    Reuses build_health_indicator / detect_fpt / extrapolate_rul / maintenance_advice
+    once on the full series — the rolling RUL fit is backward-looking, so frame k
+    equals what the system would compute having seen only the first k snapshots."""
+    from src.models.maintenance_advice import maintenance_advice
+    from src.models.rul_extrapolation import (
+        build_health_indicator,
+        detect_fpt,
+        extrapolate_rul,
+    )
+
+    cfg = load_config()
+    xj = cfg["xjtu"]
+    feat_path = resolve(xj["processed_features"])
+    if not feat_path.exists():
+        return {"available": False, "reason": "XJTU 特徵表尚未建立。"}
+    feat = pd.read_parquet(feat_path)
+    g = (feat[(feat["condition"] == condition) & (feat["bearing"] == bearing)]
+         .sort_values("minute").reset_index(drop=True))
+    if g.empty:
+        raise ValueError(f"找不到軌跡：condition={condition!r}, bearing={bearing!r}")
+
+    ind, sw = xj["health_indicator"], xj["hi_smooth_window"]
+    margin = float(cfg.get("maintenance", {}).get("safety_margin", 0.3))
+    alarm = float(xj["alarm_health"])
+
+    n = len(g)
+    hi_full, health_full, hi_base, hi_fail = build_health_indicator(
+        g[ind], sw, xj["baseline_n"], xj["fail_percentile"])
+    fpt_idx = detect_fpt(hi_full, xj["baseline_n"], xj["fpt_n_sigma"], xj["fpt_consecutive"])
+    minutes = g["minute"].to_numpy().astype(float)
+    hours = (minutes - minutes[0]) / 60.0
+    hi_arr = hi_full.to_numpy()
+    rul_full = extrapolate_rul(hours, hi_arr, hi_base, hi_fail, fpt_idx,
+                               xj["min_fit_points"], xj["fit_window"], float(hours[-1]))
+
+    frame_ks = sorted(set(np.linspace(0, n - 1, min(100, n)).round().astype(int)))
+    disp_ks = np.array(sorted(set(np.linspace(0, n - 1, min(180, n)).round().astype(int))))
+    disp_min, disp_hi = minutes[disp_ks], hi_arr[disp_ks]
+
+    frames = []
+    for k in frame_ks:
+        mask = disp_ks <= k
+        xs = list(disp_min[mask]) + [float(minutes[k])]
+        ys = list(disp_hi[mask]) + [float(hi_arr[k])]
+        past = bool(k >= fpt_idx)
+        health_now = float(health_full.iloc[k])
+        rul_now = float(rul_full[k]) if np.isfinite(rul_full[k]) else None
+        adv = maintenance_advice(health_now, rul_now, past,
+                                 alarm_health=alarm, safety_margin=margin)
+        frames.append({
+            "k": int(k), "minute": float(minutes[k]), "hours": float(hours[k]),
+            "health": health_now, "rul_hours": rul_now, "past_fpt": past,
+            "risk": adv.risk, "risk_label_zh": adv.risk_label_zh,
+            "suggested_window_hours": adv.suggested_window_hours,
+            "x": [float(v) for v in xs], "y": [float(v) for v in ys],
+        })
+
+    return {
+        "available": True,
+        "condition": condition, "bearing": bearing,
+        "hi_base": hi_base, "hi_fail": hi_fail,
+        "fpt_index": int(fpt_idx), "fpt_minute": float(minutes[fpt_idx]),
+        "fpt_hi": float(hi_arr[fpt_idx]), "last_minute": float(minutes[-1]),
+        "frames": frames,
+    }
+
+
 # --- Module B (IMS single-trajectory health curve) ---------------------------
 def ims_metrics() -> Dict[str, Any]:
     """IMS RUL metrics/meta: indicator, FPT index/time, lead time, near-failure errors."""

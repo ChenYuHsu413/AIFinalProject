@@ -74,6 +74,41 @@ def test_xjtu_domain_adapt():
     assert {"results", "summary"} <= set(resp.json())
 
 
+def test_xjtu_rul_predictions():
+    resp = client.get("/xjtu/rul_predictions")
+    assert resp.status_code == 200
+    rows = resp.json()
+    assert isinstance(rows, list) and len(rows) > 0
+    assert {"condition", "bearing", "rul_pred", "health"} <= set(rows[0])
+
+
+def test_xjtu_health_overlay():
+    resp = client.get("/xjtu/health_overlay")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is True
+    assert len(body["curves"]) > 0
+    c0 = body["curves"][0]
+    assert len(c0["life_pct"]) == len(c0["hi"]) <= 200
+    assert len(body["fpt_markers"]) == len(body["curves"])
+
+
+def test_xjtu_replay():
+    resp = client.get("/xjtu/replay/35Hz12kN/Bearing1_1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is True
+    assert 0 < len(body["frames"]) <= 100
+    f = body["frames"][0]
+    assert {"k", "minute", "health", "risk", "x", "y"} <= set(f)
+    assert len(f["x"]) == len(f["y"])
+
+
+def test_xjtu_replay_not_found():
+    resp = client.get("/xjtu/replay/nope/nope")
+    assert resp.status_code == 404
+
+
 def test_ims_metrics():
     resp = client.get("/ims/metrics")
     assert resp.status_code == 200
