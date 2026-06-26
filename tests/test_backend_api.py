@@ -51,3 +51,24 @@ def test_paderborn_eval():
     body = resp.json()
     assert {"method", "features", "results", "summary"} <= set(body)
     assert {"baseline", "artificial_to_real"} <= set(body["results"])
+
+
+def test_xjtu_generalization():
+    resp = client.get("/xjtu/generalization")
+    assert resp.status_code == 200
+    assert {"per_bearing", "aggregate"} <= set(resp.json())
+
+
+def test_xjtu_lobo_loco():
+    resp = client.get("/xjtu/lobo_loco")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {"lobo", "loco"} == set(body)
+    assert "pooled" in body["lobo"]
+    assert "pooled" in body["loco"]
+
+
+def test_xjtu_domain_adapt():
+    resp = client.get("/xjtu/domain_adapt")
+    assert resp.status_code == 200
+    assert {"results", "summary"} <= set(resp.json())

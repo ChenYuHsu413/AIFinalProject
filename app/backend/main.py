@@ -134,6 +134,24 @@ def paderborn_eval():
     return services.paderborn_eval()
 
 
+@app.get("/xjtu/generalization")
+def xjtu_generalization():
+    """模組 B+ 多軌跡退化偵測（固定參數 FPT，per-bearing + aggregate）。"""
+    return services.xjtu_generalization()
+
+
+@app.get("/xjtu/lobo_loco")
+def xjtu_lobo_loco():
+    """模組 B+ 監督式 RUL 泛化：留一軸承（LOBO）+ 留一工況（LOCO）。"""
+    return services.xjtu_lobo_loco()
+
+
+@app.get("/xjtu/domain_adapt")
+def xjtu_domain_adapt():
+    """模組 B+ E1 跨工況域適應消融（results / summary）。"""
+    return services.xjtu_domain_adapt()
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 

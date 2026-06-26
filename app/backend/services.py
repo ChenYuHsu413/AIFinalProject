@@ -75,6 +75,14 @@ def comparison_metrics() -> List[Dict[str, Any]]:
     return pd.read_csv(path).to_dict(orient="records")
 
 
+def _read_json_or_empty(rel_path: str | Path) -> Dict[str, Any]:
+    """Read a small project-relative JSON; empty dict if the file is missing."""
+    path = resolve(rel_path)
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 # Per-module KPI metric sources: module key -> {response key: (config section, path key)}.
 # Module A's KPI strip is already served by /metrics + /model_info, so it is not listed here.
 _METRICS_SUMMARY_SOURCES: Dict[str, Dict[str, tuple]] = {
@@ -102,8 +110,7 @@ def metrics_summary(module: str) -> Dict[str, Any]:
     cfg = load_config()
     out: Dict[str, Any] = {}
     for key, (section, path_key) in sources.items():
-        path = resolve(cfg[section][path_key])
-        out[key] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        out[key] = _read_json_or_empty(cfg[section][path_key])
     return out
 
 
@@ -113,11 +120,27 @@ def paderborn_eval() -> Dict[str, Any]:
     Single source for the whole Module C page (baseline CV vs artificial→real
     generalization + confusion matrices). Empty dict if the job has not run.
     """
+    return _read_json_or_empty(load_config()["paderborn"]["metrics"])
+
+
+# --- Module B+ (XJTU multi-trajectory generalization) ------------------------
+def xjtu_generalization() -> Dict[str, Any]:
+    """Fixed-param per-bearing degradation detection: method / per_bearing / aggregate."""
+    return _read_json_or_empty(load_config()["xjtu"]["gen_metrics"])
+
+
+def xjtu_lobo_loco() -> Dict[str, Any]:
+    """Supervised RUL generalization: leave-one-bearing-out + leave-one-condition-out."""
     cfg = load_config()
-    path = resolve(cfg["paderborn"]["metrics"])
-    if not path.exists():
-        return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "lobo": _read_json_or_empty(cfg["xjtu"]["lobo_metrics"]),
+        "loco": _read_json_or_empty(cfg["xjtu"]["loco_metrics"]),
+    }
+
+
+def xjtu_domain_adapt() -> Dict[str, Any]:
+    """E1 cross-condition domain adaptation ablation: results / summary."""
+    return _read_json_or_empty(load_config()["xjtu"]["domain_adapt"]["da_metrics"])
 
 
 # --- Module Servo (main line) -------------------------------------------------
