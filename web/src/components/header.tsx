@@ -7,12 +7,21 @@ import { ChevronRight, ExternalLink, Menu } from "lucide-react";
 
 import { apiGet, type Health, type ServoModelInfo } from "@/lib/api";
 import { NAV_GROUPS } from "@/lib/nav";
+import { FLEET } from "@/lib/mock";
 import { useSidebar } from "@/components/sidebar-context";
 
 /** Derive a [section, page] breadcrumb trail from the current path. */
 function useCrumbs(): { label: string; href?: string }[] {
   const pathname = usePathname();
   if (pathname === "/") return [{ label: "總覽 Overview" }];
+  if (pathname.startsWith("/equipment/")) {
+    const id = pathname.split("/")[2];
+    const unit = FLEET.find((u) => u.id === id);
+    return [
+      { label: "總覽 Overview", href: "/" },
+      { label: unit?.name ?? "設備詳情" },
+    ];
+  }
   for (const g of NAV_GROUPS) {
     const item = g.items.find((i) => i.href === pathname);
     if (item) {

@@ -90,7 +90,7 @@
    slate/zinc base · cyan primary · emerald / amber / red status accents.
    Tuned so cards read as low-contrast glass panels on a deep slate field. */
 .dark {
-  --background: oklch(0.165 0.012 248);
+  --background: oklch(0 0 0);
   --foreground: oklch(0.955 0.005 248);
   --card: oklch(0.205 0.014 248);
   --card-foreground: oklch(0.955 0.005 248);
@@ -113,7 +113,7 @@
   --chart-3: oklch(0.72 0.15 162); /* emerald*/
   --chart-4: oklch(0.82 0.15 82);  /* amber  */
   --chart-5: oklch(0.64 0.21 26);  /* red    */
-  --sidebar: oklch(0.15 0.012 248);
+  --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(0.93 0.005 248);
   --sidebar-primary: oklch(0.78 0.13 205);
   --sidebar-primary-foreground: oklch(0.17 0.02 248);

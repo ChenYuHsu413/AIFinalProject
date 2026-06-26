@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { AlertTriangle, Info, Siren } from "lucide-react";
 
-import type { FleetAlert } from "@/lib/mock";
+import { FLEET, type FleetAlert } from "@/lib/mock";
 import { cn } from "@/lib/utils";
 
 import { HealthBadge } from "./badges";
@@ -51,7 +52,19 @@ export function AlertTable({ alerts }: { alerts: FleetAlert[] }) {
                   {a.time}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">
-                  {a.equipment}
+                  {(() => {
+                    const unit = FLEET.find((u) => u.name === a.equipment);
+                    return unit ? (
+                      <Link
+                        href={`/equipment/${unit.id}`}
+                        className="text-foreground transition-colors hover:text-primary hover:underline"
+                      >
+                        {a.equipment}
+                      </Link>
+                    ) : (
+                      a.equipment
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-3">{a.type}</td>
                 <td className="px-4 py-3">

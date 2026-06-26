@@ -487,6 +487,149 @@ def servo_samples() -> List[Dict[str, Any]]:
     return json.loads(df.to_json(orient="records"))
 
 
+# Synthetic equipment identities for the Command Center fleet view. The health
+# of each unit is NOT hard-coded — it is computed by running the *real* reference
+# model (servo_predict_one) over a representative demo run that matches the unit's
+# intended state. So identities are demo, but the health/risk/features are real
+# model output on demo data (not real PHM telemetry).
+_FLEET_UNITS = [
+    {"id": "servo-a01", "name": "Servo-A01", "location": "產線 1 · X 軸", "status": "running", "target": "LN", "uptime": 1840, "updated": "12 秒前"},
+    {"id": "servo-a02", "name": "Servo-A02", "location": "產線 1 · Y 軸", "status": "running", "target": "LO", "uptime": 2210, "updated": "8 秒前"},
+    {"id": "servo-a03", "name": "Servo-A03", "location": "產線 2 · Z 軸", "status": "warning", "target": "MED", "uptime": 3050, "updated": "5 秒前"},
+    {"id": "servo-testbench", "name": "Servo-TestBench", "location": "實驗台 · 加速壽命", "status": "maintenance", "target": "HI", "uptime": 5120, "updated": "3 秒前"},
+]
+
+
+def servo_fleet() -> List[Dict[str, Any]]:
+    """Demo fleet whose health is computed by the real reference model.
+
+    For each synthetic unit, pick a demo run matching its target state and run it
+    through servo_predict_one; surface the model's health score / state / risk /
+    degradation / confidence / top anomalous feature.
+    """
+    rows = servo_samples()
+    if not rows:
+        return []
+    cols = servo_model_info()["feature_columns"]
+
+    fleet: List[Dict[str, Any]] = []
+    for u in _FLEET_UNITS:
+        match = next(
+            (r for r in rows if str(r.get("ylabel")) == u["target"]),
+            rows[len(rows) // 2],
+        )
+        features = {c: match[c] for c in cols if c in match}
+        pred = servo_predict_one(features)
+        top = (pred.get("top_features") or [{}])[0]
+        fleet.append(
+            {
+                "id": u["id"],
+                "name": u["name"],
+                "location": u["location"],
+                "status": u["status"],
+                "healthScore": round(pred["health_score"]),
+                "state": pred["predicted_health_state"],
+                "risk": pred["risk_level"],
+                "degradation": round(pred["degradation_score"], 2),
+                "confidence": round(pred["model_confidence"], 2),
+                "topFeature": {
+                    "feature": top.get("feature", "-"),
+                    "z": top.get("z", 0),
+                    "hint": top.get("hint", ""),
+                },
+                "uptimeHours": u["uptime"],
+                "lastUpdated": u["updated"],
+            }
+        )
+    return fleet
+
+
+# Map a unit's top anomalous feature to an alert type + suggested action.
+_FEATURE_ALERT = [
+    (("i_3p", "current", "direct", "quadrature"), "電流異常", "檢查繞組絕緣與供電，必要時更換軸承"),
+    (("torque",), "扭矩過載", "檢查負載與滾珠導螺桿潤滑"),
+    (("position_error", "rod_"), "跟隨誤差升高", "校正位置迴路增益，檢查機械背隙"),
+    (("rotor_speed",), "轉速不穩", "檢查編碼器與速度迴路，確認負載穩定"),
+]
+_ALERT_TIMES = ["10:42", "10:31", "10:18", "09:47"]
+
+
+def _alert_for_feature(feat: str) -> tuple:
+    f = (feat or "").lower()
+    for keys, typ, action in _FEATURE_ALERT:
+        if any(k in f for k in keys):
+            return typ, action
+    return "特徵異常", "持續觀察並複核感測訊號"
+
+
+def _servo_ops() -> tuple:
+    """Derive alerts + work orders from the *real* model-driven fleet.
+
+    Risk / state / top feature come from servo_fleet() (real model output); the
+    operational wrapping (alert IDs, work-order scheduling) is demo bookkeeping.
+    """
+    fleet = servo_fleet()
+    alerts: List[Dict[str, Any]] = []
+    work_orders: List[Dict[str, Any]] = []
+    wo_seq = 3307
+
+    for i, u in enumerate(fleet):
+        if u["risk"] == "Low":
+            continue
+        typ, action = _alert_for_feature(u["topFeature"]["feature"])
+        high = u["risk"] == "High"
+        wo_id = None
+        if high:
+            wo_id = f"WO-{wo_seq}"
+            wo_seq += 1
+            work_orders.append({
+                "id": wo_id, "equipment": u["name"], "title": f"{typ} — 停機檢修",
+                "priority": "high", "status": "in_progress",
+                "assignee": "維修班 A", "due": "今日 16:00",
+            })
+        alerts.append({
+            "id": f"ALM-{2041 - i}", "time": _ALERT_TIMES[i % len(_ALERT_TIMES)],
+            "equipment": u["name"], "type": typ,
+            "severity": "critical" if high else "warning",
+            "predictedState": u["state"], "suggestedAction": action,
+            "status": "in_progress" if high else "open", "workOrderId": wo_id,
+        })
+
+    # schedule one medium work order for the first warning alert lacking one
+    for a in alerts:
+        if a["severity"] == "warning" and a["workOrderId"] is None:
+            wo_id = f"WO-{wo_seq}"
+            wo_seq += 1
+            a["workOrderId"] = wo_id
+            work_orders.append({
+                "id": wo_id, "equipment": a["equipment"], "title": f"{a['type']} — 保養複核",
+                "priority": "medium", "status": "scheduled",
+                "assignee": "維修班 B", "due": "明日 10:00",
+            })
+            break
+
+    # one resolved info alert for the healthiest unit (demo variety)
+    if fleet:
+        best = max(fleet, key=lambda x: x["healthScore"])
+        alerts.append({
+            "id": "ALM-2030", "time": "09:31", "equipment": best["name"],
+            "type": "溫升提醒", "severity": "info", "predictedState": best["state"],
+            "suggestedAction": "持續觀察，確認散熱與環境溫度",
+            "status": "resolved", "workOrderId": None,
+        })
+    return alerts, work_orders
+
+
+def servo_alerts() -> List[Dict[str, Any]]:
+    """Fleet alerts derived from the real model-driven fleet."""
+    return _servo_ops()[0]
+
+
+def servo_work_orders() -> List[Dict[str, Any]]:
+    """Work orders derived from fleet alerts."""
+    return _servo_ops()[1]
+
+
 def servo_reference_metrics() -> Dict[str, Any]:
     """Reference baselines for the training simulator: clf / reg / dl."""
     cfg = load_config()["servo"]

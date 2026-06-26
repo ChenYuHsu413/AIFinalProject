@@ -31,7 +31,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ALERTS, FLEET, fleetSummary } from "@/lib/mock";
+import { fleetSummary, type Equipment } from "@/lib/mock";
+import { useFleet } from "@/lib/fleet";
+import { useFleetOps } from "@/lib/ops";
 import { HEALTH_COLOR } from "@/lib/servo";
 import {
   apiGet,
@@ -49,8 +51,10 @@ const LEGACY: LegacyModel[] = [
 ];
 
 export default function Overview() {
-  const s = fleetSummary();
-  const worst = [...FLEET].sort((a, b) => a.healthScore - b.healthScore)[0];
+  const { fleet, source } = useFleet();
+  const { alerts } = useFleetOps();
+  const s = fleetSummary(fleet, alerts);
+  const worst = [...fleet].sort((a, b) => a.healthScore - b.healthScore)[0];
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:px-6">
@@ -121,18 +125,22 @@ export default function Overview() {
         <div className="lg:col-span-2">
           <FleetHealthChart />
         </div>
-        <EquipmentRankCard />
+        <EquipmentRankCard fleet={fleet} />
       </section>
 
       {/* fleet health */}
       <div>
         <SectionHeader
           title="設備健康總覽"
-          desc="各伺服馬達即時健康狀態（mock，待 Servo Dataset 模組接真實遙測）"
+          desc={
+            source === "model"
+              ? "各設備健康由參考模型即時計算（後端 /servo/fleet）"
+              : "mock fallback（後端未連線；待 /servo/fleet）"
+          }
           action={{ label: "Servo 健康儀表板", href: "/servo/dashboard" }}
         />
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {FLEET.map((u) => (
+          {fleet.map((u) => (
             <EquipmentHealthCard key={u.id} unit={u} />
           ))}
         </section>
@@ -160,7 +168,7 @@ export default function Overview() {
           desc="作用中與近期事件"
           action={{ label: "前往告警 / 工單", href: "/alerts" }}
         />
-        <AlertTable alerts={ALERTS.slice(0, 4)} />
+        <AlertTable alerts={alerts.slice(0, 4)} />
       </div>
 
       {/* legacy modules */}
@@ -208,8 +216,8 @@ function SectionHeader({
 }
 
 /** "Recent sales"-style ranking list adapted to equipment health. */
-function EquipmentRankCard() {
-  const ranked = [...FLEET].sort((a, b) => a.healthScore - b.healthScore);
+function EquipmentRankCard({ fleet }: { fleet: Equipment[] }) {
+  const ranked = [...fleet].sort((a, b) => a.healthScore - b.healthScore);
   return (
     <Card className="@container/card">
       <CardHeader>
@@ -222,7 +230,7 @@ function EquipmentRankCard() {
           return (
             <Link
               key={u.id}
-              href="/servo/dashboard"
+              href={`/equipment/${u.id}`}
               className="flex items-center gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-muted/40"
             >
               <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.chip}`}>

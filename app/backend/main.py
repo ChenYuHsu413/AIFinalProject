@@ -310,6 +310,33 @@ def servo_samples():
     return services.servo_samples()
 
 
+@app.get("/servo/fleet")
+def servo_fleet():
+    """Command Center 機群：合成設備識別 + 真實參考模型在代表性 demo 運轉段上的健康輸出。"""
+    try:
+        return services.servo_fleet()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.get("/servo/alerts")
+def servo_alerts():
+    """機群告警：由真實模型驅動的機群（風險/狀態/異常特徵）衍生。"""
+    try:
+        return services.servo_alerts()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.get("/servo/work_orders")
+def servo_work_orders():
+    """維修工單：由機群告警衍生。"""
+    try:
+        return services.servo_work_orders()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
 @app.get("/servo/reference_metrics")
 def servo_reference_metrics():
     """訓練模擬器的對照指標：clf / reg / dl（離線 baseline）。"""

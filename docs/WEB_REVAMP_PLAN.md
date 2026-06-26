@@ -41,6 +41,25 @@
 > icon rail（tooltip + localStorage 記憶），手機由 `Header` 漢堡鈕開抽屜選單（遮罩 + 點連結自動關）。
 > 原本 sidebar 在 `md` 以下完全隱藏、無行動版導覽的缺口已補上。
 >
+> **設備詳情頁 + 真預測（2026-06-26）**：新增 `/equipment/[id]`，機群卡／排行點擊可 drill-down。
+> 頁面上半為該設備 mock 健康快照與遙測趨勢；下半把 mock 機群**橋接到真實參考模型**——挑一筆與
+> 該設備狀態相符（ylabel）的 demo 運轉段送入 `POST /servo/predict`，呈現實際模型輸出（機率／異常
+> 特徵／建議處置）。Header 麵包屑支援動態路由；mock 與真 API 區塊在 UI 上明確標示。真預測區可
+> 「換一筆代表段重估」並顯示所用 demo #；告警表設備名可點進詳情頁。主題背景改為全黑（OLED）。
+>
+> **機群改接後端真模型（2026-06-26）**：新增後端 `GET /servo/fleet`（`services.servo_fleet`）——
+> 合成設備識別（id/名稱/位置/狀態）+ **真實參考模型**在代表性 demo 運轉段上算出的健康分數／狀態／
+> 風險／退化／信心／主要異常特徵（非真實 PHM 遙測）。前端新增 `useFleet()`（`lib/fleet.ts`）改打此
+> API、mock 當 fallback，Overview 與設備詳情消費之，並標示資料來源（參考模型 / mock）。新增
+> `test_servo_fleet`（API 測試）。
+>
+> **告警／工單也改接真模型（2026-06-26）**：新增後端 `GET /servo/alerts`、`GET /servo/work_orders`
+> （`services.servo_alerts/servo_work_orders`）——由**真機群衍生**：風險/狀態/異常特徵來自模型，
+> 告警類型與建議處置依 top feature 對應，工單由告警排程（IDs/排程屬示意性運維包裝）。前端新增
+> `useFleetOps()`（`lib/ops.ts`），Overview 與 `/alerts` 頁改打 API、mock 當 fallback 並標示來源；
+> 新增 `test_servo_alerts`、`test_servo_work_orders`。**仍為標示清楚的 mock**：設備識別、遙測趨勢、
+> 14 班次趨勢圖、KPI 趨勢 Badge（皆非真實 PHM 遙測）。
+>
 本文件相對連結：[`README.md`](../README.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)、
 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)。
@@ -134,7 +153,7 @@
   驗證跨端點頁面流程與一致性，確認契約完整；未重構 Streamlit thin client（風險較低）。
 - **Phase 2 — Next.js 骨架 + 漸進搬頁**：🚧 進行中（2026-06-26 起）。T17 scaffold（`web/`，Next 16.2.9
   + React 19 + Tailwind v4 + shadcn/ui，需 Node 24）、T18 版面/導覽/狀態列（亮色漸層品牌 +
-  可收合補充模組）皆完成；**T19 Servo 主線五頁全部完成**，補充模組 A/B/B+/C + 關於頁待辦。
+  可收合補充模組）皆完成；**T19 全部頁面完成**（Servo 五頁 + 補充模組 A/B/B+/C 各頁 + 關於頁，2026-06-26）。
   Streamlit 全程留 fallback。本機開發：後端 `uvicorn ...:app`、前端 `cd web && npm run dev`，
   `web/.env.local` 的 `NEXT_PUBLIC_API_BASE_URL` 指向後端（本機 8000 被占用時用 8010 等）。
 - **Phase 3 — 部署 + 收尾**：GCP Compute Engine VM；nginx 反向代理前置（`/api` → uvicorn/
@@ -196,11 +215,16 @@
       （2026-06-26 完成）：左側 grouped 側邊欄（`nav.ts` 鏡像 Streamlit NAV_GROUPS、lucide 圖示、active 高亮、
       誠實性 pill「決策輔助/不控制馬達」）+ 頂部狀態列（後端連線點 + 主線模型/macro-F1 + placeholder 合成資料警示）。
       建立全部 18 條路由（首頁總覽 + 16 個 stub + about），DRY `StubPage` 依 `usePathname` 顯示標籤；build 18 routes 通過。
-- [~] T19 逐頁搬（進行中，2026-06-26）：**Servo 主線五頁全部完成** — 健康儀表板（`/servo/predict`
+- [x] T19 逐頁搬（2026-06-26 完成）：**Servo 主線五頁 + 補充模組 A/B/B+/C 各頁 + 關於頁全部完成** — 健康儀表板（`/servo/predict`
       + samples，含一致性警告/真實標籤比對）、AI 訓練模擬器（`/servo/simulate` + options +
       reference_metrics，CSS 混淆矩陣 + DL 唯讀區）、LLM 維護助理（`/servo/assistant/{report,qa,providers}`，
       react-markdown 渲染 + 來源 badge + 離線 fallback）、馬達欄位解釋（`/servo/glossary` + feature_sets）、
-      維修知識庫（`/knowledge/{documents,search}`）。**待辦：補充模組 A / B / B+ / C 各頁、關於頁。**
+      維修知識庫（`/knowledge/{documents,search}`）。**補充模組各頁（2026-06-26 完成）：**
+      A — predict / what-if（`/predict/batch` sweep）/ batch（`/batch_predict` CSV）/ evaluation（`/model_info`+
+      `/metrics`+`/failure_type_metrics`）；B（IMS）— overview / rul / explore（`/ims/*`，HI 曲線 + 指標切換）；
+      B+（XJTU）— generalization（`/xjtu/generalization`+`/xjtu/domain_adapt`）/ applications（`/xjtu/health_overlay`
+      多軸承 HI 重疊）；C — Paderborn（`/paderborn/eval`，人工→真實泛化頭條 + baseline/真實雙混淆矩陣）；
+      關於頁（三軌定位 + 誠實性聲明）。新增 `ConfusionMatrix` 共用元件；各頁皆附對應誠實性註記。
       共用 `components/ui-kit.tsx`（Card/Stat/Note/Bar/PageTitle）+ `lib/servo.ts` 色彩/標籤 map。
       踩雷修正：`/servo/simulate` 回傳 `task` 為 `classification/regression`（非 `clf/reg`），clf/reg
       判別改用結果欄位（`confusion_matrix` 存在＝分類）。

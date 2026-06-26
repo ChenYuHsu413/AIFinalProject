@@ -229,12 +229,12 @@ export const FLEET_HEALTH_HISTORY: { t: string; avg: number; worst: number }[] =
   });
 
 /** Aggregate KPIs for the Overview header, with mock trend deltas. */
-export function fleetSummary() {
-  const total = FLEET.length;
+export function fleetSummary(fleet: Equipment[] = FLEET, alerts: FleetAlert[] = ALERTS) {
+  const total = fleet.length;
   const avgHealth =
-    FLEET.reduce((s, e) => s + e.healthScore, 0) / Math.max(1, total);
-  const highRisk = FLEET.filter((e) => e.risk === "High").length;
-  const activeAlerts = ALERTS.filter((a) => a.status !== "resolved").length;
+    fleet.reduce((s, e) => s + e.healthScore, 0) / Math.max(1, total);
+  const highRisk = fleet.filter((e) => e.risk === "High").length;
+  const activeAlerts = alerts.filter((a) => a.status !== "resolved").length;
   return {
     total,
     avgHealth: Math.round(avgHealth),
