@@ -153,5 +153,58 @@ sudo journalctl -u servo-frontend -f
 
 ---
 
+## 9. 免費部署替代方案（Vercel + Hugging Face Spaces）
+
+> **狀態（2026-06-26）**：不想動用 GCP 額度時的免費路線。**前端 → Vercel**、
+> **後端（含 ML 模型）→ Hugging Face Spaces（Docker）**。兩者皆免費、免信用卡；HF 免費
+> CPU-basic 為 **2 vCPU / 16 GB RAM**，載入 sklearn servo 模型不會 OOM（512MB 級免費後端會撐爆）。
+> 取捨：HF Space 閒置約 48 小時會睡，有人訪問才喚醒（約 30 秒），對作品集 demo 無妨。
+
+與 §1–§8 的「單一 VM + nginx 同源」不同，這裡是**前後端不同網域**，接線方式因此不同：
+
+| 項目 | 單一 VM（§1–§8） | 免費拆開（§9） |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | `/api`（nginx 同源代理） | **後端 Space 完整網址**，如 `https://<user>-servo-health-api.hf.space` |
+| 後端 CORS | 同源不需 | 已是 `allow_origins=["*"]`，**免改** |
+| 後端 port | 8000 | **7860**（HF 慣例） |
+
+### 9.1 後端 → Hugging Face Spaces（Docker）
+
+1. 在 <https://huggingface.co> 建立新的 **Space** → SDK 選 **Docker** → Blank。
+2. 把以下放進該 Space 的 git repo 根目錄：
+   - `deploy/huggingface/Dockerfile`  → 改名為 **`Dockerfile`**
+   - `deploy/huggingface/README.md`   → 放成 **`README.md`**（其 YAML frontmatter 已設 `app_port: 7860`）
+   - 後端程式碼：`src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`、
+     以及模型產物 `outputs/models/`（已隨本 repo 提交）
+   - 最快做法：把本專案 repo 整包推到 Space remote，再用上面兩個檔覆蓋根目錄的 `Dockerfile`/`README.md`。
+3. push 後 HF 會自動 build（約數分鐘）。完成後測：
+   `curl https://<user>-<space>.hf.space/health` → `{"status":"ok",...}`。
+
+### 9.2 前端 → Vercel
+
+1. 在 <https://vercel.com> **Import** 你的 GitHub repo。
+2. **Root Directory** 設為 `web`（重要，否則 Vercel 會在 repo 根找不到 Next.js）。
+3. Framework 自動偵測 Next.js；Build/Output 用預設。
+4. **Environment Variables** 加一條（Production）：
+   `NEXT_PUBLIC_API_BASE_URL = https://<user>-<space>.hf.space`（你的 HF Space 網址，**結尾不加斜線**）。
+5. Deploy。完成後開 Vercel 給的網址即是線上版；前端的 API 呼叫會直接打到 HF 後端。
+
+> 改了環境變數要 **Redeploy** 才生效（`NEXT_PUBLIC_*` 是 build-time inline）。
+
+### 9.3 其他免費平台速查（2026）
+
+| 平台 | 免費條件 | 用途 |
+| --- | --- | --- |
+| **Vercel** | Next.js Hobby 免費 | ⭐ 前端 |
+| **Hugging Face Spaces** | 2vCPU/16GB，閒置 48h 睡 | ⭐ ML 後端 |
+| Render | 自動偵測 FastAPI，但 512MB + 閒置 15min 睡 | 後端可用但**怕 OOM** |
+| Railway | 僅 $1/月額度 | 跑不滿 24/7，要 $5/月 |
+| Fly.io | 新用戶**已無免費**、需信用卡 | ❌ |
+| GCP always-free e2-micro | 1GB RAM 永久免費（不吃 $300） | 偏緊，可跑後端 only |
+
+> 也可只用 **HF Spaces 跑既有 Streamlit app**（單一平台、免費、16GB），但就看不到 Next.js Command Center。
+
+---
+
 > 備註：repo 內既有的 `Dockerfile` / `docker-compose.yml` 為 **FastAPI + Streamlit** 舊組合的容器化；
-> 本指南採 **VM + systemd + nginx** 路線整合 Next.js 前端，兩者擇一即可（Docker 化前端為後續選項）。
+> §1–§8 採 **VM + systemd + nginx** 整合 Next.js 前端；§9 為**免費拆開託管**路線。三者擇一即可。
