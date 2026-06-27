@@ -36,7 +36,13 @@ def _set_seed(rs: int) -> None:
 
 
 class _CNN(nn.Module):
-    """Small 1D-CNN classifier: conv stack -> global avg pool -> linear."""
+    """Small 1D-CNN classifier: conv stack -> global avg pool -> linear.
+
+    Width/dropout were tuned on the larger 80-run set: a multi-seed sweep showed
+    wider conv + dropout did NOT robustly beat this narrow conv-only model
+    (means within one std of each other, ~0.64-0.67 macro-F1), so the simpler
+    model is kept. The per-run dataset is small, so the score is seed-sensitive.
+    """
 
     def __init__(self, in_ch: int, n_classes: int):
         super().__init__()
@@ -152,8 +158,8 @@ def run() -> Path:
             "n_train": int(tr.sum()), "n_test": int(te.sum()), "subset": True,
         },
         "architecture": {
-            "cnn": "Conv1d[8>16>32>64] k7/7/5 s2 + GAP + FC4",
-            "autoencoder": "Conv1d[8>16>8] s4 + ConvT decode",
+            "cnn": f"Conv1d[{len(channels)}>16>32>64] k7/7/5 s2 + GAP + FC{len(labels)}",
+            "autoencoder": f"Conv1d[{len(channels)}>16>8] s4 + ConvT decode",
         },
         "classifier": {
             "accuracy": acc, "macro_f1": macro_f1,

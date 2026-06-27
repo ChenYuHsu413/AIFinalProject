@@ -4,7 +4,7 @@
 > 互動化**、**資料溯源證明**、**部署修正**與一輪**完整 code review + 清理**；另補**真實資料導入後的
 > 過時文字收尾 + 報表頁擴充**（設備別比較 / 告警統計，見 §7）與**深度學習 Phase A：真 PyTorch
 > MLP + 神經 autoencoder**（取代 sklearn/PCA 替身，見 §8）、**Phase B：真 1D-CNN on 原始波形**
-> （能量包絡，留出 macro-F1 0.729，見 §9）。承接
+> （能量包絡，見 §9；§11 深化至 80-run 後 macro-F1 0.692/n=320 並如實下修）。承接
 > [`WORK_REPORT_2026-06-26.md`](WORK_REPORT_2026-06-26.md)。相關文件：
 > [`../../docs/MODULE_SERVO_PLAN.md`](../../docs/MODULE_SERVO_PLAN.md)、
 > [`../../docs/DATA_PROVENANCE.md`](../../docs/DATA_PROVENANCE.md)、
@@ -152,12 +152,30 @@
 - 誤報未採納：報表頁 recon bar「誇大」（數值同列顯示、78–100% 非 2×）、空 split 守護（檔名固定不會發生）。
 - 重新驗證：`servo_dl` / `servo_cnn` 決定性重跑一致、全測試通過、前端 tsc/eslint 過。
 
+## 11. Phase B 深化 + 誠實下修（2026-06-28）
+
+對 1D-CNN 做深化並**多 seed 穩健驗證**，得到一個重要且誠實的結論：
+
+- **資料加倍**：`MAX_RUNS_PER_FILE` 40→80（X 從 320 → **625 段**，train 305 / test 320；`train_noisy_LO`
+  真實僅 65 段故略不平衡）。更大、更具代表性的測試集。
+- **試過的深化均未穩健勝出**：每塊 std+**mean**（16 通道）→ 反而變差；加寬（24/48/96）+ dropout →
+  單 seed 0.737 但**多 seed 平均僅 0.640**（幸運抽樣）。在 80-run 上對 narrow / wide × dropout 做
+  **5-seed 掃描**：各架構平均落在 **0.64–0.70、std 0.03–0.06**，彼此在一個標準差內。
+- **結論**：保留**最簡 narrow conv（無 dropout、std-only 8 通道）**；移除 mean 通道與加寬。
+  最終 seed-42 留出 **Accuracy 0.709 / macro-F1 0.692**（n=320）、conv-AE recon LN 0.26 < LO 0.26 < MED 0.29 < HI 0.36 單調。
+- **如實下修**：先前 §9 的 40-run 單 seed **0.729 為樂觀抽樣**；以更大評估與多 seed 檢視，真實水準約
+  **0.69（±0.03）**，仍低於聚合主線 0.757——1D-CNN 作為原始波形上的誠實深度對照成立，但非主線最佳。
+- 程式註解（`servo_cnn._CNN`、`build_servo_windows`）載明這些調參結論；docs 數字全面更新。
+  決定性重跑一致、測試通過。
+
 ## 待辦 / 後續
 
 - ~~HF 後端重新部署（推最新 main；新端點 + 三組 parquet + 溯源圖已就緒，設定不需改）。~~
   **✅ 完成（2026-06-27）**：Space `icefeather/aifinalproject` 同步至 main `f083b51`（Space commit `27b07c3`）；
   驗證 `/health` ok、`/servo/provenance` n_files 8 / placeholder=false / clf 0.7566、`/figures/servo_provenance.png` 200、
   `/paderborn/samples` 15、`/xjtu/lobo_loco` 完整。
-- ~~Phase B：原始時序 1D-CNN。~~ **✅ 完成（2026-06-27，見 §9）**：留出 macro-F1 0.729、後端 `/servo/cnn_results`、報表頁顯示。
-- 後續可做：CNN 深化（更大窗 / 更多 run / 原始逐點 / 頻譜輸入）、Paderborn MCSA 頻譜邊帶特徵。
+- ~~Phase B：原始時序 1D-CNN。~~ **✅ 完成**：後端 `/servo/cnn_results`、報表頁顯示。
+  初版 §9（40-run，macro-F1 0.729）→ **深化下修 §11（80-run，macro-F1 0.692，n=320）**。
+- ~~CNN 深化（更大窗 / 更多 run）。~~ **✅ 完成（§11）**：資料加倍 + 多 seed 驗證；加寬/dropout/std+mean 未穩健勝出，保留最簡。
+- 後續可做：原始逐點（非包絡）CNN、頻譜輸入、Paderborn MCSA 頻譜邊帶特徵。
 - 報表頁**時間區間彙整**：待實場 / IoT 逐時遙測串流接入後補上。

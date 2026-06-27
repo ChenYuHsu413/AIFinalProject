@@ -6,17 +6,17 @@
   "window": {
     "len": 256,
     "channels": [
-      "torque",
-      "rotor_speed",
-      "i_3p_a",
-      "i_3p_b",
-      "i_3p_c",
-      "direct",
-      "quadrature",
-      "position_error"
+      "torque_std",
+      "rotor_speed_std",
+      "i_3p_a_std",
+      "i_3p_b_std",
+      "i_3p_c_std",
+      "direct_std",
+      "quadrature_std",
+      "position_error_std"
     ],
-    "n_train": 160,
-    "n_test": 160,
+    "n_train": 305,
+    "n_test": 320,
     "subset": true
   },
   "architecture": {
@@ -24,32 +24,32 @@
     "autoencoder": "Conv1d[8>16>8] s4 + ConvT decode"
   },
   "classifier": {
-    "accuracy": 0.73125,
-    "macro_f1": 0.7294337606837606,
+    "accuracy": 0.709375,
+    "macro_f1": 0.6923781222370471,
     "confusion_matrix": [
       [
-        24,
-        16,
-        0,
-        0
-      ],
-      [
-        17,
-        19,
-        4,
-        0
-      ],
-      [
-        0,
-        3,
-        35,
-        2
-      ],
-      [
-        0,
-        0,
+        56,
+        23,
         1,
-        39
+        0
+      ],
+      [
+        43,
+        24,
+        13,
+        0
+      ],
+      [
+        0,
+        0,
+        77,
+        3
+      ],
+      [
+        0,
+        0,
+        10,
+        70
       ]
     ],
     "labels": [
@@ -61,10 +61,10 @@
   },
   "autoencoder": {
     "reconstruction_error_by_class": {
-      "LN": 0.4016510546207428,
-      "LO": 0.41312989592552185,
-      "MED": 0.4444214701652527,
-      "HI": 0.530238151550293
+      "LN": 0.2583346962928772,
+      "LO": 0.26410046219825745,
+      "MED": 0.2853744626045227,
+      "HI": 0.3564786911010742
     }
   }
 }

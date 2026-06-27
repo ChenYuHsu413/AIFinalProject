@@ -33,11 +33,15 @@ import pandas as pd
 from src.features.servo_features import HEALTH_LABELS
 from src.utils.paths import ensure_output_dirs, load_config, resolve
 
-# Physical channels fed to the CNN (position_error is derived rod_actual-demand).
+# Physical channels (position_error is derived rod_actual-demand). The envelope
+# uses per-block std (vibration energy) per channel — adding per-block mean was
+# tried and consistently *hurt* test macro-F1 (the DC/trend channels add noise),
+# so the envelope stays std-only.
 CHANNELS = [
     "torque", "rotor_speed", "i_3p_a", "i_3p_b", "i_3p_c",
     "direct", "quadrature", "position_error",
 ]
+ENV_FEATURES = [f"{c}_std" for c in CHANNELS]
 # ylabel is intentionally absent: the class is taken from the file name in run(),
 # so we never parse the per-row label column here.
 _USECOLS = [
@@ -47,7 +51,7 @@ _USECOLS = [
 
 ENV_LEN = 256            # envelope length (time-blocks per run)
 MIN_RUN_ROWS = 50_000    # ignore truncated tail runs shorter than this
-MAX_RUNS_PER_FILE = 40   # cap runs (samples) per file
+MAX_RUNS_PER_FILE = 80   # cap runs (samples) per file
 _CHUNK = 500_000
 _DEFAULT_ZIP = "C:/Users/alung/Downloads/FMCRD_Data.zip"
 
@@ -131,7 +135,7 @@ def run(zip_path: str = _DEFAULT_ZIP) -> Path:
             if ylabel not in lab_to_idx:
                 raise ValueError(f"無法從檔名判定健康標籤：{name}")
             envs = _runs_from_file(z, name)
-            arr = np.stack(envs) if envs else np.empty((0, len(CHANNELS), ENV_LEN), np.float32)
+            arr = np.stack(envs) if envs else np.empty((0, len(ENV_FEATURES), ENV_LEN), np.float32)
             X_parts.append(arr)
             y_parts.append(np.full(len(arr), lab_to_idx[ylabel], dtype=np.int64))
             split_parts.append(np.array([split] * len(arr)))
@@ -147,7 +151,7 @@ def run(zip_path: str = _DEFAULT_ZIP) -> Path:
     out = resolve(cfg["windows_path"])
     np.savez_compressed(
         out, X=X, y=y, split=split,
-        channels=np.array(CHANNELS), labels=np.array(HEALTH_LABELS),
+        channels=np.array(ENV_FEATURES), labels=np.array(HEALTH_LABELS),
         win_len=ENV_LEN, repr="per_run_energy_envelope_blockstd",
     )
     tr = (split == "train").sum()
