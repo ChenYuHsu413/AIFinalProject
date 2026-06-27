@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, Bot, Loader2, Search, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -105,7 +106,7 @@ export default function ServoDashboardPage() {
       </div>
 
       {pred ? (
-        <Result pred={pred} trueLabel={trueLabel} />
+        <Result pred={pred} trueLabel={trueLabel} sampleIdx={idx} />
       ) : (
         !loadErr && (
           <div className="rounded-xl border border-dashed border-border/70 bg-card/40 p-12 text-center text-sm text-muted-foreground">
@@ -120,9 +121,11 @@ export default function ServoDashboardPage() {
 function Result({
   pred,
   trueLabel,
+  sampleIdx,
 }: {
   pred: ServoPrediction;
   trueLabel?: string;
+  sampleIdx: number;
 }) {
   const c = HEALTH_COLOR[pred.predicted_health_state] ?? HEALTH_COLOR.MED;
   // Illustrative recent-telemetry window (mock until Servo Dataset streams real).
@@ -233,12 +236,15 @@ function Result({
         </ul>
       </Card>
 
-      <div className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200">
+      <Link
+        href={`/servo/assistant?sample=${sampleIdx}`}
+        className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200 transition-colors hover:bg-violet-500/20"
+      >
         <Bot className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
-          想要更完整的人話解釋與工單草稿？到側邊欄「LLM 維護助理」頁，它會接收這筆結果並產生維修建議。
+          想要更完整的人話解釋與工單草稿？點此前往「LLM 維護助理」頁，它會接收<b>這筆</b>結果並產生維修建議。
         </span>
-      </div>
+      </Link>
     </div>
   );
 }

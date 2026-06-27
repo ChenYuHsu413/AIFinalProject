@@ -40,7 +40,9 @@ export default function AssistantPage() {
   const [answer, setAnswer] = useState<AssistantResponse | null>(null);
   const [qaBusy, setQaBusy] = useState(false);
 
-  // load options + auto-predict a default (MED) sample so the page is usable directly
+  // Load options, then predict the sample the dashboard handed over via
+  // ?sample=<idx> (the "到 LLM 維護助理" link). Falls back to a default MED
+  // sample so the page is usable when opened directly.
   useEffect(() => {
     (async () => {
       try {
@@ -52,8 +54,14 @@ export default function AssistantPage() {
         setCols(info.feature_columns);
         setSamples(rows);
         setProviders(prov.providers);
+        const param = new URLSearchParams(window.location.search).get("sample");
+        const handed = param != null ? Number(param) : NaN;
         const di = rows.findIndex((r) => r["ylabel"] === "MED");
-        const start = di < 0 ? Math.floor(rows.length / 2) : di;
+        const fallback = di < 0 ? Math.floor(rows.length / 2) : di;
+        const start =
+          Number.isInteger(handed) && handed >= 0 && handed < rows.length
+            ? handed
+            : fallback;
         setIdx(start);
         await runPredict(start, info.feature_columns, rows);
       } catch {
