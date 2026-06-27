@@ -45,8 +45,11 @@ def run() -> Path:
     scaler = StandardScaler().fit(X)
     Xs = scaler.transform(X)
     yc = df["ylabel"].to_numpy()
+    # Stratify only when every class has >=2 members; tiny/imbalanced real data
+    # otherwise crashes train_test_split.
+    strat = yc if pd.Series(yc).value_counts().min() >= 2 else None
     Xtr, Xte, ytr, yte = train_test_split(Xs, yc, test_size=0.25,
-                                          random_state=rs, stratify=yc)
+                                          random_state=rs, stratify=strat)
     clf = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, random_state=rs).fit(Xtr, ytr)
     labels = [c for c in HEALTH_LABELS if c in set(yc)]
     mlp_clf_f1 = float(f1_score(yte, clf.predict(Xte), average="macro",
@@ -60,8 +63,12 @@ def run() -> Path:
                "r2": float(r2_score(vte, pred))}
 
     # --- PCA reconstruction error (healthy-only fit), per class ---
-    ln_mask = df["ylabel"] == "LN"
-    pca = PCA(n_components=min(3, len(cols)), random_state=rs).fit(Xs[ln_mask.to_numpy()])
+    ln_mask = (df["ylabel"] == "LN").to_numpy()
+    n_comp = min(3, len(cols))
+    # Fit on healthy runs when there are enough; otherwise fall back to all rows
+    # so a dataset without an LN class doesn't crash the baseline.
+    fit_rows = Xs[ln_mask] if ln_mask.sum() > n_comp else Xs
+    pca = PCA(n_components=n_comp, random_state=rs).fit(fit_rows)
     recon = pca.inverse_transform(pca.transform(Xs))
     err = np.mean((Xs - recon) ** 2, axis=1)
     per_class = {lab: float(np.mean(err[(df["ylabel"] == lab).to_numpy()]))

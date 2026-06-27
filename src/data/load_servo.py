@@ -24,9 +24,18 @@ def list_servo_files() -> List[Path]:
 
 
 def load_raw_servo() -> pd.DataFrame:
-    """Concatenate all raw servo CSVs. Empty frame if none are present."""
+    """Concatenate all raw servo CSVs. Empty frame if none are present.
+
+    Each frame is tagged with ``__source_file__`` so ``build_feature_table`` can
+    keep segments from different files separate even when their ``run_index``
+    values collide (PHM ships multiple experiment files each restarting at 0).
+    """
     files = list_servo_files()
     if not files:
         return pd.DataFrame()
-    frames = [pd.read_csv(f) for f in files]
+    frames = []
+    for f in files:
+        fr = pd.read_csv(f)
+        fr["__source_file__"] = f.name
+        frames.append(fr)
     return pd.concat(frames, ignore_index=True)

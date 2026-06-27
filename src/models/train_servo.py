@@ -70,6 +70,12 @@ def run() -> Path:
     # --- classifier: pick best by stratified-CV macro-F1 ---
     X, y = df[cols], df["ylabel"]
     min_class = int(y.value_counts().min())
+    if min_class < 2:
+        rare = sorted(y.value_counts()[lambda s: s < 2].index.tolist())
+        raise ValueError(
+            f"類別 {rare} 僅有 1 段，無法做分層交叉驗證。"
+            "請確認真實資料每個健康類別至少有 2 段，或調整 ylabel_map / 聚合粒度。"
+        )
     n_splits = max(2, min(int(sv.get("cv_folds", 5)), min_class))
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=rs)
     per_model: Dict[str, float] = {}

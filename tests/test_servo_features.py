@@ -1,6 +1,7 @@
 """Module Servo — feature aggregation + feature-set definitions."""
 import numpy as np
 import pandas as pd
+import pytest
 
 from src.features.servo_features import (
     FEATURE_SETS,
@@ -9,6 +10,7 @@ from src.features.servo_features import (
     all_feature_columns,
     build_feature_table,
     feature_set_columns,
+    validate_raw_columns,
 )
 
 
@@ -55,3 +57,50 @@ def test_feature_sets_resolve():
     full = set(feature_set_columns("full"))
     for g in ("basic_motion", "current", "position_tracking"):
         assert set(feature_set_columns(g)) <= full
+
+
+# --- real-data path protections ------------------------------------------------
+def test_missing_required_column_raises():
+    df = _raw().drop(columns=["rotor_speed"])
+    with pytest.raises(ValueError, match="缺少必要欄位"):
+        build_feature_table(df)
+
+
+def test_all_nan_required_column_raises():
+    df = _raw()
+    df["torque"] = np.nan
+    with pytest.raises(ValueError, match="整欄皆為"):
+        validate_raw_columns(df)
+
+
+def test_multi_file_run_index_kept_separate():
+    # Two files, each with run_index 0/1 -> 4 distinct segments, not 2.
+    a = _raw(runs=("LN", "HI"))
+    b = _raw(runs=("LO", "MED"))
+    a["__source_file__"] = "exp_a.csv"
+    b["__source_file__"] = "exp_b.csv"
+    table = build_feature_table(pd.concat([a, b], ignore_index=True))
+    assert len(table) == 4
+    assert set(table["ylabel"]) == {"LN", "HI", "LO", "MED"}
+    assert table["run_index"].is_unique
+
+
+def test_label_map_remaps_numeric_labels():
+    df = _raw(runs=("LN", "HI"))
+    df["ylabel"] = df["ylabel"].map({"LN": 0, "HI": 3})  # numeric encoded labels
+    table = build_feature_table(df, label_map={0: "LN", 1: "LO", 2: "MED", 3: "HI"})
+    assert set(table["ylabel"]) == {"LN", "HI"}
+
+
+def test_unknown_label_raises():
+    df = _raw(runs=("LN", "HI"))
+    df["ylabel"] = df["ylabel"].map({"LN": 0, "HI": 3})  # no label_map provided
+    with pytest.raises(ValueError, match="未知健康標籤"):
+        build_feature_table(df)
+
+
+def test_all_nan_ylabel_segment_raises():
+    df = _raw(runs=("LN", "HI"))
+    df.loc[df["run_index"] == 0, "ylabel"] = np.nan  # one run has no label
+    with pytest.raises(ValueError, match="無法決定健康標籤"):
+        build_feature_table(df)

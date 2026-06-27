@@ -67,7 +67,9 @@ def retrieve_for_prediction(prediction: Dict[str, Any],
                             top_k: Optional[int] = None) -> List[Dict[str, object]]:
     """Build a query from a prediction's health state + top abnormal features."""
     state = prediction.get("health_state_zh", prediction.get("predicted_health_state", ""))
-    hints = [t.get("hint", "") for t in prediction.get("top_features", [])]
-    feats = [t.get("feature", "") for t in prediction.get("top_features", [])]
+    tf = prediction.get("top_features", [])
+    tf = [t for t in tf if isinstance(t, dict)] if isinstance(tf, list) else []
+    hints = [t.get("hint", "") for t in tf]
+    feats = [t.get("feature", "") for t in tf]
     query = f"伺服馬達 滾珠螺桿 {state} " + " ".join(feats + hints)
     return search(query, top_k=top_k)

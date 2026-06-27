@@ -109,8 +109,11 @@ def run_classification(
     cols = feature_set_columns(feature_set)
     data = _subsample(df, n_samples, "ylabel", random_state)
     X, y = data[cols], data["ylabel"]
+    # Stratify only when every class has >=2 members; a small/imbalanced
+    # subsample otherwise crashes train_test_split.
+    strat = y if y.value_counts().min() >= 2 else None
     Xtr, Xte, ytr, yte = train_test_split(
-        X, y, test_size=0.25, random_state=random_state, stratify=y)
+        X, y, test_size=0.25, random_state=random_state, stratify=strat)
     pipe = build_classifier(algo, random_state)
     t0 = time.perf_counter()
     pipe.fit(Xtr, ytr)

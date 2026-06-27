@@ -965,6 +965,12 @@ elif page in _SERVO_PAGES:
             "<br><code>python -m src.models.train_servo</code>",
             kind="danger",
         )
+    except Exception as e:  # graceful: never show a raw traceback on the page
+        style.note(
+            f"此頁發生非預期錯誤（{type(e).__name__}：{e}）。"
+            "若是 AI 訓練模擬器，請改用較大的資料量或不同特徵組重試。",
+            kind="danger",
+        )
 
 
 # ---------------------------------------------------------------------------

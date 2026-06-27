@@ -36,6 +36,15 @@ from src.utils.paths import ensure_output_dirs, load_config, resolve
 _SEVERITY = {"LN": 0.05, "LO": 0.35, "MED": 0.65, "HI": 0.92}
 
 
+def _check_dv_range(dv: pd.Series) -> None:
+    """Warn if real DV is outside 0..1 (the scale the dv_risk bands assume)."""
+    lo, hi = float(dv.min()), float(dv.max())
+    if lo < -1e-6 or hi > 1.0 + 1e-6:
+        print(f"    [!] 警告：真實 DV 範圍為 [{lo:.3f}, {hi:.3f}]，超出預期的 0..1。"
+              "config.yaml::servo.dv_risk 風險帶是以 0..1 校準，請正規化 DV 或重校風險帶"
+              "（見 docs/MODULE_SERVO_PLAN.md §10）。")
+
+
 def generate_placeholder(runs_per_class: int, seed: int = 42) -> pd.DataFrame:
     """Synthesise an aggregated feature table with realistic class structure.
 
@@ -95,7 +104,8 @@ def run() -> Path:
     raw = load_raw_servo()
     if len(raw):
         print(f"[Module Servo] 偵測到真實 PHM 原始資料（{len(raw)} 列），聚合中…")
-        table = build_feature_table(raw)
+        table = build_feature_table(raw, label_map=sv.get("ylabel_map"))
+        _check_dv_range(table["DV"])
         is_placeholder = False
     else:
         n = int(sv.get("placeholder_runs_per_class", 200))

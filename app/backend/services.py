@@ -532,6 +532,7 @@ def servo_fleet() -> List[Dict[str, Any]]:
                 "risk": pred["risk_level"],
                 "degradation": round(pred["degradation_score"], 2),
                 "confidence": round(pred["model_confidence"], 2),
+                "placeholder": bool(pred.get("placeholder", True)),
                 "topFeature": {
                     "feature": top.get("feature", "-"),
                     "z": top.get("z", 0),

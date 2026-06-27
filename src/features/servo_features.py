@@ -15,7 +15,7 @@ It deliberately has no Streamlit / model dependencies so it stays unit-testable.
 """
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -36,6 +36,69 @@ BASE_SIGNALS = [
 STATS = ["mean", "std", "min", "max", "rms"]
 
 HEALTH_LABELS = ["LN", "LO", "MED", "HI"]  # fixed order, healthy -> most degraded
+
+# Raw columns that MUST exist for build_feature_table to work. Derived/optional
+# columns (position_error is derived; time/transitions are unused here) are
+# excluded so a CSV without them still validates.
+REQUIRED_RAW_COLUMNS = [
+    "run_index", "ylabel", "DV",
+    "rotor_speed", "torque", "del_pos",
+    "i_3p_a", "i_3p_b", "i_3p_c", "direct", "quadrature",
+    "rod_demand_pos", "rod_actual_pos",
+]
+
+
+def validate_raw_columns(df: pd.DataFrame) -> None:
+    """Fail loudly (clear message) if the raw frame can't be aggregated.
+
+    Guards the real-data path: a header-name mismatch or an entirely empty
+    required column otherwise surfaces as an opaque KeyError deep in the
+    aggregation loop, or silently turns a missing signal into 0.0.
+    """
+    missing = [c for c in REQUIRED_RAW_COLUMNS if c not in df.columns]
+    if missing:
+        raise ValueError(
+            "原始 PHM 資料缺少必要欄位：" + ", ".join(missing)
+            + f"\n（實際欄位：{list(df.columns)}）"
+            + "\n請確認 CSV 欄名與 servo_features.RAW_COLUMNS 一致，或在載入前重新命名欄位。"
+        )
+    all_nan = [c for c in REQUIRED_RAW_COLUMNS if c != "ylabel"
+               and pd.to_numeric(df[c], errors="coerce").isna().all()]
+    if all_nan:
+        raise ValueError(
+            "以下必要欄位整欄皆為非數值/空值：" + ", ".join(all_nan)
+            + "。可能是欄位錯位或編碼問題，請檢查原始 CSV。"
+        )
+
+
+def _segment_label(values: pd.Series, label_map: Optional[Dict[Any, str]]) -> str:
+    """Health label for one run segment: the mode, optionally remapped.
+
+    ``label_map`` lets a numeric/encoded ylabel (e.g. 0/1/2/3) be mapped onto
+    LN/LO/MED/HI WITHOUT this module guessing the encoding.  The empty-mode case
+    (a segment whose ylabel is entirely NaN) fails with a clear message instead
+    of an opaque IndexError.
+    """
+    s = values.dropna()
+    if label_map:
+        s = s.map(lambda v: label_map.get(v, label_map.get(str(v), v))).dropna()
+    mode = s.mode()
+    if mode.empty:
+        raise ValueError(
+            "某運轉段的 ylabel 全為空值（或經 label_map 對應後為空），無法決定健康標籤。"
+            "請檢查原始資料的 ylabel 欄或 servo.ylabel_map 設定。"
+        )
+    return str(mode.iloc[0])
+
+
+def _validate_labels(labels: "pd.Series") -> None:
+    unknown = sorted(set(labels) - set(HEALTH_LABELS))
+    if unknown:
+        raise ValueError(
+            f"聚合後出現未知健康標籤 {unknown}，預期為 {HEALTH_LABELS}。"
+            "若原始 ylabel 是數值碼（如 0/1/2/3），請在 config.yaml::servo.ylabel_map "
+            "設定對應，例如 {0: LN, 1: LO, 2: MED, 3: HI}。"
+        )
 
 
 def _rms(x: np.ndarray) -> float:
@@ -72,22 +135,36 @@ def aggregate_run(run: pd.DataFrame) -> Dict[str, float]:
     return feats
 
 
-def build_feature_table(raw: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate a raw per-timestep frame into one row per ``run_index``.
+def build_feature_table(
+    raw: pd.DataFrame, label_map: Optional[Dict[Any, str]] = None
+) -> pd.DataFrame:
+    """Aggregate a raw per-timestep frame into one row per run segment.
 
     Returns a feature table with the aggregated columns plus the labels
-    ``ylabel`` (mode of the segment) and ``DV`` (mean of the segment).
+    ``ylabel`` (mode of the segment, optionally remapped via ``label_map``) and
+    ``DV`` (mean of the segment).
+
+    When several source files were concatenated (``load_raw_servo`` tags each
+    with ``__source_file__``), the SAME ``run_index`` can recur in different
+    files for unrelated experiments; grouping by ``(file, run_index)`` keeps
+    those segments separate instead of silently averaging them into one row.
     """
+    validate_raw_columns(raw)
     raw = add_position_error(raw)
+    group_keys = (["__source_file__", "run_index"]
+                  if "__source_file__" in raw.columns else ["run_index"])
     rows: List[Dict[str, float]] = []
-    for run_index, seg in raw.groupby("run_index"):
+    for _, seg in raw.groupby(group_keys, sort=False):
         feats = aggregate_run(seg)
-        feats["run_index"] = int(run_index)
         # ylabel is (near) constant within a run -> take the mode.
-        feats["ylabel"] = str(seg["ylabel"].mode().iloc[0])
+        feats["ylabel"] = _segment_label(seg["ylabel"], label_map)
         feats["DV"] = float(pd.to_numeric(seg["DV"], errors="coerce").mean())
         rows.append(feats)
-    out = pd.DataFrame(rows).sort_values("run_index").reset_index(drop=True)
+    out = pd.DataFrame(rows).reset_index(drop=True)
+    # Globally-unique segment id. The original per-file run_index is not kept
+    # because it is not unique across files; run_index is only a segment index.
+    out.insert(0, "run_index", np.arange(len(out)))
+    _validate_labels(out["ylabel"])
     return out
 
 

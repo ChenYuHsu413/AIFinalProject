@@ -256,6 +256,9 @@ servo:
   reg_metrics: outputs/metrics/servo_reg_eval.json
   dl_metrics: outputs/metrics/servo_dl_results.json        # offline DL results (read-only on the cloud app)
   labels: [LN, LO, MED, HI]
+  # If the real PHM ylabel is a numeric/encoded code, map it to LN/LO/MED/HI here
+  # (null = labels already use LN/LO/MED/HI). Example: {0: LN, 1: LO, 2: MED, 3: HI}
+  ylabel_map: null
   enabled_models: [logistic_regression, decision_tree, random_forest, gradient_boosting, mlp]
   reference_feature_set: engineered
   cv_folds: 5

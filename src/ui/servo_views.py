@@ -69,7 +69,7 @@ def _proba_bar(proba: Dict[str, float]) -> go.Figure:
     colors = {"LN": "#22c55e", "LO": "#84cc16", "MED": "#f59e0b", "HI": "#ef4444"}
     fig = go.Figure(go.Bar(
         x=[v for _, v in items],
-        y=[f"{HEALTH_LABEL_ZH[k]} ({k})" for k, _ in items],
+        y=[f"{HEALTH_LABEL_ZH.get(k, k)} ({k})" for k, _ in items],
         orientation="h",
         marker_color=[colors[k] for k, _ in items],
         text=[f"{v*100:.1f}%" for _, v in items], textposition="auto"))
@@ -169,7 +169,9 @@ def render_dashboard() -> None:
 # ---------------------------------------------------------------------------
 def render_simulator() -> None:
     _placeholder_note()
-    df = _features()
+    # Simulator runs on the committed demo CSV (per MODULE_SERVO_PLAN.md §8), so
+    # it works on the cloud without shipping the full processed parquet.
+    df = _demo()
 
     with style.zone("mint", key="sim-controls"):
         style.section("選擇訓練設定")
