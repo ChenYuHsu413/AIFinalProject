@@ -104,10 +104,15 @@ def render_dashboard() -> None:
                    kind="danger")
         return
 
-    if go_pred or "servo_pred" not in st.session_state:
+    # Recompute on click OR whenever the selected sample changes, so the stored
+    # prediction always matches the current selection — the LLM 維護助理 page reads
+    # st.session_state.servo_pred, so it then receives exactly the motor shown here.
+    if (go_pred or "servo_pred" not in st.session_state
+            or st.session_state.get("servo_pred_idx") != idx):
         pred = predict_servo(samples.iloc[idx])
         pred["_true_label"] = labels[idx] if idx < len(labels) else None
         st.session_state.servo_pred = pred
+        st.session_state.servo_pred_idx = idx
         # new prediction invalidates any previously generated LLM outputs
         st.session_state.pop("servo_llm_report", None)
         st.session_state.pop("servo_llm_answer", None)
@@ -341,6 +346,12 @@ def render_assistant() -> None:
 
     with style.zone("stone", key="llm-ctx"):
         style.section("目前的模型結果（助理輸入）")
+        _tl = pred.get("_true_label")
+        st.caption(
+            f"來自健康儀表板選取的運轉段（真實標籤 {HEALTH_LABEL_ZH.get(_tl, _tl)}）。"
+            "回儀表板換一筆並重新估測，這裡會同步更新。"
+            if _tl else "尚未從儀表板選取；以下為預設示範運轉段（MED）。"
+        )
         c1, c2, c3 = st.columns(3)
         c1.metric("健康狀態", f"{pred['health_state_zh']} ({pred['predicted_health_state']})")
         c2.metric("風險等級", _RISK_LABEL.get(pred["risk_level"], pred["risk_level"]))
