@@ -11,6 +11,7 @@ import { FeatureImportancePanel } from "@/components/dashboard/FeatureImportance
 import { TelemetryTrends } from "@/components/dashboard/TelemetryTrends";
 import { HealthBadge, RiskBadge } from "@/components/dashboard/badges";
 import {
+  API_BASE,
   apiGet,
   apiPost,
   type ServoModelInfo,
@@ -286,6 +287,17 @@ function ProvenancePanel() {
           FMCRD 為高擬真<b>模擬</b>資料集（非真實工廠伺服馬達遙測）；「真實」指完整大型公開 PHM 資料集本身（相對於先前 placeholder 合成資料）。
         </p>
       )}
+      <details className="mt-2">
+        <summary className="cursor-pointer text-[11px] text-emerald-300/90 hover:text-emerald-200">
+          查看資料溯源圖（DV 各類分布 + 留出測試混淆矩陣）
+        </summary>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`${API_BASE}/figures/servo_provenance.png`}
+          alt="Servo 資料溯源：DV 各健康類別分布與留出測試混淆矩陣"
+          className="mt-2 w-full rounded-lg border border-border/60 bg-white"
+        />
+      </details>
     </div>
   );
 }
