@@ -40,23 +40,32 @@ def run() -> Path:
     df = pd.read_parquet(resolve(cfg["processed_features"]))
     cols = feature_set_columns(cfg.get("reference_feature_set", "engineered"))
     X = df[cols].to_numpy()
+    yc = df["ylabel"].to_numpy()
+    yv = df["DV"].to_numpy()
+
+    # Honour a provided train/test split (real PHM); else random 25% holdout.
+    has_split = "split" in df.columns and {"train", "test"} <= set(df["split"])
+    eval_mode = "holdout_test" if has_split else "cv"
+    if has_split:
+        tr = (df["split"] == "train").to_numpy()
+        scaler = StandardScaler().fit(X[tr])  # fit on train only (no leakage)
+        Xs = scaler.transform(X)
+        Xtr, Xte, ytr, yte = Xs[tr], Xs[~tr], yc[tr], yc[~tr]
+        Xtr2, Xte2, vtr, vte = Xs[tr], Xs[~tr], yv[tr], yv[~tr]
+    else:
+        scaler = StandardScaler().fit(X)
+        Xs = scaler.transform(X)
+        strat = yc if pd.Series(yc).value_counts().min() >= 2 else None
+        Xtr, Xte, ytr, yte = train_test_split(Xs, yc, test_size=0.25,
+                                              random_state=rs, stratify=strat)
+        Xtr2, Xte2, vtr, vte = train_test_split(Xs, yv, test_size=0.25, random_state=rs)
 
     # --- MLP baseline (classification + DV regression) ---
-    scaler = StandardScaler().fit(X)
-    Xs = scaler.transform(X)
-    yc = df["ylabel"].to_numpy()
-    # Stratify only when every class has >=2 members; tiny/imbalanced real data
-    # otherwise crashes train_test_split.
-    strat = yc if pd.Series(yc).value_counts().min() >= 2 else None
-    Xtr, Xte, ytr, yte = train_test_split(Xs, yc, test_size=0.25,
-                                          random_state=rs, stratify=strat)
     clf = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, random_state=rs).fit(Xtr, ytr)
     labels = [c for c in HEALTH_LABELS if c in set(yc)]
     mlp_clf_f1 = float(f1_score(yte, clf.predict(Xte), average="macro",
                                 labels=labels, zero_division=0))
 
-    yv = df["DV"].to_numpy()
-    Xtr2, Xte2, vtr, vte = train_test_split(Xs, yv, test_size=0.25, random_state=rs)
     reg = MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=800, random_state=rs).fit(Xtr2, vtr)
     pred = reg.predict(Xte2)
     mlp_reg = {"mae": float(mean_absolute_error(vte, pred)),
@@ -76,6 +85,7 @@ def run() -> Path:
 
     out = {
         "method": "servo_dl_offline_baseline",
+        "eval": eval_mode,
         "placeholder": bool(cfg.get("placeholder", True)),
         "note": ("sklearn MLP baseline + PCA 重建誤差（健康資料擬合）。真正的 1D-CNN / "
                  "Autoencoder 需離線 torch、且需真實 PHM 時序資料，列為後續工作。"),

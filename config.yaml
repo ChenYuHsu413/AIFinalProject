@@ -264,12 +264,15 @@ servo:
   cv_folds: 5
   random_state: 42
   placeholder_runs_per_class: 1500   # synthetic runs per health class when no real data
-  # DV (0..1, higher = more degraded) -> risk bands. Calibrated on PLACEHOLDER
-  # data; MUST be recalibrated on the real DV distribution.
+  # DV -> risk bands. Recalibrated (2026-06-27) on the REAL PHM DV distribution
+  # after normalising raw DV (physical units, max ~5012) to 0..1. Class means:
+  # LN 0.000 / LO 0.076 / MED 0.319 / HI 0.639 -> boundaries at the LO|MED and
+  # MED|HI mid-points (Low covers LN+LO, Medium=MED, High=HI).
+  dv_raw_max: 5012.414               # scale used to normalise real DV to 0..1
   dv_risk:
-    low_max: 0.33
-    medium_max: 0.66
-  placeholder: true                  # set false after training on the real PHM dataset
+    low_max: 0.20
+    medium_max: 0.48
+  placeholder: false                 # trained on the REAL PHM FMCRD dataset
 
 # ---------------------------------------------------------------------------
 # LLM maintenance assistant. Consumes STRUCTURED model output (never replaces

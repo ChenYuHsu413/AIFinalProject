@@ -1,8 +1,9 @@
 {
   "model": "logistic_regression",
   "feature_set": "engineered",
-  "accuracy": 0.7483333333333333,
-  "macro_f1": 0.7483382912558307,
+  "eval": "holdout_test",
+  "accuracy": 0.75875,
+  "macro_f1": 0.7566458195358798,
   "labels": [
     "LN",
     "LO",
@@ -17,37 +18,37 @@
   },
   "confusion_matrix": [
     [
-      1250,
-      248,
-      2,
+      132,
+      68,
+      0,
       0
     ],
     [
-      264,
-      1007,
-      228,
-      1
-    ],
-    [
-      2,
-      229,
-      1010,
-      259
+      86,
+      100,
+      14,
+      0
     ],
     [
       0,
-      3,
-      274,
-      1223
+      9,
+      186,
+      5
+    ],
+    [
+      0,
+      0,
+      11,
+      189
     ]
   ],
   "per_model_macro_f1": {
-    "logistic_regression": 0.7482703320625161,
-    "decision_tree": 0.61393002609836,
-    "random_forest": 0.7301934691551786,
-    "gradient_boosting": 0.7203869624169104,
-    "mlp": 0.7195498937187447
+    "logistic_regression": 0.7299701716183528,
+    "decision_tree": 0.6646880473638809,
+    "random_forest": 0.7005351336001515,
+    "gradient_boosting": 0.6785364957381997,
+    "mlp": 0.7176654780679707
   },
-  "n": 6000,
-  "placeholder": true
+  "n": 800,
+  "placeholder": false
 }

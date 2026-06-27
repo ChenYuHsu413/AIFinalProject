@@ -64,11 +64,21 @@ def run() -> Path:
     df = pd.read_parquet(feat_path)
     feature_set = sv.get("reference_feature_set", "engineered")
     cols = feature_set_columns(feature_set)
-    labels = [c for c in HEALTH_LABELS if c in set(df["ylabel"])]
-    print(f"[Servo] 特徵組 {feature_set}（{len(cols)} 維）、{len(df)} 段、類別 {labels}")
 
-    # --- classifier: pick best by stratified-CV macro-F1 ---
-    X, y = df[cols], df["ylabel"]
+    # Honour a provided train/test split when present (the real PHM data ships
+    # one); otherwise cross-validate on the whole table (placeholder fallback).
+    has_split = "split" in df.columns and {"train", "test"} <= set(df["split"])
+    df_tr = df[df["split"] == "train"].reset_index(drop=True) if has_split else df
+    df_te = df[df["split"] == "test"].reset_index(drop=True) if has_split else None
+    eval_mode = "holdout_test" if has_split else "cv"
+
+    labels = [c for c in HEALTH_LABELS if c in set(df_tr["ylabel"])]
+    print(f"[Servo] 特徵組 {feature_set}（{len(cols)} 維）、訓練 {len(df_tr)} 段"
+          + (f"、留出測試 {len(df_te)} 段" if has_split else "")
+          + f"、類別 {labels}（評估={eval_mode}）")
+
+    # --- classifier: pick best by stratified-CV macro-F1 on TRAIN ---
+    X, y = df_tr[cols], df_tr["ylabel"]
     min_class = int(y.value_counts().min())
     if min_class < 2:
         rare = sorted(y.value_counts()[lambda s: s < 2].index.tolist())
@@ -96,38 +106,50 @@ def run() -> Path:
     if best_name is None:
         raise RuntimeError("沒有可用的分類器。")
 
-    y_cv = cross_val_predict(build_classifier(best_name, rs), X, y, cv=skf)
+    # Final model trained on TRAIN; honest metrics from the held-out TEST split
+    # (or CV on the whole table when there is no split).
+    clf_pipe = build_classifier(best_name, rs).fit(X, y)
+    if has_split:
+        y_true, y_pred = df_te["ylabel"], clf_pipe.predict(df_te[cols])
+    else:
+        y_true = y
+        y_pred = cross_val_predict(build_classifier(best_name, rs), X, y, cv=skf)
     clf_eval = {
         "model": best_name,
         "feature_set": feature_set,
-        "accuracy": float(accuracy_score(y, y_cv)),
-        "macro_f1": float(f1_score(y, y_cv, average="macro", labels=labels, zero_division=0)),
+        "eval": eval_mode,
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", labels=labels, zero_division=0)),
         "labels": labels,
         "label_zh": {k: HEALTH_LABEL_ZH[k] for k in labels},
-        "confusion_matrix": confusion_matrix(y, y_cv, labels=labels).tolist(),
+        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels).tolist(),
         "per_model_macro_f1": per_model,
-        "n": int(len(y)),
+        "n": int(len(y_true)),
         "placeholder": bool(sv.get("placeholder", True)),
     }
-    clf_pipe = build_classifier(best_name, rs).fit(X, y)
 
-    # --- regressor for DV (held-out CV predictions for honest metrics) ---
+    # --- regressor for DV (held-out test, or CV when no split) ---
     reg_name = "random_forest"
-    yv = df["DV"]
-    from sklearn.model_selection import KFold, cross_val_predict as _cvp
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=rs)
-    dv_cv = _cvp(build_regressor(reg_name, rs), X, yv, cv=kf)
+    yv = df_tr["DV"]
+    reg_pipe = build_regressor(reg_name, rs).fit(X, yv)
+    if has_split:
+        dv_true, dv_pred = df_te["DV"].to_numpy(), reg_pipe.predict(df_te[cols])
+    else:
+        from sklearn.model_selection import KFold, cross_val_predict as _cvp
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=rs)
+        dv_true = yv.to_numpy()
+        dv_pred = _cvp(build_regressor(reg_name, rs), X, yv, cv=kf)
     reg_eval = {
         "model": reg_name,
         "feature_set": feature_set,
-        "mae": float(mean_absolute_error(yv, dv_cv)),
-        "rmse": float(np.sqrt(np.mean((yv.to_numpy() - dv_cv) ** 2))),
-        "r2": float(r2_score(yv, dv_cv)),
-        "n": int(len(yv)),
+        "eval": eval_mode,
+        "mae": float(mean_absolute_error(dv_true, dv_pred)),
+        "rmse": float(np.sqrt(np.mean((dv_true - dv_pred) ** 2))),
+        "r2": float(r2_score(dv_true, dv_pred)),
+        "n": int(len(dv_true)),
         "placeholder": bool(sv.get("placeholder", True)),
     }
-    reg_pipe = build_regressor(reg_name, rs).fit(X, yv)
-    print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R²={reg_eval['r2']:.3f}")
+    print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R²={reg_eval['r2']:.3f}（{eval_mode}）")
 
     # --- persist artifacts (compress=3: keeps the RF regressor well under
     #     GitHub's 50 MB file recommendation; ~96 MB -> ~29 MB) ---
@@ -144,11 +166,12 @@ def run() -> Path:
         "labels": labels,
         "label_zh": {k: HEALTH_LABEL_ZH[k] for k in labels},
         "dv_risk": sv.get("dv_risk", {"low_max": 0.33, "medium_max": 0.66}),
-        "healthy_baseline": _healthy_baseline(df, cols),
+        "healthy_baseline": _healthy_baseline(df_tr, cols),
         "clf_model": best_name,
         "reg_model": reg_name,
         "clf_macro_f1": clf_eval["macro_f1"],
         "reg_r2": reg_eval["r2"],
+        "eval_mode": eval_mode,
         "placeholder": bool(sv.get("placeholder", True)),
     }
     resolve(sv["feature_config"]).write_text(

@@ -6,8 +6,15 @@
 > LLM 維護助理改為**多供應商**（Groq / OpenRouter / Gemini / Anthropic 依序嘗試，
 > 全失敗才用離線範本）；側邊欄補充模組（A/B/B+/C）改為**可收合**（預設收合）。
 > 結構化輸出新增 `consistency_warning`（分類器狀態與 DV 風險矛盾時提醒）；維修問答與維護報告
-> 改用獨立 prompt（問答不再吐整份報告）。**目前以 placeholder 合成資料訓練**，待下載真實
-> PHM 資料後重訓。**已補真實資料載入路徑防護**：欄位 schema 驗證、`ylabel` 數值碼對應
+> 改用獨立 prompt（問答不再吐整份報告）。
+> **已導入真實 PHM 資料並重訓（2026-06-27，`placeholder=false`）**：原始 FMCRD 8 檔 106 GB 以
+> 串流聚合（`build_servo_from_zip.py`，不解壓不爆記憶體、線上統計與 `aggregate_run` 比對誤差 8.8e-13）
+> 產出 **1,465 段特徵**（train 665 / 留出 test 800）；DV 由物理單位（max≈5012）正規化 0..1、依真實分布
+> 重校 `dv_risk`（0.20 / 0.48）。**留出測試結果**：分類 logistic_regression macro-F1 **0.757**、
+> DV 回歸 RandomForest **R²=0.937 / MAE=0.047**；DL 離線 baseline MLP macro-F1 0.711、PCA 重建誤差
+> 隨退化單調上升（LN .02→HI 1.19）。**資料特性如實揭露**：`train_noisy_LO` 原始檔僅含 65 段
+> （非 200，下載偏少），故 train LO 類別偏少；測試集各類 200 段完整。
+> **已補真實資料載入路徑防護**：欄位 schema 驗證、`ylabel` 數值碼對應
 > （`servo.ylabel_map`）、多檔 `run_index` 不再互相合併、DV 超出 0..1 警告（見 §3、§10）。
 > **另補小資料/類別不均的穩健性**：`train_servo` 單樣本類別清楚報錯、`servo_dl` 在無 LN 段或
 > 單樣本時不再崩、訓練模擬器與儀表板頁的非預期例外改為優雅降級（不噴 traceback）、模擬器改用
@@ -115,18 +122,23 @@ torch 與真實時序資料，列為後續工作；雲端 runtime 不跑 DL。**
 ## 9. 重建步驟
 
 ```bash
-python -m src.data.build_servo_dataset   # 無原始資料時自動產生 placeholder 特徵表
-python -m src.models.train_servo         # 訓練 Reference Model（分類 + 回歸）
+# 真實 PHM（FMCRD zip，106 GB）—— 串流聚合、不解壓、每檔 checkpoint 可續跑
+python -m src.data.build_servo_from_zip --zip <FMCRD_Data.zip 路徑>
+#   （無原始資料時改用：python -m src.data.build_servo_dataset 產生 placeholder）
+python -m src.models.train_servo         # 訓練 Reference Model（分類 + 回歸；有 split 則留出評估）
 python -m src.models.servo_dl            # （選用）離線 DL baseline
 streamlit run app/streamlit_app.py       # 首頁主線 = 模組 Servo
 ```
 
-## 10. 待真實資料下載後
+> Windows 主控台若為 cp950，跑訓練請加 `PYTHONUTF8=1`（log 內含 `R²` 等字元）。
 
-1. 將原始 CSV 放入 `data/raw/servo/`，重跑 `build_servo_dataset`（改走真實聚合路徑）。
-   若 schema 驗證報錯，依訊息對齊欄名或在載入前重新命名。
-2. 若 `ylabel` 為數值碼，於 `config.yaml::servo.ylabel_map` 設定對應再重跑。
-3. 重跑 `train_servo`、`servo_dl`；把 `config.yaml::servo.placeholder` 設為 `false`。
-4. 依真實 DV 分布重校 `servo.dv_risk` 風險帶（若載入時出現 DV 超界警告，先正規化）。
-5. 視資料調整聚合粒度（`run_index` / `transitions`）。
+## 10. 真實資料導入（已完成，2026-06-27）
+
+1. ✅ 原始 FMCRD `*.csv`（8 檔、欄位與 `RAW_COLUMNS` 完全吻合、`ylabel` 已是 LN/LO/MED/HI）以
+   `build_servo_from_zip.py` **串流聚合**（不解壓、線上統計、每檔 checkpoint）。途中發現
+   `train_noisy_LO` 的 `i_3p_c` 有少量非數值雜訊 → `pd.to_numeric(errors="coerce")` 容錯。
+2. ✅ DV 為物理單位（max≈5012）→ 正規化 0..1；依真實分布重校 `servo.dv_risk` = 0.20 / 0.48。
+3. ✅ `placeholder=false`；`train_servo` / `servo_dl` 走 **split-aware**（train_* 訓練、test_* 留出）。
+4. ⬜（後續）視資料調整聚合粒度（`run_index` / `transitions`）、或對 train LO 段數偏少補資料。
+5. ⬜（第二部分）取得逐時序後做真正的 1D-CNN / Autoencoder（離線 torch）。
 6. 取得真實時序後再做 1D-CNN / Autoencoder（離線 torch）。
