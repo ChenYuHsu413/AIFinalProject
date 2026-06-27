@@ -278,7 +278,7 @@ function RealPredictionSection({ state }: { state: string }) {
           </Card>
 
           <Link
-            href="/servo/assistant"
+            href={current ? `/servo/assistant?sample=${current.idx}` : "/servo/assistant"}
             className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200 transition-colors hover:bg-violet-500/15"
           >
             <Bot className="mt-0.5 h-4 w-4 shrink-0" />
