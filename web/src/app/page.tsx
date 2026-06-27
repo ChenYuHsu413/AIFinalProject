@@ -87,36 +87,32 @@ export default function Overview() {
           label="監控設備"
           value={s.total}
           unit="台"
-          trend={s.trends.total}
-          footerStrong="本班次新增 1 台"
-          footerMuted="Demo 機群 + 實驗台"
+          footerStrong="示意機群 + 實驗台"
+          footerMuted="身份為 demo，健康為真模型輸出"
         />
         <MetricCard
           label="平均健康分數"
           value={s.avgHealth}
           unit="/100"
-          trend={s.trends.avgHealth}
           valueClassName={s.avgHealth >= 70 ? "text-emerald-400" : "text-amber-400"}
-          footerStrong="較上班次下降"
-          footerMuted="全機群加權平均"
+          footerStrong="全機群加權平均"
+          footerMuted="參考模型即時計算"
         />
         <MetricCard
           label="高風險設備"
           value={s.highRisk}
           unit="台"
-          trend={s.trends.highRisk}
           valueClassName={s.highRisk > 0 ? "text-red-400" : "text-emerald-400"}
-          footerStrong="新增 1 台高風險"
-          footerMuted="風險等級 = High"
+          footerStrong="風險等級 = High"
+          footerMuted="由模型輸出判定"
         />
         <MetricCard
           label="作用中告警"
           value={s.activeAlerts}
           unit="筆"
-          trend={s.trends.activeAlerts}
           valueClassName={s.activeAlerts > 0 ? "text-amber-400" : "text-emerald-400"}
-          footerStrong="新增 2 筆告警"
-          footerMuted="未解決告警事件"
+          footerStrong="未解決告警事件"
+          footerMuted="由 fleet 告警衍生"
         />
       </section>
 

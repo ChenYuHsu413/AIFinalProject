@@ -29,7 +29,8 @@ export function FleetHealthChart() {
       <CardHeader>
         <CardDescription>機群健康趨勢</CardDescription>
         <CardTitle className="text-lg">平均 vs 最低設備健康分數</CardTitle>
-        <CardAction>
+        <CardAction className="flex items-center gap-2">
+          <Badge variant="warning">示意資料</Badge>
           <Badge variant="outline">近 14 班次</Badge>
         </CardAction>
       </CardHeader>
