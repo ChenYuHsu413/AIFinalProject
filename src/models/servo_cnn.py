@@ -1,9 +1,10 @@
 """Phase B — offline 1D-CNN on the raw Servo waveforms (read-only on the cloud).
 
-Trains on the windowed raw-signal dataset from ``build_servo_windows`` (8 physical
-channels × 1024 timesteps): a **1D-CNN classifier** (health state LN/LO/MED/HI) and
-a **1D-conv autoencoder** (fit on healthy windows; reconstruction error rises with
-degradation). Writes ``outputs/metrics/servo_cnn_results.json`` for the dashboard.
+Trains on the raw-signal *energy-envelope* dataset from ``build_servo_windows``
+(8 physical channels × 256 time-blocks — per-block std of the raw waveform): a
+**1D-CNN classifier** (health state LN/LO/MED/HI) and a **1D-conv autoencoder**
+(fit on healthy-train envelopes; test reconstruction error rises with degradation).
+Writes ``outputs/metrics/servo_cnn_results.json`` for the dashboard.
 
 This is the "real CNN" deferred by ``servo_dl`` (which only had MLP + AE on the
 per-run aggregated features). torch lives in ``requirements-dl.txt`` (offline only).
@@ -114,6 +115,7 @@ def run() -> Path:
     yte = y[te]
 
     # --- 1D-CNN classifier ---
+    _set_seed(rs)  # seed before construction so init is independently reproducible
     clf = _CNN(len(channels), len(labels))
     _train(clf, Xtr, ytr, nn.CrossEntropyLoss(), epochs=60, rs=rs, batch=16)
     with torch.no_grad():
@@ -123,17 +125,20 @@ def run() -> Path:
                               labels=list(range(len(labels))), zero_division=0))
     cm = confusion_matrix(yte, pred, labels=list(range(len(labels)))).tolist()
 
-    # --- 1D conv autoencoder: fit on healthy (LN) train windows ---
+    # --- 1D conv autoencoder: fit on healthy (LN) TRAIN envelopes ---
     ln_idx = labels.index("LN") if "LN" in labels else 0
     ln_mask = tr & (y == ln_idx)
     fit = torch.from_numpy(Xs[ln_mask]) if ln_mask.sum() >= 8 else Xtr
+    _set_seed(rs)  # seed before construction so init is independently reproducible
     ae = _ConvAE(len(channels))
     _train(ae, fit, fit, nn.MSELoss(), epochs=60, rs=rs)
+    # Reconstruction error per class on the TEST envelopes only (no in-sample
+    # deflation of the healthy bucket — consistent with the holdout eval).
     with torch.no_grad():
-        recon = ae(torch.from_numpy(Xs)).numpy()
-    err = np.mean((Xs - recon) ** 2, axis=(1, 2))
-    per_class = {lab: float(err[y == i].mean()) for i, lab in enumerate(labels)
-                 if (y == i).any()}
+        recon = ae(Xte).numpy()
+    err = np.mean((Xs[te] - recon) ** 2, axis=(1, 2))
+    per_class = {lab: float(err[yte == i].mean()) for i, lab in enumerate(labels)
+                 if (yte == i).any()}
 
     out = {
         "method": "servo_cnn_1d",

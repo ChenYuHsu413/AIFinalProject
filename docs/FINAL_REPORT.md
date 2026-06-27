@@ -172,8 +172,8 @@ HI 高度退化）+ **退化值 DV 回歸**（0=健康、1=高度退化），並
 | --- | --- | --- |
 | 健康狀態分類（4 類） | Logistic Regression（engineered） | Accuracy 0.759 · macro-F1 **0.757** |
 | 退化值 DV 回歸 | Random Forest（engineered） | MAE 0.047 · RMSE 0.064 · R² **0.937** |
-| 深度學習離線對照（PyTorch） | MLP 分類/回歸 + 神經 autoencoder | MLP macro-F1 0.714 · 回歸 R² 0.959；AE 重建誤差隨退化單調遞增（LN 0.33 → HI 2.15） |
-| **真 1D-CNN（原始波形）** | 1D-CNN 分類 + 1D conv-AE（每段 run 能量包絡 8ch×256） | Accuracy 0.731 · macro-F1 **0.729**（依檔分離留出）；conv-AE 重建誤差 LN 0.40 → HI 0.51 單調遞增 |
+| 深度學習離線對照（PyTorch） | MLP 分類/回歸 + 神經 autoencoder | MLP macro-F1 0.714 · 回歸 R² 0.959；AE 留出重建誤差隨退化單調遞增（LN 0.36 → HI 2.20） |
+| **真 1D-CNN（原始波形）** | 1D-CNN 分類 + 1D conv-AE（每段 run 能量包絡 8ch×256） | Accuracy 0.731 · macro-F1 **0.729**（依檔分離留出）；conv-AE 留出重建誤差 LN 0.40 → HI 0.53 單調遞增 |
 
 > **誠實性**：指標為真實 FMCRD 留出測試（train_* 訓練、test_* 留出）；FMCRD 為高擬真**模擬**資料集，
 > 非真實工廠遙測。`train_noisy_LO` 原始檔僅 65 段（下載偏少）致 train LO 偏少，test 各類 200 完整。

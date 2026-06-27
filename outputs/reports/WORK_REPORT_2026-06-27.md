@@ -106,7 +106,7 @@
   健康 LN-train 擬合、各類重建誤差）取代 PCA。固定種子、CPU、全批 Adam → **可重現**（重跑數字一致）。
   JSON key 不變（向後相容）；新增 `framework` / `architecture`；`method`→`servo_dl_torch`、`note` 改實。
 - **留出測試結果**：MLP macro-F1 **0.714**（sklearn 版 0.711，幾乎一致）、DV 回歸 R² **0.959** / MAE 0.039；
-  AE 重建誤差 **LN 0.33 < LO 0.37 < MED 0.69 < HI 2.15**（隨退化單調上升）。
+  AE 留出重建誤差 **LN 0.36 < LO 0.38 < MED 0.65 < HI 2.20**（隨退化單調上升）。
 - **torch 拆成獨立 `requirements-dl.txt`**（離線訓練專用）：因 HF/root Dockerfile 與 CI 皆裝 `requirements-dev.txt`，
   若把 torch 放 dev 會被拉進雲端映像（~700MB）。故 dev 不含 torch、雲端映像維持精簡；CI 改裝 `requirements-dl.txt` 跑 DL 測試。
 - 前端：`simulator` 頁「PCA 重建誤差」標籤→「神經 autoencoder 重建誤差」；`note` 自 JSON 自動更新（其餘零改）。
@@ -125,7 +125,7 @@
   退化訊號在長時統計、單短窗太雜訊 + 跨檔域偏移。改為**每段 run 一個能量包絡**後大幅改善。
 - **1D-CNN**（`src/models/servo_cnn.py`，PyTorch）：Conv1d[8→16→32→64]+BN+GAP+FC 分類 + 1D conv-AE；
   split 依來源檔分離（無洩漏）、固定種子 → 可重現。留出 **Accuracy 0.731 / macro-F1 0.729**
-  （與聚合模型 0.757 相當）；conv-AE 重建誤差 **LN 0.40 < LO 0.41 < MED 0.45 < HI 0.51** 單調。
+  （與聚合模型 0.757 相當）；conv-AE 留出重建誤差 **LN 0.40 < LO 0.41 < MED 0.44 < HI 0.53** 單調。
   混淆矩陣顯示誤差集中在 LN↔LO（早期退化難分），MED/HI 幾乎全對——合理可解釋。
 - **整合**：後端 `GET /servo/cnn_results`（`services.servo_cnn_results`）；報表頁新增「1D-CNN（原始波形）」卡
   （準確率 / macro-F1 / 輸入規格 + conv-AE 重建誤差條）；原 DL 卡標題正名（「1D-CNN AE / MLP」→「PyTorch MLP + 神經 AE」）。
@@ -134,6 +134,23 @@
 - 新增 `tests/test_servo_cnn.py`（forward 形狀 + run() 在有 npz 時驗證）、後端 `/servo/cnn_results` 測試。
   **全測試 123 passed / 1 skipped**；前端 tsc/eslint/build 全過。
 - docs 同步：`FINAL_REPORT §9`（新增 1D-CNN 列）+未來工作、`MODULE_SERVO_PLAN` 狀態戳/§7/下一步。
+
+## 10. Phase B code review 修正（同日後補）
+
+對 Phase B 跑多角度 code review，確認並修掉：
+
+- **AE 重建誤差由全資料改為 test-only**（`servo_cnn.py` 及為一致性連同 `servo_dl.py`）：原 `recon = ae(Xs)`
+  在 train+test 全資料算，但 eval 標 holdout → LN 含 in-sample 訓練樣本、低估 LN、誇大可分性。
+  改成只在留出 test 上算（CV/placeholder 模式維持全資料相容）。MLP/CNN 分類數字不受影響；
+  recon 更新為 **Phase A LN 0.36→HI 2.20、Phase B LN 0.40→HI 0.53**（皆仍單調）。
+- **`servo_cnn.py` docstring 修正**：誤寫「8 channels × 1024 raw timesteps / windowed」→ 正為「8 通道 ×
+  256 能量包絡（逐塊 std）」，與其餘文件 / JSON note 一致（誠實性）。
+- **`build_servo_windows.py` 穩健性**：(a) `_envelope` 在 NaN drop 後有效列 < ENV_LEN 時回 `None` 並跳過
+  （避免空 block → std=NaN 靜默汙染）；(b) 整塊 run_index 全 NaN 的 chunk `continue`（避免 `part_ri[0]` IndexError）；
+  (c) 移除未使用的 `ylabel` 欄（類別由檔名判定）。
+- **決定性強化**：CNN/AE 各自建構前再 `_set_seed`，使初始化獨立可重現。
+- 誤報未採納：報表頁 recon bar「誇大」（數值同列顯示、78–100% 非 2×）、空 split 守護（檔名固定不會發生）。
+- 重新驗證：`servo_dl` / `servo_cnn` 決定性重跑一致、全測試通過、前端 tsc/eslint 過。
 
 ## 待辦 / 後續
 

@@ -155,11 +155,16 @@ def run() -> Path:
     ae = _AE(in_dim, bottleneck=bottleneck)
     _train(ae, torch.from_numpy(fit_rows), torch.from_numpy(fit_rows),
            nn.MSELoss(), epochs=800, rs=rs)
+    # Reconstruction error per class on the held-out TEST rows when a split is
+    # present (no in-sample deflation of the healthy bucket — consistent with the
+    # holdout eval); fall back to all rows in CV/placeholder mode.
+    eval_mask = (~tr) if has_split else np.ones(len(Xs), dtype=bool)
     with torch.no_grad():
-        recon = ae(torch.from_numpy(Xs)).numpy()
-    err = np.mean((Xs - recon) ** 2, axis=1)
-    per_class = {lab: float(np.mean(err[(df["ylabel"] == lab).to_numpy()]))
-                 for lab in labels}
+        recon = ae(torch.from_numpy(Xs[eval_mask])).numpy()
+    err = np.mean((Xs[eval_mask] - recon) ** 2, axis=1)
+    ylab_eval = df["ylabel"].to_numpy()[eval_mask]
+    per_class = {lab: float(np.mean(err[ylab_eval == lab]))
+                 for lab in labels if (ylab_eval == lab).any()}
 
     out = {
         "method": "servo_dl_torch",

@@ -38,9 +38,11 @@ CHANNELS = [
     "torque", "rotor_speed", "i_3p_a", "i_3p_b", "i_3p_c",
     "direct", "quadrature", "position_error",
 ]
+# ylabel is intentionally absent: the class is taken from the file name in run(),
+# so we never parse the per-row label column here.
 _USECOLS = [
     "rod_demand_pos", "rod_actual_pos", "torque", "rotor_speed",
-    "i_3p_a", "i_3p_b", "i_3p_c", "direct", "quadrature", "run_index", "ylabel",
+    "i_3p_a", "i_3p_b", "i_3p_c", "direct", "quadrature", "run_index",
 ]
 
 ENV_LEN = 256            # envelope length (time-blocks per run)
@@ -50,11 +52,18 @@ _CHUNK = 500_000
 _DEFAULT_ZIP = "C:/Users/alung/Downloads/FMCRD_Data.zip"
 
 
-def _envelope(run_rows: list[np.ndarray]) -> np.ndarray:
-    """Reduce one run's raw signal (T, C) to an energy envelope (C, ENV_LEN)."""
+def _envelope(run_rows: list[np.ndarray]) -> np.ndarray | None:
+    """Reduce one run's raw signal (T, C) to an energy envelope (C, ENV_LEN).
+
+    Returns None if, after dropping NaN rows, there are fewer valid samples than
+    ENV_LEN — np.array_split would then make empty blocks whose std is NaN, which
+    would silently poison training. Such a run is skipped instead.
+    """
     sig = np.concatenate(run_rows, axis=0)        # (T, C)
     sig = sig[~np.isnan(sig).any(axis=1)]
-    blocks = np.array_split(sig, ENV_LEN, axis=0)  # ENV_LEN time-blocks
+    if len(sig) < ENV_LEN:
+        return None
+    blocks = np.array_split(sig, ENV_LEN, axis=0)  # ENV_LEN non-empty time-blocks
     env = np.stack([b.std(axis=0) for b in blocks], axis=1)  # (C, ENV_LEN)
     return env.astype(np.float32)
 
@@ -69,15 +78,19 @@ def _runs_from_file(z: zipfile.ZipFile, name: str) -> list[np.ndarray]:
     def flush():
         nonlocal cur_rows, cur_n
         if cur_n >= MIN_RUN_ROWS:
-            envs.append(_envelope(cur_rows))
+            env = _envelope(cur_rows)
+            if env is not None:
+                envs.append(env)
         cur_rows, cur_n = [], 0
 
     with z.open(name) as f:
         for chunk in pd.read_csv(f, usecols=_USECOLS, chunksize=_CHUNK):
             for c in _USECOLS:
-                if c != "ylabel" and chunk[c].dtype == object:
+                if chunk[c].dtype == object:
                     chunk[c] = pd.to_numeric(chunk[c], errors="coerce")
             chunk = chunk[chunk["run_index"].notna()]
+            if chunk.empty:  # whole chunk had unparseable run_index — nothing to fold
+                continue
             chunk["run_index"] = chunk["run_index"].astype("int64")
             chunk["position_error"] = chunk["rod_actual_pos"] - chunk["rod_demand_pos"]
             ri = chunk["run_index"].to_numpy()
