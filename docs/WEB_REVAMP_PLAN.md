@@ -82,7 +82,7 @@
 - AI4I 2020 為**合成資料**，非真實伺服馬達。
 - IMS Set 2 為**單軌跡**，結果不得宣稱可泛化；不在單軌跡做深度 RUL 回歸。
 - Paderborn 為**真實 PMSM 試驗台**訊號（非產線伺服馬達）、含人工/真實兩種損傷、屬**故障分類非 RUL**、為子集 MVP。
-- Servo 主線目前以 **placeholder 合成資料**訓練。
+- Servo 主線已以**完整真實 PHM FMCRD 資料集**訓練（2026-06-27，`placeholder=false`）；FMCRD 為高擬真**模擬**、非工廠遙測。
 - Servo 結構化輸出的 `consistency_warning`（分類器狀態與 DV 風險矛盾時提醒）必須保留。
 - LLM 助理定位為輔助、不直接控制馬達；金鑰遷移到 server 端。
 

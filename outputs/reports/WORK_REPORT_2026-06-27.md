@@ -1,7 +1,8 @@
 # 工作報告 — 2026-06-27
 
 > **狀態（2026-06-27）**：本日為大改動日，主線完成**真實 PHM 資料導入重訓**、**Next.js 前端
-> 互動化**、**資料溯源證明**、**部署修正**與一輪**完整 code review + 清理**。承接
+> 互動化**、**資料溯源證明**、**部署修正**與一輪**完整 code review + 清理**；另補**真實資料導入後的
+> 過時文字收尾 + 報表頁擴充**（設備別比較 / 告警統計，見 §7）。承接
 > [`WORK_REPORT_2026-06-26.md`](WORK_REPORT_2026-06-26.md)。相關文件：
 > [`../../docs/MODULE_SERVO_PLAN.md`](../../docs/MODULE_SERVO_PLAN.md)、
 > [`../../docs/DATA_PROVENANCE.md`](../../docs/DATA_PROVENANCE.md)、
@@ -80,7 +81,23 @@
 - Next.js：`tsc` + `eslint` + `next build`（22 路由）全過。
 - 端點契約：FastAPI TestClient 逐一比對回傳形狀與前端 TypeScript interface 吻合。
 
+## 7. 真實資料導入後的過時文字收尾 + 報表頁擴充（同日後補）
+
+切到真實 PHM FMCRD（`placeholder=false`）那次大改，留下一批**寫死的「仍是 placeholder 合成」文字**未同步——
+盤點全專案後修正（條件式 `placeholder` 警告會自動失效，故不動；只改寫死處）：
+
+- **前端過時文字**：`about/page.tsx`（三軌定位 Servo 資料列 + 第一條誠實性聲明）、`streamlit_app.py` about 頁
+  總覽段——皆由「placeholder 合成 / 待真實 PHM 替換」改為「已導入真實 PHM FMCRD（高擬真**模擬**、非工廠遙測）」。
+- **文件同步**：`FINAL_REPORT.md`（§1 前提、§4 資料表、§9 成果表指標 0.748/0.733→**留出 0.757 / R² 0.937 / MAE 0.047**、
+  §12 結果彙整、§13 誠實聲明 + 頂部狀態戳）、`MODULE_SERVO_PLAN.md` §1、`DEMO_SCRIPT.md` 開場白 + Q&A、
+  `data/README.md` 狀態戳、`WEB_REVAMP_PLAN.md` 誠實性紅線。歷史工作報告（06-25 等）不動。
+- **報表頁擴充**（原 placeholder 提示承諾「接真實資料後擴充」，前置條件已達成）：`web/.../reports/page.tsx`
+  新增**設備別比較**（`/servo/fleet`，recharts 長條 + DV / 風險）與**告警統計**（`/servo/alerts`，嚴重度
+  KPI + 類型分布），皆標示真實模型來源 / mock fallback。**時間區間彙整**如實留待逐時遙測串流（仍為示意 mock）。
+- 驗證：前端 `tsc` + `eslint` + `next build`（22 路由）全過；`streamlit_app.py` py_compile 過。
+
 ## 待辦 / 後續
 
 - HF 後端重新部署（推最新 main；新端點 + 三組 parquet + 溯源圖已就緒，設定不需改）。
 - 後續可做：真正的 1D-CNN / Autoencoder（離線 torch、真實時序）、Paderborn MCSA 頻譜邊帶特徵。
+- 報表頁**時間區間彙整**：待實場 / IoT 逐時遙測串流接入後補上。

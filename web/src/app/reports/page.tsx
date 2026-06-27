@@ -3,19 +3,36 @@
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import Link from "next/link";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { MetricCard } from "@/components/dashboard/MetricCard";
+import { HealthBadge, RiskBadge } from "@/components/dashboard/badges";
 import { Card, Note, PageTitle } from "@/components/ui-kit";
 import {
   apiGet,
   type ServoModelInfo,
   type ServoReferenceMetrics,
 } from "@/lib/api";
+import { useFleet } from "@/lib/fleet";
+import { useFleetOps } from "@/lib/ops";
+import type { Equipment, FleetAlert } from "@/lib/mock";
+import { HEALTH_COLOR } from "@/lib/servo";
 
 export default function ReportsPage() {
   const [ref, setRef] = useState<ServoReferenceMetrics | null>(null);
   const [info, setInfo] = useState<ServoModelInfo | null>(null);
   const [err, setErr] = useState(false);
+  const { fleet, source: fleetSource } = useFleet();
+  const { alerts, source: opsSource } = useFleetOps();
 
   useEffect(() => {
     (async () => {
@@ -36,7 +53,7 @@ export default function ReportsPage() {
     <div className="mx-auto max-w-5xl px-6 py-8">
       <PageTitle
         title="報表中心"
-        desc="參考模型評估指標與訓練結果彙整（接後端 /servo/reference_metrics）"
+        desc="參考模型評估指標、設備別健康比較與告警統計（接後端 /servo/reference_metrics、/servo/fleet、/servo/alerts）"
       />
 
       {err && (
@@ -109,11 +126,196 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      <EquipmentComparison fleet={fleet} source={fleetSource} />
+
+      <AlarmStatistics alerts={alerts} source={opsSource} />
+
       <Note tone="info" className="mt-6">
-        更多報表（時間區間彙整、設備別比較、告警統計）將於 Servo Dataset
-        模組接真實資料後擴充。
+        <b>時間區間彙整</b>（逐班次 / 逐日趨勢）需逐時遙測串流；目前遙測趨勢仍為示意 mock
+        （見健康儀表板標示），待實場 / IoT 串流接入後補上。
       </Note>
     </div>
+  );
+}
+
+const SEVERITY_META: Record<
+  "critical" | "warning" | "info",
+  { label: string; hex: string; cls: string }
+> = {
+  critical: { label: "嚴重", hex: "#f87171", cls: "text-red-400" },
+  warning: { label: "警示", hex: "#fbbf24", cls: "text-amber-400" },
+  info: { label: "提示", hex: "#60a5fa", cls: "text-sky-400" },
+};
+
+function EquipmentComparison({
+  fleet,
+  source,
+}: {
+  fleet: Equipment[];
+  source: "model" | "mock";
+}) {
+  const data = fleet.map((u) => ({
+    name: u.name,
+    health: u.healthScore,
+    state: u.state,
+    degradation: u.degradation,
+    risk: u.risk,
+  }));
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">設備別比較</h2>
+      {source === "model" ? (
+        <Note tone="info" className="mb-4">
+          各設備健康分數 / 退化值 (DV) 由<b>真實參考模型</b>在代表性 demo 運轉段上即時計算
+          （後端 <code className="font-mono">/servo/fleet</code>）；設備識別為示意。
+        </Note>
+      ) : (
+        <Note tone="warn" className="mb-4">
+          後端未連線，以下為 mock fallback；連線後改由 <code className="font-mono">/servo/fleet</code> 即時衍生。
+        </Note>
+      )}
+
+      <Card title="健康分數（依設備）">
+        <div className="h-[240px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-border"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                className="text-muted-foreground"
+                tickLine={false}
+                axisLine={false}
+                width={36}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                contentStyle={{
+                  background: "var(--popover)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "var(--popover-foreground)",
+                }}
+                labelStyle={{ color: "var(--muted-foreground)" }}
+                formatter={(value) => [`${value}`, "健康分數"]}
+              />
+              <Bar dataKey="health" radius={[4, 4, 0, 0]} maxBarSize={64}>
+                {data.map((d) => (
+                  <Cell key={d.name} fill={HEALTH_COLOR[d.state]?.hex ?? "#94a3b8"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="mt-4 space-y-1.5">
+          {fleet.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-1.5 text-sm last:border-0"
+            >
+              <span className="font-medium">{u.name}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">DV {u.degradation.toFixed(2)}</span>
+                <HealthBadge state={u.state} />
+                <RiskBadge level={u.risk} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function AlarmStatistics({
+  alerts,
+  source,
+}: {
+  alerts: FleetAlert[];
+  source: "model" | "mock";
+}) {
+  const sev = { critical: 0, warning: 0, info: 0 };
+  for (const a of alerts) sev[a.severity] += 1;
+  const active = alerts.filter((a) => a.status !== "resolved").length;
+
+  const byType = Object.entries(
+    alerts.reduce<Record<string, number>>((m, a) => {
+      m[a.type] = (m[a.type] ?? 0) + 1;
+      return m;
+    }, {}),
+  ).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">告警統計</h2>
+      {source === "model" ? (
+        <Note tone="info" className="mb-4">
+          告警由<b>真實模型驅動的機群</b>衍生（後端 <code className="font-mono">/servo/alerts</code>）；
+          事件 ID / 時間屬示意性運維包裝。
+        </Note>
+      ) : (
+        <Note tone="warn" className="mb-4">
+          後端未連線，以下為 mock fallback；連線後改由 <code className="font-mono">/servo/alerts</code> 即時衍生。
+        </Note>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {(["critical", "warning", "info"] as const).map((k) => (
+          <MetricCard
+            key={k}
+            label={`${SEVERITY_META[k].label}告警`}
+            value={sev[k]}
+            unit="筆"
+            valueClassName={sev[k] > 0 ? SEVERITY_META[k].cls : "text-emerald-400"}
+            footerMuted={`severity = ${k}`}
+          />
+        ))}
+      </div>
+
+      <Card title="告警類型分布" className="mt-4">
+        <p className="mb-3 text-xs text-muted-foreground">
+          共 {alerts.length} 筆告警，其中 {active} 筆未結案。
+        </p>
+        {byType.length > 0 ? (
+          <div className="space-y-2">
+            {byType.map(([type, n]) => {
+              const pct = Math.round((n / Math.max(1, alerts.length)) * 100);
+              return (
+                <div key={type} className="text-sm">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-muted-foreground">{type}</span>
+                    <span className="font-medium tabular-nums">{n} 筆 · {pct}%</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">目前無告警。</p>
+        )}
+      </Card>
+    </section>
   );
 }
 

@@ -31,7 +31,8 @@
 - 這是**模擬資料**，**不是**真實工廠伺服馬達 log；比軸承資料更接近伺服系統，但仍須如實揭露。
 - 任務為 **health state estimation（分類）+ degradation value 回歸**。
 - `run_index` 為運轉段索引，**不**等於剩餘壽命（RUL）；本模組**不宣稱 RUL**。
-- 目前產物以 **placeholder 合成資料**訓練（`config.yaml::servo.placeholder: true`），僅供流程展示。
+- 目前產物已以**完整真實 PHM FMCRD 資料集**訓練（`config.yaml::servo.placeholder: false`，2026-06-27 導入）；
+  FMCRD 為高擬真**模擬**資料集，非真實工廠 log（見上方狀態戳與 §3）。
 
 ## 2. 任務定義
 

@@ -1,7 +1,8 @@
 # 模組 Servo（專案主線）— PHM Servomotor-Driven Ballscrew Degradation Dataset
 
-> **狀態（2026-06-25）**：主線資料。目前以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
-> 詳見 [`../docs/MODULE_SERVO_PLAN.md`](../docs/MODULE_SERVO_PLAN.md)。
+> **狀態（2026-06-27）**：主線資料。已導入**完整真實 PHM FMCRD 資料集**（106.66 GB）並重訓
+> （`config.yaml::servo.placeholder=false`）；FMCRD 為高擬真**模擬**資料集，非真實工廠 log。
+> 詳見 [`../docs/MODULE_SERVO_PLAN.md`](../docs/MODULE_SERVO_PLAN.md)、[`../docs/DATA_PROVENANCE.md`](../docs/DATA_PROVENANCE.md)。
 
 伺服馬達驅動滾珠螺桿機構的退化資料（**模擬資料，非真實工廠 log**）。任務為健康狀態
 分類（`ylabel`：LN/LO/MED/HI）與退化值回歸（`DV`）；`run_index` **不**等於 RUL。

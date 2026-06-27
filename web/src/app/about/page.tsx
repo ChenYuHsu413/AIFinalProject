@@ -4,7 +4,7 @@ const TRACKS = [
   {
     code: "Servo（主線）",
     name: "伺服馬達健康估測",
-    data: "Servo 退化資料（目前 placeholder 合成）",
+    data: "PHM FMCRD 伺服馬達退化（高擬真模擬）",
     task: "健康狀態分類 + 退化值 DV 回歸",
     tone: "text-violet-300",
   },
@@ -39,7 +39,7 @@ const TRACKS = [
 ];
 
 const DISCLAIMERS = [
-  "Servo 主線目前以 placeholder 合成資料訓練，非真實 PHM 伺服馬達資料；機群健康為參考模型在 demo 運轉段上的即時輸出，遙測趨勢 / 告警排程為示意。",
+  "Servo 主線已以完整真實 PHM FMCRD 資料集（106.66 GB）重訓；FMCRD 為高擬真模擬資料集，非真實工廠伺服馬達遙測——「真實」指完整大型公開 PHM 資料集本身（相對於先前 placeholder 合成）。機群健康為參考模型在代表性 demo 運轉段上的即時輸出，設備識別與遙測趨勢 / 告警排程為示意包裝。",
   "AI4I 2020 為合成資料，不得宣稱為真實伺服馬達資料。",
   "IMS Set 2 為單軌跡，其結果不可泛化到其他軸承 / 馬達；不在單軌跡上做深度 RUL 回歸。",
   "Paderborn 為真實 PMSM 試驗台訊號（MCSA 成立），但屬試驗台、非產線伺服馬達；含人工與真實兩種損傷，須如實呈現泛化落差；屬故障分類非 RUL；為子集 MVP。",

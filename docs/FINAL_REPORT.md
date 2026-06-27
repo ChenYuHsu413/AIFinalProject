@@ -2,7 +2,8 @@
 
 > **狀態（2026-06-27）**：完整書面報告。涵蓋主線 **模組 Servo** 與對照軌 **A / B / B+ / C**、
 > 系統實作（FastAPI 後端 + Next.js Command Center 前端 + LLM 維護助理 + 知識庫）與部署
-> （Vercel + Hugging Face Spaces）。數字取自 `outputs/metrics/` 已提交之評估檔。
+> （Vercel + Hugging Face Spaces）。數字取自 `outputs/metrics/` 已提交之評估檔；主線 Servo 已同步為
+> **真實 PHM FMCRD 留出測試**結果（非先前 placeholder 合成）。
 > 線上 Demo：Next.js Command Center（Vercel）+ 後端（HF Spaces）。
 > 相關文件：[`REPORT_OUTLINE.md`](REPORT_OUTLINE.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 > [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)、
@@ -26,8 +27,9 @@
 並以馬達電流補上電氣模態**。系統另含 **AI 訓練模擬器**、**LLM 多供應商維護助理**、
 **TF-IDF 維修知識庫**，並以 **Next.js Command Center** 前端整合為工業監控介面。
 
-> **誠實性前提**：主線 Servo 目前以 **placeholder 合成資料** 運作（待真實 PHM 資料替換）；
-> AI4I 為合成資料；IMS 為單軌跡；Paderborn 為真實 PMSM 試驗台（非產線伺服馬達）。各結果均如實標示。
+> **誠實性前提**：主線 Servo 已以**完整真實 PHM FMCRD 資料集（106.66 GB）** 重訓（`config.yaml::servo.placeholder=false`）；
+> FMCRD 為**高擬真模擬**資料集（非真實工廠遙測）。AI4I 為合成資料；IMS 為單軌跡；Paderborn 為真實 PMSM
+> 試驗台（非產線伺服馬達）。各結果均如實標示。
 
 ---
 
@@ -60,13 +62,13 @@
 
 | 模組 | 資料集 | 型態 | 真實性 | 目標 |
 | --- | --- | --- | --- | --- |
-| Servo | PHM 伺服馬達退化（目前 placeholder 合成） | 多通道時域聚合特徵 | ⚠️ 合成 placeholder | 健康狀態分類 + DV 回歸 |
+| Servo | PHM **FMCRD** 伺服馬達退化（106.66 GB） | 多通道時域聚合特徵 | 真實 PHM 資料集（高擬真**模擬**，非工廠遙測） | 健康狀態分類 + DV 回歸 |
 | A | UCI **AI4I 2020** | 單筆製程點 | 合成 | 故障二元分類 |
 | B | NASA/**IMS** Set 2 | 20 kHz 振動 run-to-failure | 實測（單軌跡） | 健康度 / RUL |
 | B+ | **XJTU-SY** | 25.6 kHz 振動，15 顆 / 3 工況 | 實測（多軌跡） | 跨軸承 / 工況泛化 |
 | C | **Paderborn** | 64 kHz 電流 + 振動 | 實測（試驗台，真實+人工損傷） | 故障分類（健康/外環/內環） |
 
-**關鍵限制（詳見 §14 誠實性聲明）**：AI4I 與 Servo placeholder 為合成；IMS 為單軌跡不可泛化；
+**關鍵限制（詳見 §14 誠實性聲明）**：AI4I 為合成；Servo FMCRD 為高擬真**模擬**（非工廠遙測）；IMS 為單軌跡不可泛化；
 XJTU 為軸承試驗台（非伺服馬達本體，以「旋轉機械 / 電動機」為方法範疇）；Paderborn 為 PMSM
 **試驗台**且含人工與真實兩類損傷。原始大型資料集（IMS/XJTU/Paderborn raw，約 21 GB）不進 git。
 
@@ -164,16 +166,17 @@ XJTU 為軸承試驗台（非伺服馬達本體，以「旋轉機械 / 電動機
 HI 高度退化）+ **退化值 DV 回歸**（0=健康、1=高度退化），並衍生健康分數、風險等級、主要異常特徵、
 模型信心與建議處置。
 
-**參考模型成果**（⚠️ 目前以 **placeholder 合成資料** 訓練，n=6000）：
+**參考模型成果**（真實 PHM **FMCRD** 資料集，**split-aware 留出測試** n=800）：
 
 | 任務 | 模型 | 指標 |
 | --- | --- | --- |
-| 健康狀態分類（4 類） | Logistic Regression（engineered） | Accuracy 0.748 · macro-F1 **0.748** |
-| 退化值 DV 回歸 | Random Forest（engineered） | MAE 0.135 · RMSE 0.169 · R² **0.733** |
-| 深度學習離線對照 | MLP + PCA 重建誤差 | MLP macro-F1 0.733 · 回歸 R² 0.759；PCA 重建誤差隨退化遞增（LN 0.30 → HI 1.81） |
+| 健康狀態分類（4 類） | Logistic Regression（engineered） | Accuracy 0.759 · macro-F1 **0.757** |
+| 退化值 DV 回歸 | Random Forest（engineered） | MAE 0.047 · RMSE 0.064 · R² **0.937** |
+| 深度學習離線對照 | MLP + PCA 重建誤差 | MLP macro-F1 0.711 · 回歸 R² 0.912；PCA 重建誤差隨退化單調遞增（LN 0.02 → HI 1.18） |
 
-> **誠實性**：上述數字僅供**流程展示**；下載真實 PHM 伺服馬達資料重訓後方為正式結果。一致性檢查：
-> 分類器健康狀態與 DV 風險矛盾時輸出 `consistency_warning`。
+> **誠實性**：指標為真實 FMCRD 留出測試（train_* 訓練、test_* 留出）；FMCRD 為高擬真**模擬**資料集，
+> 非真實工廠遙測。`train_noisy_LO` 原始檔僅 65 段（下載偏少）致 train LO 偏少，test 各類 200 完整。
+> 一致性檢查：分類器健康狀態與 DV 風險矛盾時輸出 `consistency_warning`。
 
 **AI 訓練模擬器**：使用者可選資料量 / 特徵組 / 演算法，在後端即時訓練小模型（<0.4 s）並與離線
 Reference Model 對照，教學「資料量、特徵選擇與演算法如何影響表現」。
@@ -219,15 +222,15 @@ Servo 健康儀表板、設備詳情頁（`/equipment/[id]`，橋接真模型預
 | B（IMS） | 健康度 / RUL | 失效前 3.12 天偵測 · 退化區 MAE 25 h | 單軌跡可偵測退化，絕對 RUL 受外推牆限制 |
 | B+（XJTU） | 多軌跡泛化 | 15/15 偵測 FPT · LOCO R² −1.22→−0.92 | 健康監測可泛化、絕對 RUL 跨工況受限 |
 | C（Paderborn） | 電流故障分類 | baseline F1 1.0 → 真實 F1 0.20（gap 0.80） | 人工故障訓練無法直接泛化到真實損傷 |
-| Servo（主線） | 健康分類 + DV | macro-F1 0.748 · DV R² 0.733（placeholder） | 流程完整，待真實 PHM 資料替換 |
+| Servo（主線） | 健康分類 + DV | macro-F1 0.757 · DV R² 0.937（真實 FMCRD 留出） | 真實 PHM 資料留出測試，流程完整 |
 
 ---
 
 ## 13. 誠實性聲明（報告防禦紅線）
 
 1. **AI4I 2020** 為合成資料，不得宣稱為真實伺服馬達資料。
-2. **Servo 主線** 目前以 placeholder 合成資料運作；機群健康為真模型在 demo 樣本上的輸出、
-   遙測趨勢/告警排程為示意，皆非真實 PHM 遙測。
+2. **Servo 主線** 已以完整真實 PHM **FMCRD** 資料集重訓；FMCRD 為高擬真**模擬**資料集，非真實工廠遙測。
+   機群健康為真模型在代表性 demo 運轉段上的輸出、設備識別與遙測趨勢/告警排程為示意包裝。
 3. **IMS Set 2** 為單軌跡，結果不可泛化到其他軸承/馬達；不在單軌跡上做深度 RUL 回歸。
 4. **XJTU/IMS** 為軸承試驗台資料（非伺服馬達本體）；以「旋轉機械 / 電動機」為方法範疇、伺服馬達為應用情境。
 5. **Paderborn** 為真實 PMSM **試驗台**（非產線伺服馬達）；含人工與真實兩類損傷，須如實呈現泛化落差；屬分類非 RUL；為子集 MVP。
