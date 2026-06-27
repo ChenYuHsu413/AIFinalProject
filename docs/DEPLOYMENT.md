@@ -176,6 +176,8 @@ sudo journalctl -u servo-frontend -f
    - `deploy/huggingface/README.md`   → 放成 **`README.md`**（其 YAML frontmatter 已設 `app_port: 7860`）
    - 後端程式碼：`src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`
    - 模型與指標：`outputs/models/`、`outputs/metrics/`（已隨本 repo 提交）
+   - **圖檔：`outputs/figures/`**（後端以 `GET /figures/*.png` 靜態提供，前端 `<img src>`；
+     如資料溯源圖 `servo_provenance.png`。**（2026-06-27 加入白名單）**，缺了相關圖會 404。）
    - **執行期資料（缺了相關端點會 503 / available:false）**：`data/processed/servo_features.parquet`、
      `servo_feature_demo.csv`、`servo_sample_predictions.csv`（`/servo/simulate`、`/servo/samples`、
      `/servo/fleet` 必需）；**（2026-06-27 新增）** `paderborn_features.parquet`（`/paderborn/samples`

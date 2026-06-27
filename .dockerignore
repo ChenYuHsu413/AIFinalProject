@@ -22,13 +22,15 @@ tests
 scripts
 
 # Auto-generated runtime artefacts. For docker-compose these are volume-mounted
-# (so excluded from the image), BUT the *committed* models / metrics / processed
-# servo data must stay in the build context so the Hugging Face image
+# (so excluded from the image), BUT the *committed* models / metrics / figures /
+# processed servo data must stay in the build context so the Hugging Face image
 # (deploy/huggingface/Dockerfile, which has no volumes) can COPY them.
-# See docs/DEPLOYMENT.md §9.
+# outputs/figures is served by the backend at GET /figures/*.png (e.g. the data
+# provenance figure servo_provenance.png). See docs/DEPLOYMENT.md §9.
 outputs/*
 !outputs/models
 !outputs/metrics
+!outputs/figures
 data/raw
 data/processed/*
 !data/processed/servo_features.parquet

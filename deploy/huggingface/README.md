@@ -38,7 +38,9 @@ pinned: false
 `Dockerfile`、把這份檔放成 Space 根目錄的 `README.md`，並一併附上後端程式碼**與執行期資料**：
 
 - `src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`
-- `outputs/models/`、`outputs/metrics/`（模型 + 評估 JSON）
+- `outputs/models/`、`outputs/metrics/`、`outputs/figures/`（模型 + 評估 JSON + 圖檔；
+  圖檔由後端 `GET /figures/*.png` 提供，如資料溯源圖 `servo_provenance.png`——
+  **2026-06-27 將 `outputs/figures` 加入 `.dockerignore` 白名單**，缺了相關圖會 404）
 - **`data/processed/servo_features.parquet`、`servo_feature_demo.csv`、`servo_sample_predictions.csv`**
   （`/servo/simulate`、`/servo/samples`、`/servo/fleet` 必需，缺了會 **503**）
 - `data/knowledge/`（`/knowledge/*` 用）
