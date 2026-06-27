@@ -19,12 +19,17 @@ pinned: false
 
 - Servo 主線：`/servo/predict`、`/servo/fleet`、`/servo/alerts`、`/servo/work_orders`、
   `/servo/simulate`、`/servo/assistant/*`
-- 模組 A / C：`/predict`、`/predict/batch`、`/batch_predict`、`/metrics`、`/paderborn/eval`
+- 模組 A / C：`/predict`、`/predict_full`、`/predict/batch`、`/batch_predict`、`/metrics`、
+  `/metrics/test_predictions`、`/paderborn/eval`、`/paderborn/samples`、`/paderborn/predict`（即時推論）
+- 模組 B+：`/xjtu/generalization`、`/xjtu/lobo_loco`、`/xjtu/rul_predictions`、
+  `/xjtu/health_overlay`、`/xjtu/replay/*`、`/maintenance/advice`（皆由已提交產物驅動）
 - 知識庫：`/knowledge/*`
 - 健康檢查：`/health`、Swagger：`/docs`
 
-> IMS / XJTU 原始大型資料集未隨 Space 打包，`/ims/*`、`/xjtu/*` 會回 `available:false`
-> （前端會優雅降級）；其餘端點正常。
+> **狀態（2026-06-27）**：`data/processed/{paderborn,xjtu}_features.parquet` 已納入 build context，
+> 故**模組 C 即時推論**與 **B+ 全頁（E2/E3/泛化/HI 重疊）雲端可運作**。僅 **IMS**（`/ims/*`，其
+> 處理後 parquet 未打包）仍回 `available:false`、前端優雅降級；如需 IMS 雲端互動，把
+> `data/processed/ims_set2_features.parquet` 加入 `.dockerignore` 白名單即可。
 
 ## 怎麼建立此 Space
 

@@ -34,6 +34,8 @@ data/processed/*
 !data/processed/servo_features.parquet
 !data/processed/servo_feature_demo.csv
 !data/processed/servo_sample_predictions.csv
+!data/processed/paderborn_features.parquet
+!data/processed/xjtu_features.parquet
 
 # Local logs
 *.log

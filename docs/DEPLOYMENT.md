@@ -176,9 +176,11 @@ sudo journalctl -u servo-frontend -f
    - `deploy/huggingface/README.md`   → 放成 **`README.md`**（其 YAML frontmatter 已設 `app_port: 7860`）
    - 後端程式碼：`src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`
    - 模型與指標：`outputs/models/`、`outputs/metrics/`（已隨本 repo 提交）
-   - **執行期資料（缺了相關端點會 503）**：`data/processed/servo_features.parquet`、
+   - **執行期資料（缺了相關端點會 503 / available:false）**：`data/processed/servo_features.parquet`、
      `servo_feature_demo.csv`、`servo_sample_predictions.csv`（`/servo/simulate`、`/servo/samples`、
-     `/servo/fleet` 必需）與 `data/knowledge/`（`/knowledge/*`）
+     `/servo/fleet` 必需）；**（2026-06-27 新增）** `paderborn_features.parquet`（`/paderborn/samples`
+     → 模組 C 即時推論）、`xjtu_features.parquet`（`/xjtu/replay`、`/xjtu/health_overlay` → 模組 B+
+     E3／HI 重疊）；以及 `data/knowledge/`（`/knowledge/*`）。以上皆已在 `.dockerignore` 白名單。
    - 連同本 repo 的 `.dockerignore`（已調好讓上述已提交檔留在 build context；無此檔則 COPY 會抓不到）
    - 最快做法：把本專案 repo 整包推到 Space remote（已提交的 `outputs/`、`data/processed/servo_*`、
      `data/knowledge/` 會一起進去），再用上面兩個檔覆蓋根目錄的 `Dockerfile`/`README.md`。
