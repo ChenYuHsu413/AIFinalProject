@@ -1,14 +1,15 @@
 # AI 伺服馬達健康狀態估測與智慧維護助理系統
 
-> **狀態（2026-06-26）**：主線已重構為 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，
-> 健康狀態估測 + 退化值回歸），並加入 **AI 訓練模擬器 / 馬達欄位解釋 / LLM 維護助理 /
-> 維修知識庫(RAG) / 深度學習離線 baseline**。LLM 維護助理為**多供應商**（Groq / OpenRouter /
-> Gemini 免費模型 / Anthropic 依序嘗試，全失敗才用離線範本），金鑰以 `.env` 設定；側邊欄
-> 補充模組（A/B/B+/C）改為**可收合**（預設收合）。原 Model A/B/B+/C 保留為**對照與歷史補充**。
-> 目前 Servo 以 placeholder 合成資料運作，待下載真實 PHM 資料替換。
-> 細節見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md)。
-> 近期修正：維修問答與維護報告改用獨立 prompt（問答不再吐整份報告）、分類器健康狀態與
-> 退化值風險矛盾時輸出 `consistency_warning`、LLM 助理頁的報告與問答結果各自保留不互相覆蓋。
+> **狀態（2026-06-27）**：主線 **模組 Servo**（PHM 伺服馬達滾珠螺桿退化資料，健康狀態估測 +
+> 退化值回歸）已**導入完整真實 PHM FMCRD 資料集（106 GB）並重訓**（`placeholder=false`）：
+> 串流聚合 8 檔 / ~4.4 億列 → 1,465 段特徵，**留出測試**（train 檔訓練、test 檔評估）分類
+> macro-F1 **0.757**、DV 回歸 R² **0.937**；附可獨立重驗的**資料溯源**（CRC32 指紋 + 圖 +
+> `GET /servo/provenance` + 儀表板面板）。誠實性：FMCRD 為高擬真**模擬**資料集（非真實工廠遙測）。
+> 另含 AI 訓練模擬器 / 馬達欄位解釋 / LLM 維護助理（多供應商：Groq / OpenRouter / Gemini /
+> Anthropic 依序，全失敗才用離線範本）/ 維修知識庫(RAG) / 深度學習離線 baseline。
+> **Next.js 前端互動化**：B+ 延伸應用（E2 維護建議 / E3 串流回放 / LOBO-LOCO）、模組 C 即時推論、
+> 模組 A 互動門檻調節器；儀表板→LLM 助理可帶入所選樣本。原 Model A/B/B+/C 保留為**對照與歷史補充**。
+> 細節見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md)、[`docs/DATA_PROVENANCE.md`](docs/DATA_PROVENANCE.md)。
 
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)
@@ -806,7 +807,7 @@ docker compose up -d
 `.github/workflows/ci.yml` 在每次 push / PR 到 `main` 或 `master` 時自動：
 
 1. **語法檢查** — `python -m compileall src app tests scripts`
-2. **單元測試** — `pytest -v`（50 通過 / 1 依環境跳過，均使用合成資料，**不需要** AI4I CSV）
+2. **單元測試** — `pytest -v`（**119 通過 / 1 依環境跳過**；多用合成 fixture 或已提交產物，**不需要**原始大型資料集）
 3. **Docker build smoke test** — 用 buildx 建出映像並執行 `python -c "import ..."` 驗證模組可載入
 
 矩陣同時跑 **Python 3.11** 與 **3.12**。pip cache 由 `actions/setup-python` 提供，
