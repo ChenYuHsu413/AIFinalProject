@@ -1,6 +1,6 @@
 # Prompt 紀錄 — 2026-06-20 session
 
-> 由 `conversation-2026-06-20-174842.txt`(Claude Code 終端匯出)抽取,共 11 則使用者
+> 由 Claude Code 終端匯出之原始逐字稿抽取(原始檔已移除,本檔為策展後紀錄),共 11 則使用者
 > prompt。純 UI 斜線指令(`/model`)未列入。本日為專案 Day 1:從零建立模組 A(AI4I
 > 2020 預測性維護原型),以 CRISP-DM 流程完成全棧 → 中文化 → 加 SHAP / 互動閾值 →
 > 二階段故障類型 + What-if → 超參數調整 + 模型卡 → Docker + CI → 推送 GitHub +

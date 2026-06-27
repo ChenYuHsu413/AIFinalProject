@@ -35,11 +35,6 @@ beautifulsoup4>=4.12
 # Testing
 pytest>=7.4
 
-# Optional — manual Streamlit UI QA only (scripts/verify_dashboard_clicks.py).
-# Left commented so it stays OUT of the Hugging Face image (which installs this
-# file). To run that script locally: uncomment, then `playwright install chromium`.
-# playwright>=1.40
-
 # Jupyter (for the EDA notebook)
 jupyter>=1.0
 ipykernel>=6.27

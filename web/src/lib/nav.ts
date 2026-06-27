@@ -100,7 +100,11 @@ export const ACCENTS: Record<
   },
 };
 
-/** Mirrors the Streamlit NAV_GROUPS so the two UIs stay in sync. */
+/**
+ * Servo + supplementary module groups mirror the Streamlit NAV_GROUPS; the
+ * Next.js app additionally has an Ops Center (alerts / reports) with no Streamlit
+ * equivalent, so this is a superset rather than a 1:1 mirror.
+ */
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: null,
