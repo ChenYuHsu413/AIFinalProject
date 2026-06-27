@@ -857,7 +857,8 @@ docker run --rm pmm-app:ci python -c "from src.models import predict, explain, t
 ### 未來工作（已排序）
 - **模組 C 延伸**：MCSA 頻譜邊帶特徵（真正的電流診斷）、納入全 4 工況、即時預測 FastAPI 端點。
 - **（以下皆推遲）** 其餘公開資料集（FEMTO / Mendeley / PMSM）、更強的領域自適應 / 更多工況以
-  突破跨工況絕對 RUL、1D-CNN Autoencoder 深度對照、ESP32 邊緣 IoT 實場接入、成本敏感門檻調整 /
+  突破跨工況絕對 RUL、**模組 B（IMS）的 1D-CNN Autoencoder 深度對照**（Servo 主線已完成 Phase A/B
+  深度學習，見下）、ESP32 邊緣 IoT 實場接入、成本敏感門檻調整 /
   模型校準、MLOps（重訓 / 漂移 / 版本 / 審計）、規則式維護建議升級為 LLM 結構化敘述。
 
 ---

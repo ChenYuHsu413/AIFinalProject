@@ -122,8 +122,8 @@
 1. **下一步：Paderborn Bearing Dataset** —— 引入馬達定子電流（MCSA 非侵入式診斷）＋多感測器
    （電流 / 振動 / 溫度）＋真實損傷子集，最貼近「馬達」主題，並補上目前缺的電流模態。
 2. （推遲）其餘公開資料集（FEMTO / Mendeley / PMSM）、RUL 壽命正規化 / 領域自適應、
-   1D-CNN Autoencoder 深度對照、ESP32 邊緣 IoT 實場接入、成本敏感門檻、MLOps（重訓 / 漂移 /
-   版本 / 審計）。
+   模組 B（IMS）的 1D-CNN Autoencoder 深度對照（Servo 主線已完成 Phase A/B 深度學習）、
+   ESP32 邊緣 IoT 實場接入、成本敏感門檻、MLOps（重訓 / 漂移 / 版本 / 審計）。
 
 ## 16. 結論
 一段文字總結：本系統從**靜態風險分類（A）**延伸到**動態健康監測 / RUL（B）**，再以**多軌跡、

@@ -1,9 +1,10 @@
 # AI 伺服馬達健康監控與智慧維護指揮中心 — 專題報告
 
-> **狀態（2026-06-27）**：完整書面報告。涵蓋主線 **模組 Servo** 與對照軌 **A / B / B+ / C**、
+> **狀態（2026-06-28）**：完整書面報告。涵蓋主線 **模組 Servo** 與對照軌 **A / B / B+ / C**、
 > 系統實作（FastAPI 後端 + Next.js Command Center 前端 + LLM 維護助理 + 知識庫）與部署
 > （Vercel + Hugging Face Spaces）。數字取自 `outputs/metrics/` 已提交之評估檔；主線 Servo 已同步為
-> **真實 PHM FMCRD 留出測試**結果（非先前 placeholder 合成）。
+> **真實 PHM FMCRD 留出測試**結果（非先前 placeholder 合成）。§9.1 補上**兩階段深度學習完整說明**
+> （Phase A PyTorch MLP+AE、Phase B 真 1D-CNN on 原始波形，含深化後的誠實下修）。
 > 線上 Demo：Next.js Command Center（Vercel）+ 後端（HF Spaces）。
 > 相關文件：[`REPORT_OUTLINE.md`](REPORT_OUTLINE.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 > [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)、
@@ -178,6 +179,40 @@ HI 高度退化）+ **退化值 DV 回歸**（0=健康、1=高度退化），並
 > **誠實性**：指標為真實 FMCRD 留出測試（train_* 訓練、test_* 留出）；FMCRD 為高擬真**模擬**資料集，
 > 非真實工廠遙測。`train_noisy_LO` 原始檔僅 65 段（下載偏少）致 train LO 偏少，test 各類 200 完整。
 > 一致性檢查：分類器健康狀態與 DV 風險矛盾時輸出 `consistency_warning`。
+
+### 9.1 深度學習（兩階段，離線訓練、雲端唯讀）
+
+深度學習為本專案第二部分。架構原則：**離線訓練、只把結果 JSON 提交**，雲端 / Docker 映像（裝
+`requirements-dev.txt`）**不含 torch**、runtime 只讀 JSON；`torch` 獨立放 `requirements-dl.txt`，
+雲端映像維持精簡。分兩階段，由淺到深：
+
+**Phase A — PyTorch MLP + 神經 autoencoder（聚合特徵）**（[`src/models/servo_dl.py`](../src/models/servo_dl.py)）
+- **MLP 分類 / DV 回歸**（隱藏層 64→32）：在 7 維 engineered 聚合特徵上以 PyTorch 重做，與傳統
+  baseline 對照（macro-F1 0.714、R² 0.959）。
+- **神經 autoencoder**（`7→4→2→4→7`）：**只用健康（LN）train 樣本**擬合，量各類**留出**重建誤差。
+  健康資料學到的「正常樣態」對退化樣本重建變差 → 誤差隨退化單調上升（LN 0.36→HI 2.20），是無監督的
+  退化偵測。此處**取代了先前以 PCA 重建誤差充當 autoencoder 的替身**，名實相符為真神經網路。
+
+**Phase B — 真 1D-CNN（原始時序波形）**（[`build_servo_windows.py`](../src/data/build_servo_windows.py) +
+[`servo_cnn.py`](../src/models/servo_cnn.py)）
+- **資料**：從原始 FMCRD zip（106.66 GB）**串流**每段 run，降為原始波形的**能量包絡**——每段切 256 個
+  時間塊、取每塊 8 個物理通道（扭矩 / 轉速 / 三相電流 / direct / quadrature / 位置誤差）的 std，
+  得到 (8 通道 × 256 時間塊) 的時序輸入。卷積仍沿時間軸滑動，保留振幅 / 變異的退化訊號又穩定。
+- **為何「每段 run 一個樣本」而非「每個短窗」**：先試過每個 1024 點短窗分類，效果接近隨機
+  （留出 ≈0.27，連 logistic 吃手工窗統計上限也僅 ≈0.36）——退化訊號在**整段的長時統計**，
+  單一短窗的變異估計太雜訊、且 train/test 跨檔有域偏移。改為每段 run 的能量包絡後大幅改善。
+- **模型**：1D-CNN 分類（Conv1d 8→16→32→64 + 全域池化 + 線性）+ 1D conv-autoencoder（重建誤差）。
+  split **依來源檔分離**（train_* vs test_* 不共享檔，無洩漏）、固定種子可重現。
+- **成果與誠實下修**：把資料由 40→**80 runs/檔**（留出 test 320，更具代表性）後做**多 seed 穩健驗證**，
+  發現加寬 / dropout / 加入逐塊 mean 等**都未穩健勝出**（各架構平均 0.64–0.70、std 0.03–0.06），
+  故保留最簡 narrow conv。最終留出 **Accuracy 0.709 / macro-F1 0.692**（seed 敏感 ±0.03）；
+  conv-AE 留出重建誤差 LN 0.26 < LO 0.26 < MED 0.29 < HI 0.36 單調。先前 40-run 單 seed 的 0.729
+  屬樂觀抽樣，已如實下修。混淆矩陣顯示誤差集中在 LN↔LO（早期退化最難分），MED/HI 幾近全對。
+
+**結論（誠實對照）**：1D-CNN 確實能**直接從原始波形**學到退化（macro-F1 ~0.69），驗證深度學習在此情境
+可行；但在這份**小型 per-run、高擬真模擬**資料上**仍低於聚合特徵主線（0.757）**——退化訊號主要在
+長時統計，短資料下深度模型未占優、且分數對 seed 敏感，我們不誇大單次好抽樣。後端 `GET /servo/cnn_results`
+與報表頁「1D-CNN（原始波形）」卡將上述結果唯讀呈現。
 
 **AI 訓練模擬器**：使用者可選資料量 / 特徵組 / 演算法，在後端即時訓練小模型（<0.4 s）並與離線
 Reference Model 對照，教學「資料量、特徵選擇與演算法如何影響表現」。
