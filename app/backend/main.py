@@ -169,6 +169,31 @@ def paderborn_eval():
     return services.paderborn_eval()
 
 
+@app.get("/paderborn/samples")
+def paderborn_samples():
+    """即時推論用的代表性量測（每種損傷來源/故障類別數筆，含真實標籤與特徵）。"""
+    return services.paderborn_samples()
+
+
+from pydantic import BaseModel  # noqa: E402
+
+
+class PaderbornPredictRequest(BaseModel):
+    """One Paderborn feature row to classify (see /paderborn/samples for shape)."""
+    features: dict
+
+
+@app.post("/paderborn/predict")
+def paderborn_predict(req: PaderbornPredictRequest):
+    """以已訓練的 Paderborn 分類器即時推論一筆量測：回預測類別 + 各類機率。"""
+    try:
+        return services.paderborn_predict_one(req.features)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/xjtu/generalization")
 def xjtu_generalization():
     """模組 B+ 多軌跡退化偵測（固定參數 FPT，per-bearing + aggregate）。"""

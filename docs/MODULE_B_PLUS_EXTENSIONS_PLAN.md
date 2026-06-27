@@ -12,6 +12,12 @@
 > **E3（即時串流回放）已完成**（Plotly 瀏覽器端 frames 動畫逐快照重播、可即時切速、播完停在末幀、
 > 零重跑不閃爍；重用既有函式、無新產物）。E1/E2/E3 已抽出至獨立「**B+ 延伸應用**」頁、以三 tab 呈現。
 > **三軌延伸 E1/E2/E3 全數完成。** 回寫見 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)。
+>
+> **更新（2026-06-27）**：原本只有 Streamlit 有 E2/E3，**Next.js Command Center 的「延伸應用」頁**
+> 先前僅顯示需 21 GB 原始資料的 HI 重疊（雲端為空）。現補上 **E2 維護建議**（巡檢檢查點滑桿 →
+> `/maintenance/advice` + `/xjtu/rul_predictions` 即時重算 15 顆軸承建議卡）、**E3 串流回放**
+> （`/xjtu/replay`，recharts 播放/拖曳）、**LOBO/LOCO 泛化表**（`/xjtu/lobo_loco`）——皆由已提交產物驅動、
+> 雲端可運作；HI 重疊保留於頁尾並優雅降級。
 
 ---
 

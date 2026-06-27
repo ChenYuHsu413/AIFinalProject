@@ -63,6 +63,8 @@ data/raw/servo/
 !data/processed/paderborn_features.parquet
 !outputs/metrics/paderborn_eval.json
 !outputs/metrics/paderborn_predictions.csv
+# ~0.8 MB classifier — committed so the cloud demo can do live inference.
+!outputs/models/paderborn_clf.joblib
 
 # Module Servo (main line) artefacts — committed so the cloud demo runs without
 # the raw PHM dataset (placeholder data until the real dataset is downloaded).

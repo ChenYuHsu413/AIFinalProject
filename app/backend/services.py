@@ -164,6 +164,38 @@ def paderborn_eval() -> Dict[str, Any]:
     return _read_json_or_empty(load_config()["paderborn"]["metrics"])
 
 
+def paderborn_samples() -> List[Dict[str, Any]]:
+    """A few representative measurements per (damage_origin, fault_class) for the
+    live-inference picker: identity + true label + the feature row to score."""
+    from src.models.train_paderborn import feature_columns
+
+    fp = resolve(load_config()["paderborn"]["processed_features"])
+    if not fp.exists():
+        return []
+    df = pd.read_parquet(fp)
+    feats = feature_columns(df)
+    sample = (df.groupby(["damage_origin", "fault_class"], group_keys=False)
+              .head(3).reset_index(drop=True))
+    rows: List[Dict[str, Any]] = []
+    for _, r in sample.iterrows():
+        rows.append({
+            "bearing_code": str(r["bearing_code"]),
+            "condition": str(r["condition"]),
+            "measurement": int(r["measurement"]),
+            "fault_class": str(r["fault_class"]),
+            "damage_origin": str(r["damage_origin"]),
+            "features": {c: float(r[c]) for c in feats},
+        })
+    return rows
+
+
+def paderborn_predict_one(features: Dict[str, Any]) -> Dict[str, Any]:
+    """Run the trained Paderborn classifier on one feature row (live inference)."""
+    from src.models.predict_paderborn import predict_paderborn
+
+    return predict_paderborn(features)
+
+
 # --- Module B+ (XJTU multi-trajectory generalization) ------------------------
 def xjtu_generalization() -> Dict[str, Any]:
     """Fixed-param per-bearing degradation detection: method / per_bearing / aggregate."""

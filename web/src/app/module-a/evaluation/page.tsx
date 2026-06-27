@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { ConfusionMatrix } from "@/components/dashboard/ConfusionMatrix";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { Card, Note, PageTitle } from "@/components/ui-kit";
+import { Card, Note, PageTitle, Stat } from "@/components/ui-kit";
 import { apiGet } from "@/lib/api";
 
 interface ModelInfo {
@@ -29,11 +30,16 @@ interface FailureRow {
   f1: number;
   roc_auc: number;
 }
+interface TestPreds {
+  y_true: number[];
+  y_proba: number[];
+}
 
 export default function ModuleAEvaluationPage() {
   const [info, setInfo] = useState<ModelInfo | null>(null);
   const [rows, setRows] = useState<MetricRow[]>([]);
   const [ftRows, setFtRows] = useState<FailureRow[]>([]);
+  const [tp, setTp] = useState<TestPreds | null>(null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -41,11 +47,13 @@ export default function ModuleAEvaluationPage() {
       apiGet<ModelInfo>("/model_info"),
       apiGet<{ rows: MetricRow[] }>("/metrics"),
       apiGet<{ rows: FailureRow[] }>("/failure_type_metrics"),
+      apiGet<TestPreds>("/metrics/test_predictions"),
     ])
-      .then(([i, m, f]) => {
+      .then(([i, m, f, t]) => {
         setInfo(i);
         setRows([...m.rows].sort((a, b) => b.roc_auc - a.roc_auc).slice(0, 8));
         setFtRows(f.rows);
+        setTp(t);
       })
       .catch(() => setErr(true));
   }, []);
@@ -72,6 +80,8 @@ export default function ModuleAEvaluationPage() {
           </section>
         </>
       )}
+
+      {tp && tp.y_true.length > 0 && <ThresholdTuner data={tp} />}
 
       <Card title="模型 / 特徵組比較（依 ROC-AUC 前 8）" className="mb-6">
         <div className="overflow-x-auto">
@@ -129,5 +139,80 @@ export default function ModuleAEvaluationPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// ===========================================================================
+// Interactive decision-threshold tuner (recomputes the confusion matrix +
+// precision/recall/F1 client-side from the held-out test probabilities)
+// ===========================================================================
+function ThresholdTuner({ data }: { data: TestPreds }) {
+  const [thr, setThr] = useState(0.5);
+  const total = data.y_true.length;
+  const nPos = useMemo(() => data.y_true.reduce((s, v) => s + v, 0), [data]);
+
+  const m = useMemo(() => {
+    let tn = 0,
+      fp = 0,
+      fn = 0,
+      tpos = 0;
+    for (let i = 0; i < total; i++) {
+      const pred = data.y_proba[i] >= thr ? 1 : 0;
+      if (data.y_true[i] === 1) {
+        if (pred === 1) tpos++;
+        else fn++;
+      } else if (pred === 1) {
+        fp++;
+      } else {
+        tn++;
+      }
+    }
+    const precision = tpos + fp ? tpos / (tpos + fp) : 0;
+    const recall = tpos + fn ? tpos / (tpos + fn) : 0;
+    const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0;
+    return { tn, fp, fn, tpos, precision, recall, f1 };
+  }, [data, thr, total]);
+
+  return (
+    <Card title="互動式門檻調節器（即時重算）" className="mb-6">
+      <Note tone="info" className="mb-4">
+        測試集共 <b>{total}</b> 筆，其中故障樣本 <b>{nPos}</b> 筆（{((nPos / total) * 100).toFixed(2)}%）。
+        往左拉門檻 → 預測為故障的樣本變多 → Recall 上升、漏報 FN 下降，但誤報 FP 通常上升。
+        預測性維護情境通常偏好較低門檻以提高 Recall。
+      </Note>
+
+      <label className="block">
+        <span className="text-xs text-muted-foreground">
+          決策門檻 threshold（機率 ≥ threshold ⇒ 預測為故障）：
+          <b className="ml-1 text-foreground tabular-nums">{thr.toFixed(2)}</b>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={thr}
+          onChange={(e) => setThr(Number(e.target.value))}
+          className="mt-2 w-full accent-primary"
+        />
+      </label>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Precision" value={m.precision.toFixed(3)} sub="誤報越少越高" valueClass="text-cyan-400" />
+        <Stat label="Recall" value={m.recall.toFixed(3)} sub="漏報越少越高" valueClass="text-emerald-400" />
+        <Stat label="F1" value={m.f1.toFixed(3)} sub="兩者調和" valueClass="text-amber-400" />
+        <Stat label="漏報 FN" value={String(m.fn)} sub={`誤報 FP = ${m.fp}`} valueClass="text-red-400" />
+      </div>
+
+      <div className="mt-4">
+        <ConfusionMatrix
+          labels={["健康", "故障"]}
+          matrix={[
+            [m.tn, m.fp],
+            [m.fn, m.tpos],
+          ]}
+        />
+      </div>
+    </Card>
   );
 }

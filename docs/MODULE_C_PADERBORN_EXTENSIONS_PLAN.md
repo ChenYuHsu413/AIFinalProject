@@ -5,7 +5,12 @@
 > 落差 0.80**）。本文規劃四條**延伸軌**，把模組 C 從「MVP 分類」推進成「有電流診斷深度、能跨工況、
 > 並嘗試修復人工→真實落差、可即時預測」的系統。結果回寫 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md) §4。
 >
-> **狀態（2026-06-24）**：規劃草稿，**尚未動工**。四軌獨立、可單獨交付；建議優先序 **CE1 > CE2 > CE3 > CE4**。
+> **狀態（2026-06-27）**：**CE4（即時預測端點）已完成**——新增 `src/models/predict_paderborn.py`
+> （載 `paderborn_clf.joblib` 即時推論）+ FastAPI `GET /paderborn/samples`、`POST /paderborn/predict`
+> （端點命名沿用既有 `/paderborn/*` 而非計畫初稿的 `/predict_paderborn`）。Next.js 模組 C 頁加「選一筆量測
+> 即時分類」區（預測 vs 真實 + 機率條；選真實損傷量測可現場看到誤判，即泛化落差的單筆呈現）。
+> `paderborn_clf.joblib`（~0.8 MB）已納入 git 白名單供雲端推論；測試 `tests/test_predict_paderborn.py`。
+> CE1/CE2/CE3 仍為規劃草稿、尚未動工（優先序 **CE1 > CE2 > CE3**）。
 
 ---
 
