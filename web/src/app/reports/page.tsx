@@ -19,17 +19,19 @@ import { HealthBadge, RiskBadge } from "@/components/dashboard/badges";
 import { Card, Note, PageTitle } from "@/components/ui-kit";
 import {
   apiGet,
+  type ServoCnnResults,
   type ServoModelInfo,
   type ServoReferenceMetrics,
 } from "@/lib/api";
 import { useFleet } from "@/lib/fleet";
 import { useFleetOps } from "@/lib/ops";
 import type { Equipment, FleetAlert } from "@/lib/mock";
-import { HEALTH_COLOR } from "@/lib/servo";
+import { HEALTH_COLOR, HEALTH_ZH } from "@/lib/servo";
 
 export default function ReportsPage() {
   const [ref, setRef] = useState<ServoReferenceMetrics | null>(null);
   const [info, setInfo] = useState<ServoModelInfo | null>(null);
+  const [cnn, setCnn] = useState<ServoCnnResults | null>(null);
   const [err, setErr] = useState(false);
   const { fleet, source: fleetSource } = useFleet();
   const { alerts, source: opsSource } = useFleetOps();
@@ -47,6 +49,9 @@ export default function ReportsPage() {
         setErr(true);
       }
     })();
+    apiGet<ServoCnnResults>("/servo/cnn_results")
+      .then(setCnn)
+      .catch(() => {/* CNN results optional */});
   }, []);
 
   return (
@@ -88,7 +93,7 @@ export default function ReportsPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="深度學習對照 (1D-CNN AE / MLP)">
+        <Card title="深度學習對照 (PyTorch MLP + 神經 AE)">
           {ref?.dl ? (
             <dl className="space-y-2 text-sm">
               <Row
@@ -126,6 +131,8 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      <CnnReport cnn={cnn} />
+
       <EquipmentComparison fleet={fleet} source={fleetSource} />
 
       <AlarmStatistics alerts={alerts} source={opsSource} />
@@ -135,6 +142,73 @@ export default function ReportsPage() {
         （見健康儀表板標示），待實場 / IoT 串流接入後補上。
       </Note>
     </div>
+  );
+}
+
+function CnnReport({ cnn }: { cnn: ServoCnnResults | null }) {
+  const clf = cnn?.classifier;
+  if (!clf || clf.macro_f1 == null) return null; // not built (cloud may lack it)
+  const rec = cnn?.autoencoder?.reconstruction_error_by_class ?? {};
+  const recLabels = ["LN", "LO", "MED", "HI"].filter((l) => l in rec);
+  const recMax = Math.max(1e-9, ...recLabels.map((l) => rec[l]));
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">
+        1D-CNN（原始波形）
+      </h2>
+      <Note tone="info" className="mb-4">
+        真正的 <b>1D-CNN</b>（PyTorch）直接吃原始 FMCRD 波形的能量包絡——卷積分類 +
+        conv-autoencoder。離線訓練、後端唯讀（<code className="font-mono">/servo/cnn_results</code>）。
+      </Note>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MetricCard
+          label="CNN 分類準確率"
+          value={clf.accuracy.toFixed(3)}
+          footerMuted="留出測試（依檔分離）"
+        />
+        <MetricCard
+          label="CNN 分類 macro-F1"
+          value={clf.macro_f1.toFixed(3)}
+          footerMuted={cnn?.architecture?.cnn ?? "1D-CNN"}
+        />
+        <MetricCard
+          label="輸入"
+          value={`${cnn?.window?.channels?.length ?? 8}×${cnn?.window?.len ?? 256}`}
+          footerMuted={`${cnn?.window?.n_train ?? 0}/${cnn?.window?.n_test ?? 0} 段（train/test）`}
+        />
+      </div>
+
+      {recLabels.length > 0 && (
+        <Card title="conv-autoencoder 重建誤差（健康擬合，退化越重越大）" className="mt-4">
+          <div className="space-y-2">
+            {recLabels.map((l) => {
+              const pct = Math.round((rec[l] / recMax) * 100);
+              return (
+                <div key={l} className="text-sm">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-muted-foreground">
+                      {HEALTH_ZH[l]} ({l})
+                    </span>
+                    <span className="font-medium tabular-nums">{rec[l].toFixed(3)}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full rounded-full ${HEALTH_COLOR[l]?.bar ?? "bg-primary"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {cnn?.note && (
+            <p className="mt-3 text-xs text-muted-foreground">{cnn.note}</p>
+          )}
+        </Card>
+      )}
+    </section>
   );
 }
 

@@ -255,6 +255,8 @@ servo:
   clf_metrics: outputs/metrics/servo_clf_eval.json
   reg_metrics: outputs/metrics/servo_reg_eval.json
   dl_metrics: outputs/metrics/servo_dl_results.json        # offline DL results (read-only on the cloud app)
+  windows_path: data/processed/servo_windows.npz           # Phase B: windowed raw signals (offline, gitignored)
+  cnn_metrics: outputs/metrics/servo_cnn_results.json       # Phase B: offline 1D-CNN results (read-only on cloud)
   labels: [LN, LO, MED, HI]
   # If the real PHM ylabel is a numeric/encoded code, map it to LN/LO/MED/HI here
   # (null = labels already use LN/LO/MED/HI). Example: {0: LN, 1: LO, 2: MED, 3: HI}

@@ -111,6 +111,28 @@ export interface ServoReferenceMetrics {
   };
 }
 
+/** GET /servo/cnn_results (Phase B 1D-CNN on raw-waveform envelopes; {} when not built). */
+export interface ServoCnnResults {
+  method?: string;
+  framework?: string;
+  note?: string;
+  window?: {
+    len: number;
+    channels: string[];
+    n_train: number;
+    n_test: number;
+    subset: boolean;
+  };
+  architecture?: { cnn: string; autoencoder: string };
+  classifier?: {
+    accuracy: number;
+    macro_f1: number;
+    confusion_matrix: number[][];
+    labels: string[];
+  };
+  autoencoder?: { reconstruction_error_by_class: Record<string, number> };
+}
+
 /** One row of GET /servo/glossary. */
 export interface GlossaryEntry {
   name: string;

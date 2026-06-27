@@ -374,6 +374,12 @@ def servo_reference_metrics():
     return services.servo_reference_metrics()
 
 
+@app.get("/servo/cnn_results")
+def servo_cnn_results():
+    """Phase B 離線 1D-CNN（原始波形能量包絡）：分類指標 + conv-AE 重建誤差；未建置回 {}。"""
+    return services.servo_cnn_results()
+
+
 @app.get("/servo/simulate/options")
 def servo_simulate_options():
     """訓練模擬器可選的演算法（分類 / 回歸名稱 + 中文標籤）。"""

@@ -34,6 +34,9 @@ outputs/.batch_sample.csv
 data/raw/*.csv
 data/processed/*.csv
 data/processed/*.parquet
+# Module Servo windowed raw-signal dataset (Phase B 1D-CNN) — transient offline
+# artefact rebuilt from the raw zip; large, never commit (cloud reads only the JSON).
+data/processed/*.npz
 # IMS Set 2 raw snapshots (~1.5 GB, extensionless files) — never commit
 data/raw/ims/
 # XJTU-SY raw snapshots (Module B+, multi-bearing CSVs) — never commit
@@ -76,6 +79,7 @@ data/raw/servo/
 !outputs/metrics/servo_clf_eval.json
 !outputs/metrics/servo_reg_eval.json
 !outputs/metrics/servo_dl_results.json
+!outputs/metrics/servo_cnn_results.json
 !outputs/metrics/servo_data_provenance.json
 
 # Module A + comparison-study artefacts — committed so the dashboard's

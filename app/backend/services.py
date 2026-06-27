@@ -681,6 +681,11 @@ def servo_reference_metrics() -> Dict[str, Any]:
     }
 
 
+def servo_cnn_results() -> Dict[str, Any]:
+    """Phase B offline 1D-CNN results (raw-waveform envelope); {} if not built."""
+    return _read_json_or_empty(load_config()["servo"]["cnn_metrics"])
+
+
 def servo_simulate_options() -> Dict[str, Any]:
     """Algorithm choices for the training simulator (clf / reg names + labels)."""
     from src.models import servo_simulator as sim

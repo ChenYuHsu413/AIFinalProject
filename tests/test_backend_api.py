@@ -335,6 +335,21 @@ def test_servo_reference_metrics():
     assert set(resp.json()) == {"clf", "reg", "dl"}
 
 
+def test_servo_cnn_results():
+    """Phase B 1D-CNN results endpoint: 200 with classifier metrics when built,
+    or an empty object before the offline CNN has run."""
+    resp = client.get("/servo/cnn_results")
+    assert resp.status_code == 200
+    d = resp.json()
+    if d:  # built (committed JSON present)
+        assert d["method"] == "servo_cnn_1d"
+        assert 0.0 <= d["classifier"]["macro_f1"] <= 1.0
+        rec = d["autoencoder"]["reconstruction_error_by_class"]
+        labels = d["classifier"]["labels"]
+        ordered = [rec[lab] for lab in labels if lab in rec]
+        assert ordered[-1] > ordered[0]
+
+
 def test_servo_simulate_options():
     resp = client.get("/servo/simulate/options")
     assert resp.status_code == 200

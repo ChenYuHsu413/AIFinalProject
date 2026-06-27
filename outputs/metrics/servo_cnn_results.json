@@ -1,0 +1,70 @@
+{
+  "method": "servo_cnn_1d",
+  "eval": "holdout_test_by_file",
+  "framework": "pytorch 2.12.1+cpu",
+  "note": "真正的 1D-CNN（卷積分類）+ 1D conv-autoencoder，吃每段 run 的原始波形能量包絡（逐塊 std，8 通道 × 256 時間塊）。MVP 子集、split 依來源檔分離（無洩漏）；FMCRD 為高擬真模擬資料。",
+  "window": {
+    "len": 256,
+    "channels": [
+      "torque",
+      "rotor_speed",
+      "i_3p_a",
+      "i_3p_b",
+      "i_3p_c",
+      "direct",
+      "quadrature",
+      "position_error"
+    ],
+    "n_train": 160,
+    "n_test": 160,
+    "subset": true
+  },
+  "architecture": {
+    "cnn": "Conv1d[8>16>32>64] k7/7/5 s2 + GAP + FC4",
+    "autoencoder": "Conv1d[8>16>8] s4 + ConvT decode"
+  },
+  "classifier": {
+    "accuracy": 0.73125,
+    "macro_f1": 0.7294337606837606,
+    "confusion_matrix": [
+      [
+        24,
+        16,
+        0,
+        0
+      ],
+      [
+        17,
+        19,
+        4,
+        0
+      ],
+      [
+        0,
+        3,
+        35,
+        2
+      ],
+      [
+        0,
+        0,
+        1,
+        39
+      ]
+    ],
+    "labels": [
+      "LN",
+      "LO",
+      "MED",
+      "HI"
+    ]
+  },
+  "autoencoder": {
+    "reconstruction_error_by_class": {
+      "LN": 0.4027862548828125,
+      "LO": 0.4106388986110687,
+      "MED": 0.45062685012817383,
+      "HI": 0.5141350626945496
+    }
+  }
+}
