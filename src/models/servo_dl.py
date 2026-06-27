@@ -46,8 +46,8 @@ def run() -> Path:
     # Honour a provided train/test split (real PHM); else random 25% holdout.
     has_split = "split" in df.columns and {"train", "test"} <= set(df["split"])
     eval_mode = "holdout_test" if has_split else "cv"
+    tr = (df["split"] == "train").to_numpy() if has_split else None
     if has_split:
-        tr = (df["split"] == "train").to_numpy()
         scaler = StandardScaler().fit(X[tr])  # fit on train only (no leakage)
         Xs = scaler.transform(X)
         Xtr, Xte, ytr, yte = Xs[tr], Xs[~tr], yc[tr], yc[~tr]
@@ -72,11 +72,16 @@ def run() -> Path:
                "r2": float(r2_score(vte, pred))}
 
     # --- PCA reconstruction error (healthy-only fit), per class ---
+    # Fit on healthy (LN) runs — TRAIN-only when a split is present so the
+    # reconstruction baseline doesn't leak test rows; fall back to (train) all
+    # rows if there are too few LN to fit.
     ln_mask = (df["ylabel"] == "LN").to_numpy()
+    fit_mask = (ln_mask & tr) if has_split else ln_mask
     n_comp = min(3, len(cols))
-    # Fit on healthy runs when there are enough; otherwise fall back to all rows
-    # so a dataset without an LN class doesn't crash the baseline.
-    fit_rows = Xs[ln_mask] if ln_mask.sum() > n_comp else Xs
+    if fit_mask.sum() > n_comp:
+        fit_rows = Xs[fit_mask]
+    else:
+        fit_rows = Xs[tr] if has_split else Xs
     pca = PCA(n_components=n_comp, random_state=rs).fit(fit_rows)
     recon = pca.inverse_transform(pca.transform(Xs))
     err = np.mean((Xs - recon) ** 2, axis=1)
@@ -96,7 +101,7 @@ def run() -> Path:
     }
     p = resolve(cfg["dl_metrics"])
     p.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"[Servo DL] MLP macro-F1={mlp_clf_f1:.3f}, reg R²={mlp_reg['r2']:.3f}")
+    print(f"[Servo DL] MLP macro-F1={mlp_clf_f1:.3f}, reg R2={mlp_reg['r2']:.3f}")
     print(f"    重建誤差/類別：{ {k: round(v,3) for k,v in per_class.items()} }")
     print(f"    -> {p}")
     return p

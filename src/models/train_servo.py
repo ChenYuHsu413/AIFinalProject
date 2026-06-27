@@ -149,7 +149,7 @@ def run() -> Path:
         "n": int(len(dv_true)),
         "placeholder": bool(sv.get("placeholder", True)),
     }
-    print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R²={reg_eval['r2']:.3f}（{eval_mode}）")
+    print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R2={reg_eval['r2']:.3f}（{eval_mode}）")
 
     # --- persist artifacts (compress=3: keeps the RF regressor well under
     #     GitHub's 50 MB file recommendation; ~96 MB -> ~29 MB) ---

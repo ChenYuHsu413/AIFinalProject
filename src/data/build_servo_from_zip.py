@@ -130,16 +130,21 @@ def _finalize_file(acc: Dict[Tuple[str, int], Dict], split: str) -> pd.DataFrame
         feat: Dict[str, object] = {}
         for sig in BASE_SIGNALS:
             s, sq, mn, mx, c = a["sig"][sig]
-            mean = s / c
-            var = max(sq / c - mean * mean, 0.0)
-            feat[f"{sig}_mean"] = mean
-            feat[f"{sig}_std"] = np.sqrt(var)
-            feat[f"{sig}_min"] = mn
-            feat[f"{sig}_max"] = mx
-            feat[f"{sig}_rms"] = np.sqrt(sq / c)
-        feat["current_rms"] = np.sqrt(a["cur_sumsq"] / (3 * a["cur_rows"]))
+            if c:
+                mean = s / c
+                var = max(sq / c - mean * mean, 0.0)
+                feat[f"{sig}_mean"] = mean
+                feat[f"{sig}_std"] = np.sqrt(var)
+                feat[f"{sig}_min"] = mn
+                feat[f"{sig}_max"] = mx
+                feat[f"{sig}_rms"] = np.sqrt(sq / c)
+            else:  # entirely-NaN signal -> 0.0 (mirror aggregate_run's len-guard)
+                for st in ("mean", "std", "min", "max", "rms"):
+                    feat[f"{sig}_{st}"] = 0.0
+        feat["current_rms"] = (
+            np.sqrt(a["cur_sumsq"] / (3 * a["cur_rows"])) if a["cur_rows"] else 0.0)
         feat["ylabel"] = a["ylabel"]
-        feat["DV_raw"] = a["dv_sum"] / a["dv_count"]
+        feat["DV_raw"] = a["dv_sum"] / a["dv_count"] if a["dv_count"] else 0.0
         feat["split"] = split
         feat["__ri"] = ri
         rows.append(feat)
@@ -186,6 +191,8 @@ def run(zip_path: str = _DEFAULT_ZIP, chunksize: int = 300_000) -> Path:
             part.to_parquet(ck, index=False)
             parts.append(part)
 
+    if not parts:
+        raise ValueError("zip 內找不到任何 .csv，無法建表。")
     table = pd.concat(parts, ignore_index=True)
     table = table.sort_values(["split", "ylabel", "__ri"]).reset_index(drop=True)
     table.insert(0, "run_index", np.arange(len(table)))  # globally-unique id
@@ -193,7 +200,8 @@ def run(zip_path: str = _DEFAULT_ZIP, chunksize: int = 300_000) -> Path:
 
     # --- DV normalisation to 0..1 (real DV is physical units) ---
     dv_raw_max = float(table["DV_raw"].max())
-    table["DV"] = (table["DV_raw"] / dv_raw_max).clip(0.0, 1.0)
+    denom = dv_raw_max if dv_raw_max > 0 else 1.0
+    table["DV"] = (table["DV_raw"] / denom).clip(0.0, 1.0)
     table = table.drop(columns=["DV_raw"])
     print(f"[DV] raw max = {dv_raw_max:.3f}; normalised to 0..1.")
     print("[DV] normalised by class:\n",

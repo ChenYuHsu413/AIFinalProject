@@ -38,6 +38,8 @@ data/processed/*
 !data/processed/servo_sample_predictions.csv
 !data/processed/paderborn_features.parquet
 !data/processed/xjtu_features.parquet
+# /ims/health_indicator (Module B explore/overview) on Hugging Face
+!data/processed/ims_set2_features.parquet
 
 # Local logs
 *.log
