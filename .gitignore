@@ -76,6 +76,7 @@ data/raw/servo/
 !outputs/metrics/servo_clf_eval.json
 !outputs/metrics/servo_reg_eval.json
 !outputs/metrics/servo_dl_results.json
+!outputs/metrics/servo_data_provenance.json
 
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training

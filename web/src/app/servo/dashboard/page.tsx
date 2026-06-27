@@ -65,6 +65,8 @@ export default function ServoDashboardPage() {
         desc="輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、主要異常特徵與模型信心，並給出建議處置。"
       />
 
+      <ProvenancePanel />
+
       {loadErr && (
         <Note tone="danger" className="mb-6">
           無法載入 demo 樣本或模型資訊。請確認後端已啟動。
@@ -245,6 +247,45 @@ function Result({
           想要更完整的人話解釋與工單草稿？點此前往「LLM 維護助理」頁，它會接收<b>這筆</b>結果並產生維修建議。
         </span>
       </Link>
+    </div>
+  );
+}
+
+interface Provenance {
+  is_simulation: boolean;
+  source?: { n_files: number; total_uncompressed_gb: number };
+  features?: { aggregated_segments: number };
+  model?: { eval: string; placeholder: boolean; clf_macro_f1: number; reg_r2: number };
+}
+
+function ProvenancePanel() {
+  const [p, setP] = useState<Provenance | null>(null);
+  useEffect(() => {
+    apiGet<Provenance>("/servo/provenance")
+      .then(setP)
+      .catch(() => {});
+  }, []);
+  if (!p?.source || !p.model) return null;
+  return (
+    <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+        <span className="font-semibold text-emerald-300">✅ 訓練於真實 PHM FMCRD 資料集</span>
+        <span className="text-muted-foreground">
+          {p.source.total_uncompressed_gb} GB · {p.source.n_files} 檔 ·{" "}
+          {p.features?.aggregated_segments?.toLocaleString()} 段
+        </span>
+        <span className="text-muted-foreground">
+          留出 macro-F1 {p.model.clf_macro_f1.toFixed(3)} · DV R² {p.model.reg_r2.toFixed(3)}
+        </span>
+        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+          placeholder = {String(p.model.placeholder)}
+        </span>
+      </div>
+      {p.is_simulation && (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          FMCRD 為高擬真<b>模擬</b>資料集（非真實工廠伺服馬達遙測）；「真實」指完整大型公開 PHM 資料集本身（相對於先前 placeholder 合成資料）。
+        </p>
+      )}
     </div>
   );
 }

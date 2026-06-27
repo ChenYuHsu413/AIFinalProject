@@ -486,6 +486,14 @@ def servo_model_info() -> Dict[str, Any]:
     }
 
 
+def servo_provenance() -> Dict[str, Any]:
+    """Real-data provenance: FMCRD fingerprint + aggregation + holdout metrics.
+
+    Lets the dashboard testify, live, that the model trained on the full real PHM
+    dataset (placeholder=false). Empty dict if the record hasn't been generated."""
+    return _read_json_or_empty("outputs/metrics/servo_data_provenance.json")
+
+
 def servo_predict_one(features: Dict[str, Any]) -> Dict[str, Any]:
     from src.models.servo_predict import load_servo_models, predict_servo
 

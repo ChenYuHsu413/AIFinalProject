@@ -306,6 +306,12 @@ def servo_model_info():
         raise HTTPException(status_code=503, detail=str(e))
 
 
+@app.get("/servo/provenance")
+def servo_provenance():
+    """資料溯源：真實 PHM FMCRD 指紋 + 聚合統計 + 留出測試指標（證明非 placeholder）。"""
+    return services.servo_provenance()
+
+
 @app.post("/servo/predict")
 def servo_predict(req: ServoPredictRequest):
     """伺服馬達健康狀態估測（健康狀態分類 + DV 退化回歸）。"""
