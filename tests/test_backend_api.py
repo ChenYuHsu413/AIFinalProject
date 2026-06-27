@@ -1,6 +1,7 @@
 """API-level tests for the FastAPI backend (app.backend.main)."""
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.backend.main import app
@@ -426,3 +427,42 @@ def test_metrics_test_predictions():
     assert set(body) == {"y_true", "y_proba"}
     assert len(body["y_true"]) == len(body["y_proba"]) > 0
     assert set(body["y_true"]) <= {0, 1}
+
+
+# --- Servo provenance + live inference (real-data artifacts) -------------------
+def test_servo_provenance():
+    p = client.get("/servo/provenance").json()
+    if not p:
+        pytest.skip("provenance record not generated")
+    assert p["model"]["placeholder"] is False
+    assert p["model"]["eval"] == "holdout_test"
+    assert p["source"]["n_files"] == 8
+    assert p["features"]["aggregated_segments"] > 0
+
+
+def test_servo_predict_and_missing_feature():
+    info = client.get("/servo/model_info")
+    if info.status_code != 200:
+        pytest.skip("servo model not trained")
+    cols = info.json()["feature_columns"]
+    rows = client.get("/servo/samples").json()
+    if not rows:
+        pytest.skip("no servo samples")
+    feats = {c: float(rows[0][c]) for c in cols}
+    ok = client.post("/servo/predict", json={"features": feats})
+    assert ok.status_code == 200
+    assert ok.json()["predicted_health_state"] in ("LN", "LO", "MED", "HI")
+    # missing a required feature -> 400, not a 500
+    bad = {k: v for k, v in feats.items() if k != cols[0]}
+    assert client.post("/servo/predict", json={"features": bad}).status_code == 400
+
+
+def test_paderborn_predict_http():
+    rows = client.get("/paderborn/samples").json()
+    if not rows:
+        pytest.skip("paderborn model/features not available")
+    out = client.post("/paderborn/predict", json={"features": rows[0]["features"]})
+    assert out.status_code == 200
+    body = out.json()
+    assert body["predicted_class"] in body["labels"]
+    assert 0.0 <= body["confidence"] <= 1.0
