@@ -125,6 +125,7 @@ function RealPredictionSection({ state }: { state: string }) {
 
   async function predictRow(row: ServoSample, columns: string[]) {
     setBusy(true);
+    setErr(false); // clear any prior error so a successful retry recovers
     try {
       const features: Record<string, number> = {};
       for (const col of columns) features[col] = Number(row[col]);

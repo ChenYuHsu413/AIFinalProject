@@ -145,7 +145,7 @@ export default function ModuleCPage() {
 function LiveInference({ samples }: { samples: Sample[] }) {
   const [idx, setIdx] = useState(0);
   const [out, setOut] = useState<PredictOut | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true); // mount fetches immediately
   const [err, setErr] = useState(false);
 
   const s = samples[idx];
@@ -172,6 +172,7 @@ function LiveInference({ samples }: { samples: Sample[] }) {
   const selectSample = (i: number) => {
     setBusy(true);
     setErr(false);
+    setOut(null); // clear so the stale prediction's ✓/✗ can't flash against the new sample
     setIdx(i);
   };
 
@@ -208,6 +209,10 @@ function LiveInference({ samples }: { samples: Sample[] }) {
         </div>
 
         {err && <Note tone="danger">推論失敗，請確認後端與模型已就緒。</Note>}
+
+        {busy && !out && !err && (
+          <p className="py-6 text-center text-sm text-muted-foreground">即時推論中…</p>
+        )}
 
         {out && (
           <div className={busy ? "opacity-60 transition-opacity" : "transition-opacity"}>

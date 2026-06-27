@@ -44,6 +44,7 @@ export default function AssistantPage() {
   // ?sample=<idx> (the "到 LLM 維護助理" link). Falls back to a default MED
   // sample so the page is usable when opened directly.
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const [info, rows, prov] = await Promise.all([
@@ -51,11 +52,13 @@ export default function AssistantPage() {
           apiGet<ServoSample[]>("/servo/samples"),
           apiGet<AssistantProviders>("/servo/assistant/providers"),
         ]);
+        if (cancelled) return;
         setCols(info.feature_columns);
         setSamples(rows);
         setProviders(prov.providers);
         const param = new URLSearchParams(window.location.search).get("sample");
-        const handed = param != null ? Number(param) : NaN;
+        // require a non-empty numeric param (Number("")===0 would wrongly pick #0)
+        const handed = param != null && param.trim() !== "" ? Number(param) : NaN;
         const di = rows.findIndex((r) => r["ylabel"] === "MED");
         const fallback = di < 0 ? Math.floor(rows.length / 2) : di;
         const start =
@@ -65,9 +68,12 @@ export default function AssistantPage() {
         setIdx(start);
         await runPredict(start, info.feature_columns, rows);
       } catch {
-        setLoadErr(true);
+        if (!cancelled) setLoadErr(true);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function runPredict(i: number, c: string[], rows: ServoSample[]) {

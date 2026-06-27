@@ -296,6 +296,9 @@ function ProvenancePanel() {
           src={`${API_BASE}/figures/servo_provenance.png`}
           alt="Servo 資料溯源：DV 各健康類別分布與留出測試混淆矩陣"
           className="mt-2 w-full rounded-lg border border-border/60 bg-white"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
         />
       </details>
     </div>
