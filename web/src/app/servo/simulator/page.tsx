@@ -346,7 +346,7 @@ function DlPanel({ dl }: { dl?: ServoReferenceMetrics["dl"] }) {
           {recOrder.length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-xs text-muted-foreground">
-                PCA 重建誤差（以健康資料擬合）— 退化越嚴重，重建誤差應越大：
+                神經 autoencoder 重建誤差（以健康資料擬合）— 退化越嚴重，重建誤差應越大：
               </p>
               <div className="space-y-2">
                 {recOrder.map((l) => (

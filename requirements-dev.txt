@@ -24,6 +24,11 @@ uvicorn[standard]>=0.27
 pydantic>=2.5
 python-multipart>=0.0.9
 
+# Module Servo — offline deep-learning baseline needs torch, kept OUT of this file
+# on purpose: the cloud / Docker image installs requirements-dev.txt and must stay
+# slim (it never trains DL — it only reads the results JSON). To run src/models/servo_dl.py
+# locally or in CI:   pip install -r requirements-dl.txt
+
 # Module Servo — LLM maintenance assistant (optional; offline fallback works without it)
 anthropic>=0.40
 

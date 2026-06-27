@@ -1,18 +1,26 @@
 {
-  "method": "servo_dl_offline_baseline",
+  "method": "servo_dl_torch",
   "eval": "holdout_test",
   "placeholder": false,
-  "note": "sklearn MLP baseline + PCA 重建誤差（健康資料擬合）。真正的 1D-CNN / Autoencoder 需離線 torch、且需真實 PHM 時序資料，列為後續工作。",
-  "mlp_classification_macro_f1": 0.711210465308826,
+  "note": "PyTorch MLP 分類/回歸 + 神經 autoencoder（健康資料擬合的重建誤差）。真正的 1D-CNN 需原始 PHM 時序波形（非此處的逐段聚合特徵），列為後續工作。",
+  "framework": "pytorch 2.12.1+cpu",
+  "architecture": {
+    "mlp_hidden": [
+      64,
+      32
+    ],
+    "autoencoder": "7->4->2->4->7"
+  },
+  "mlp_classification_macro_f1": 0.7143302776434407,
   "mlp_regression": {
-    "mae": 0.06026390750010366,
-    "r2": 0.911814740865276
+    "mae": 0.03949226066470146,
+    "r2": 0.9591280221939087
   },
   "reconstruction_error_by_class": {
-    "LN": 0.02094626627266675,
-    "LO": 0.027934376415828337,
-    "MED": 0.2599663545376739,
-    "HI": 1.1833120186306234
+    "LN": 0.33218148350715637,
+    "LO": 0.374308705329895,
+    "MED": 0.6889588236808777,
+    "HI": 2.15299916267395
   },
   "labels": [
     "LN",

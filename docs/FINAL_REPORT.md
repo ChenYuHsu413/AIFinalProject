@@ -172,7 +172,7 @@ HI 高度退化）+ **退化值 DV 回歸**（0=健康、1=高度退化），並
 | --- | --- | --- |
 | 健康狀態分類（4 類） | Logistic Regression（engineered） | Accuracy 0.759 · macro-F1 **0.757** |
 | 退化值 DV 回歸 | Random Forest（engineered） | MAE 0.047 · RMSE 0.064 · R² **0.937** |
-| 深度學習離線對照 | MLP + PCA 重建誤差 | MLP macro-F1 0.711 · 回歸 R² 0.912；PCA 重建誤差隨退化單調遞增（LN 0.02 → HI 1.18） |
+| 深度學習離線對照（PyTorch） | MLP 分類/回歸 + 神經 autoencoder | MLP macro-F1 0.714 · 回歸 R² 0.959；AE 重建誤差隨退化單調遞增（LN 0.33 → HI 2.15） |
 
 > **誠實性**：指標為真實 FMCRD 留出測試（train_* 訓練、test_* 留出）；FMCRD 為高擬真**模擬**資料集，
 > 非真實工廠遙測。`train_noisy_LO` 原始檔僅 65 段（下載偏少）致 train LO 偏少，test 各類 200 完整。
@@ -241,14 +241,14 @@ Servo 健康儀表板、設備詳情頁（`/equipment/[id]`，橋接真模型預
 
 ## 14. 限制與未來工作
 
-**限制**：合成資料數值不可外推真實馬達；單軌跡 RUL 偏粗；監督式絕對 RUL 跨工況/壽命尺度受限；
-決策門檻採預設、未做成本敏感調整；Servo 主線待真實資料。
+**限制**：FMCRD 為高擬真模擬（非工廠遙測）、數值不可外推真實馬達；單軌跡 RUL 偏粗；
+監督式絕對 RUL 跨工況/壽命尺度受限；決策門檻採預設、未做成本敏感調整。
 
 **未來工作（已排序）**：
-1. **下載真實 PHM 伺服馬達資料（約 21 GB）→ 重訓 Servo、替換 placeholder**（進行中）。
+1. **Servo 原始時序 1D-CNN**：開窗 builder（從原始 FMCRD zip 串流抽時間窗）+ 1D-CNN 分類 / conv-AE。
+   （PyTorch MLP + 神經 autoencoder 對照**已完成**；原始 FMCRD 時序資料已備齊，待開窗管線。）
 2. 把 IMS/XJTU 的互動健康曲線產成可上雲的離線結果，讓雲端 demo 也能完整呈現。
-3. 1D-CNN / Autoencoder 深度對照（需離線 torch + 真實時序）。
-4. 成本敏感門檻、ESP32 邊緣 IoT 實場接入、MLOps（重訓 / 漂移 / 版本 / 審計）。
+3. 成本敏感門檻、ESP32 邊緣 IoT 實場接入、MLOps（重訓 / 漂移 / 版本 / 審計）。
 
 ---
 

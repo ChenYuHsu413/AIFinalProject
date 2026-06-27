@@ -2,7 +2,8 @@
 
 > **狀態（2026-06-27）**：本日為大改動日，主線完成**真實 PHM 資料導入重訓**、**Next.js 前端
 > 互動化**、**資料溯源證明**、**部署修正**與一輪**完整 code review + 清理**；另補**真實資料導入後的
-> 過時文字收尾 + 報表頁擴充**（設備別比較 / 告警統計，見 §7）。承接
+> 過時文字收尾 + 報表頁擴充**（設備別比較 / 告警統計，見 §7）與**深度學習 Phase A：真 PyTorch
+> MLP + 神經 autoencoder**（取代 sklearn/PCA 替身，見 §8）。承接
 > [`WORK_REPORT_2026-06-26.md`](WORK_REPORT_2026-06-26.md)。相關文件：
 > [`../../docs/MODULE_SERVO_PLAN.md`](../../docs/MODULE_SERVO_PLAN.md)、
 > [`../../docs/DATA_PROVENANCE.md`](../../docs/DATA_PROVENANCE.md)、
@@ -96,11 +97,29 @@
   KPI + 類型分布），皆標示真實模型來源 / mock fallback。**時間區間彙整**如實留待逐時遙測串流（仍為示意 mock）。
 - 驗證：前端 `tsc` + `eslint` + `next build`（22 路由）全過；`streamlit_app.py` py_compile 過。
 
+## 8. 深度學習 Phase A — 真 PyTorch（取代 sklearn MLP / PCA 替身）（同日後補）
+
+原 `servo_dl.py` 的「深度學習」實為 sklearn MLP + **PCA 假裝 autoencoder**，無任何 DL 框架。Phase A 改為真 PyTorch：
+
+- **`src/models/servo_dl.py` 改寫**：torch MLP 分類/回歸（隱藏層 64→32）+ **神經 autoencoder**（`7→4→2→4→7`，
+  健康 LN-train 擬合、各類重建誤差）取代 PCA。固定種子、CPU、全批 Adam → **可重現**（重跑數字一致）。
+  JSON key 不變（向後相容）；新增 `framework` / `architecture`；`method`→`servo_dl_torch`、`note` 改實。
+- **留出測試結果**：MLP macro-F1 **0.714**（sklearn 版 0.711，幾乎一致）、DV 回歸 R² **0.959** / MAE 0.039；
+  AE 重建誤差 **LN 0.33 < LO 0.37 < MED 0.69 < HI 2.15**（隨退化單調上升）。
+- **torch 拆成獨立 `requirements-dl.txt`**（離線訓練專用）：因 HF/root Dockerfile 與 CI 皆裝 `requirements-dev.txt`，
+  若把 torch 放 dev 會被拉進雲端映像（~700MB）。故 dev 不含 torch、雲端映像維持精簡；CI 改裝 `requirements-dl.txt` 跑 DL 測試。
+- 前端：`simulator` 頁「PCA 重建誤差」標籤→「神經 autoencoder 重建誤差」；`note` 自 JSON 自動更新（其餘零改）。
+- 新增 `tests/test_servo_dl.py`（smoke：JSON 形狀 + 重建誤差單調）。**全測試 120 passed / 1 skipped**；前端 tsc/eslint 過。
+- docs 同步：`FINAL_REPORT §9`+未來工作、`MODULE_SERVO_PLAN` 狀態戳/§7/下一步。
+- **發現**：原始 FMCRD zip 仍在 `Downloads/FMCRD_Data.zip`（22 GB 壓縮 / 106.66 GB 解壓、8 檔、CRC 對齊溯源指紋）
+  → **Phase B（原始時序 1D-CNN）解鎖**，待開窗 builder。
+
 ## 待辦 / 後續
 
 - ~~HF 後端重新部署（推最新 main；新端點 + 三組 parquet + 溯源圖已就緒，設定不需改）。~~
   **✅ 完成（2026-06-27）**：Space `icefeather/aifinalproject` 同步至 main `f083b51`（Space commit `27b07c3`）；
   驗證 `/health` ok、`/servo/provenance` n_files 8 / placeholder=false / clf 0.7566、`/figures/servo_provenance.png` 200、
   `/paderborn/samples` 15、`/xjtu/lobo_loco` 完整。
-- 後續可做：真正的 1D-CNN / Autoencoder（離線 torch、真實時序）、Paderborn MCSA 頻譜邊帶特徵。
+- **Phase B（已解鎖）**：原始時序 1D-CNN——開窗 builder（從 `FMCRD_Data.zip` 串流抽窗）+ 1D-CNN 分類 / conv-AE。
+- 後續可做：Paderborn MCSA 頻譜邊帶特徵。
 - 報表頁**時間區間彙整**：待實場 / IoT 逐時遙測串流接入後補上。

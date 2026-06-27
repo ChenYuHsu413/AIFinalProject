@@ -1,0 +1,18 @@
+# ---------------------------------------------------------------------------
+# Offline deep-learning environment for Module Servo (src/models/servo_dl.py):
+# the full dev environment PLUS PyTorch.
+#
+# Kept SEPARATE from requirements-dev.txt on purpose: the cloud / Docker image
+# (Hugging Face Space + root Dockerfile) installs requirements-dev.txt and must
+# stay slim — the cloud never trains DL, it only reads the committed results JSON
+# (outputs/metrics/servo_dl_results.json). torch is needed only OFFLINE to
+# (re)generate that JSON.
+#
+# Use locally / in CI to run the offline DL:   pip install -r requirements-dl.txt
+# ---------------------------------------------------------------------------
+
+-r requirements-dev.txt
+
+# CPU-only torch is enough (tiny fully-connected nets + autoencoder on the
+# 7-dim engineered features).
+torch>=2.2
