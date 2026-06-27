@@ -98,6 +98,9 @@
 
 ## 待辦 / 後續
 
-- HF 後端重新部署（推最新 main；新端點 + 三組 parquet + 溯源圖已就緒，設定不需改）。
+- ~~HF 後端重新部署（推最新 main；新端點 + 三組 parquet + 溯源圖已就緒，設定不需改）。~~
+  **✅ 完成（2026-06-27）**：Space `icefeather/aifinalproject` 同步至 main `f083b51`（Space commit `27b07c3`）；
+  驗證 `/health` ok、`/servo/provenance` n_files 8 / placeholder=false / clf 0.7566、`/figures/servo_provenance.png` 200、
+  `/paderborn/samples` 15、`/xjtu/lobo_loco` 完整。
 - 後續可做：真正的 1D-CNN / Autoencoder（離線 torch、真實時序）、Paderborn MCSA 頻譜邊帶特徵。
 - 報表頁**時間區間彙整**：待實場 / IoT 逐時遙測串流接入後補上。
