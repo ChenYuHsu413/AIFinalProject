@@ -5,12 +5,17 @@
 > 落差 0.80**）。本文規劃四條**延伸軌**，把模組 C 從「MVP 分類」推進成「有電流診斷深度、能跨工況、
 > 並嘗試修復人工→真實落差、可即時預測」的系統。結果回寫 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md) §4。
 >
-> **狀態（2026-06-27）**：**CE4（即時預測端點）已完成**——新增 `src/models/predict_paderborn.py`
-> （載 `paderborn_clf.joblib` 即時推論）+ FastAPI `GET /paderborn/samples`、`POST /paderborn/predict`
-> （端點命名沿用既有 `/paderborn/*` 而非計畫初稿的 `/predict_paderborn`）。Next.js 模組 C 頁加「選一筆量測
-> 即時分類」區（預測 vs 真實 + 機率條；選真實損傷量測可現場看到誤判，即泛化落差的單筆呈現）。
-> `paderborn_clf.joblib`（~0.8 MB）已納入 git 白名單供雲端推論；測試 `tests/test_predict_paderborn.py`。
-> CE1/CE2/CE3 仍為規劃草稿、尚未動工（優先序 **CE1 > CE2 > CE3**）。
+> **狀態（2026-06-28）**：**CE1（領域自適應）已完成**——新增 `src/models/adapt_paderborn.py`，
+> 在同一「人工→真實」切分上跑 baseline / CORAL / 工況感知標準化 / few-shot 四評估，輸出
+> `outputs/metrics/paderborn_domain_adapt.json`；FastAPI `GET /paderborn/domain_adapt`；Next.js 模組 C 頁加
+> 「CE1 領域自適應」消融卡（無監督對齊長條 + few-shot 學習曲線）。測試 `tests/test_adapt_paderborn.py`（5 項）。
+> **核心結論（誠實）**：baseline macro-F1 **0.200**（自洽重現 MVP）；**兩種無監督仿射對齊未能改善**
+> （CORAL **0.038**、z-score **0.189**，皆 ≤ baseline；CORAL 跨 reg 0.01–100 全 < 0.20）——人工 EDM/雕刻
+> 故障與真實疲勞劣化的差異**不是單純協方差/平移位移**，線性對齊修不動；**few-shot 有效且可量化**：每類
+> k=1/3/5/10 真實標籤 → macro-F1 **0.288 / 0.380 / 0.416 / 0.541**（±~0.04，5 次抽樣平均）。
+> 因真實測試集無 healthy 類，另報 outer/inner 二類 `binary_f1`。
+> **CE4（即時預測端點）先前已完成**（`predict_paderborn.py` + `/paderborn/samples`、`/paderborn/predict`）。
+> CE2/CE3 仍為規劃草稿、尚未動工（需重抓 Paderborn 原始 `.mat`；優先序 **CE2 > CE3**）。
 
 ---
 
@@ -84,6 +89,24 @@
 
 **誠實**：手段 1/2 僅用目標未標註特徵（無監督 DA）；手段 3 用了少量真實標籤須寫明屬 few-shot、非零樣本；改善幅度如實呈現。
 
+**實測結果（2026-06-28，固定分類器 RandomForest、`adapt_paderborn.py`）**：
+
+| 手段 | macro-F1（3 類） | outer/inner F1 | 監督性 |
+| --- | --- | --- | --- |
+| baseline（無自適應） | **0.200** | 0.300 | — |
+| CORAL 協方差對齊 | **0.038** | 0.057 | 無監督（僅 target 特徵） |
+| 工況感知標準化（transductive z-score） | **0.189** | 0.283 | 無監督 |
+| few-shot k=1/類 | 0.288 ± 0.036 | — | 用真實標籤 |
+| few-shot k=3/類 | 0.380 ± 0.053 | — | 用真實標籤 |
+| few-shot k=5/類 | 0.416 ± 0.050 | — | 用真實標籤 |
+| few-shot k=10/類 | **0.541 ± 0.042** | — | 用真實標籤 |
+
+- **無監督仿射對齊無效**：CORAL 反而更糟（0.038）、z-score 幾無變化（0.189），皆 ≤ baseline 0.200。
+  另跨 `coral_reg` 0.01→100 掃描全落在 0.04–0.17（reg→大趨近 identity 才回到 baseline）——確認非調參問題，
+  而是 artificial→real shift **不是單純協方差/平移位移**，線性對齊修不動。
+- **few-shot 有效且可量化**：每類僅 10 筆真實標籤即把 macro-F1 自 0.20 抬到 **0.54**，量化「要多少真實標籤才夠」。
+- baseline 0.200 與 MVP `paderborn_eval.json` 泛化 0.20 一致（自洽檢查通過）。
+
 ### CE2：MCSA 頻譜邊帶特徵 —— 名實相符的電流診斷
 
 **做法**：對 `phase_current_1/2` 做 FFT，量取**供電頻率 f_s 附近的故障特徵邊帶**（外/內環故障在 f_s ± k·f_defect 產生邊帶）；新增 `cur1_band_*` / `cur2_band_*` 能量特徵。
@@ -116,12 +139,12 @@
 
 ## 6. 分階段交付（每步附驗收）
 
-### CE1 — 領域自適應救人工→真實
-| 步 | 工作 | 驗收 |
-| --- | --- | --- |
-| 1 | CORAL 對齊版人工→真實 | 對照表 baseline vs CORAL（macro-F1 / 混淆矩陣），無目標標籤洩漏 |
-| 2 | few-shot（每類 k 筆真實）微調 | 隨 k 的學習曲線；標明用了真實標籤 |
-| 3 | 消融對照表 + 回寫 | baseline / CORAL / few-shot 並列；誠實標註改善幅度 |
+### CE1 — 領域自適應救人工→真實 ✅（2026-06-28 完成）
+| 步 | 工作 | 驗收 | 狀態 |
+| --- | --- | --- | --- |
+| 1 | CORAL 對齊版人工→真實 | 對照表 baseline vs CORAL（macro-F1 / 混淆矩陣），無目標標籤洩漏 | ✅ CORAL 0.038 < baseline 0.200 |
+| 2 | few-shot（每類 k 筆真實）微調 | 隨 k 的學習曲線；標明用了真實標籤 | ✅ k=1→10：0.288→0.541 |
+| 3 | 消融對照表 + 回寫 | baseline / CORAL / few-shot 並列；誠實標註改善幅度 | ✅ 見 §4 表 + 前端消融卡 |
 
 ### CE2 — MCSA 頻譜邊帶
 | 步 | 工作 | 驗收 |

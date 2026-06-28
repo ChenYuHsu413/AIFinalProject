@@ -196,6 +196,12 @@ def paderborn_predict_one(features: Dict[str, Any]) -> Dict[str, Any]:
     return predict_paderborn(features)
 
 
+def paderborn_domain_adapt() -> Dict[str, Any]:
+    """CE1 artificial->real domain-adaptation ablation: baseline / CORAL /
+    transductive z-score / few-shot learning curve. Empty dict if not built."""
+    return _read_json_or_empty(load_config()["paderborn"]["domain_adapt"]["metrics"])
+
+
 # --- Module B+ (XJTU multi-trajectory generalization) ------------------------
 def xjtu_generalization() -> Dict[str, Any]:
     """Fixed-param per-bearing degradation detection: method / per_bearing / aggregate."""

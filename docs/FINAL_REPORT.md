@@ -4,7 +4,8 @@
 > 系統實作（FastAPI 後端 + Next.js Command Center 前端 + LLM 維護助理 + 知識庫）與部署
 > （Vercel + Hugging Face Spaces）。數字取自 `outputs/metrics/` 已提交之評估檔；主線 Servo 已同步為
 > **真實 PHM FMCRD 留出測試**結果（非先前 placeholder 合成）。§9.1 補上**兩階段深度學習完整說明**
-> （Phase A PyTorch MLP+AE、Phase B 真 1D-CNN on 原始波形，含深化後的誠實下修）。
+> （Phase A PyTorch MLP+AE、Phase B 真 1D-CNN on 原始波形，含深化後的誠實下修）。§8 模組 C 補上
+> **CE1 領域自適應**（無監督對齊無效、few-shot 每類 10 筆真實標籤把 macro-F1 0.20→0.54）。
 > 線上 Demo：Next.js Command Center（Vercel）+ 後端（HF Spaces）。
 > 相關文件：[`REPORT_OUTLINE.md`](REPORT_OUTLINE.md)、[`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、
 > [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)、[`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md)、
@@ -156,8 +157,22 @@ XJTU 為軸承試驗台（非伺服馬達本體，以「旋轉機械 / 電動機
 （混淆矩陣對角線潰散）。這正是「**人工故障訓練無法直接泛化到真實劣化**」的關鍵發現——
 本系統**如實呈現此落差、不只報 baseline**。
 
+**CE1 · 領域自適應（嘗試修補落差）**：在同一切分上試三種補救：
+
+| 手段 | macro-F1 | 監督性 |
+| --- | --- | --- |
+| baseline（無自適應） | 0.200 | — |
+| CORAL 協方差對齊 | 0.038 | 無監督（僅 target 特徵） |
+| 工況感知標準化 | 0.189 | 無監督 |
+| few-shot（每類 10 筆真實標籤） | **0.541 ± 0.042** | 用少量真實標籤 |
+
+**誠實結論**：**無監督仿射對齊修不動**（CORAL/z-score 皆 ≤ baseline；CORAL 跨 reg 0.01–100 全 < 0.20）——
+artificial→real shift 不是單純協方差/平移位移；**但每類僅 10 筆真實標籤即把 macro-F1 自 0.20 抬到 0.54**，
+量化了「要多少真實標籤才夠」。few-shot 用了真實標籤（非零樣本，如實揭露）；因真實測試集無 healthy 類，
+另報 outer/inner 二類 F1。
+
 > 誠實性：Paderborn 為真實 PMSM **試驗台**訊號（MCSA 主張成立），但屬試驗台、**非產線伺服馬達**；
-> 屬故障分類**非 RUL**；為子集 MVP。
+> 屬故障分類**非 RUL**；為子集 MVP。CORAL/z-score 僅用目標未標註特徵（無監督 DA）；few-shot 揭露用了少量真實標籤。
 
 ---
 
@@ -257,7 +272,7 @@ Servo 健康儀表板、設備詳情頁（`/equipment/[id]`，橋接真模型預
 | A（AI4I） | 故障二元分類 | F1 0.887 · PR-AUC 0.906 · Recall 0.809 | 合成資料上靜態風險分類可用，偏重 Recall |
 | B（IMS） | 健康度 / RUL | 失效前 3.12 天偵測 · 退化區 MAE 25 h | 單軌跡可偵測退化，絕對 RUL 受外推牆限制 |
 | B+（XJTU） | 多軌跡泛化 | 15/15 偵測 FPT · LOCO R² −1.22→−0.92 | 健康監測可泛化、絕對 RUL 跨工況受限 |
-| C（Paderborn） | 電流故障分類 | baseline F1 1.0 → 真實 F1 0.20（gap 0.80） | 人工故障訓練無法直接泛化到真實損傷 |
+| C（Paderborn） | 電流故障分類 + 領域自適應 | baseline F1 1.0 → 真實 0.20（gap 0.80）；CE1：無監督對齊無效、few-shot 10 筆/類 →0.54 | 人工故障訓練無法直接泛化；線性對齊修不動、需少量真實標籤 |
 | Servo（主線） | 健康分類 + DV | macro-F1 0.757 · DV R² 0.937（真實 FMCRD 留出） | 真實 PHM 資料留出測試，流程完整 |
 
 ---

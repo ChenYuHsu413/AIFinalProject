@@ -1,0 +1,188 @@
+{
+  "method": "paderborn_artificial_to_real_domain_adaptation",
+  "features": [
+    "vib_rms",
+    "vib_peak",
+    "vib_peak2peak",
+    "vib_kurtosis",
+    "vib_skewness",
+    "vib_crest_factor",
+    "vib_shape_factor",
+    "vib_impulse_factor",
+    "vib_std",
+    "vib_mean",
+    "cur1_rms",
+    "cur1_peak",
+    "cur1_peak2peak",
+    "cur1_kurtosis",
+    "cur1_skewness",
+    "cur1_crest_factor",
+    "cur1_shape_factor",
+    "cur1_impulse_factor",
+    "cur1_std",
+    "cur1_mean",
+    "cur2_rms",
+    "cur2_peak",
+    "cur2_peak2peak",
+    "cur2_kurtosis",
+    "cur2_skewness",
+    "cur2_crest_factor",
+    "cur2_shape_factor",
+    "cur2_impulse_factor",
+    "cur2_std",
+    "cur2_mean"
+  ],
+  "coral_reg": 1.0,
+  "results": {
+    "baseline": {
+      "model": "random_forest",
+      "accuracy": 0.2409090909090909,
+      "macro_f1": 0.19978070175438598,
+      "binary_f1": 0.29967105263157895,
+      "labels": [
+        "healthy",
+        "outer",
+        "inner"
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          41,
+          21,
+          38
+        ],
+        [
+          49,
+          39,
+          32
+        ]
+      ],
+      "n": 220
+    },
+    "coral": {
+      "model": "random_forest",
+      "accuracy": 0.03636363636363636,
+      "macro_f1": 0.03831168831168831,
+      "binary_f1": 0.057467532467532466,
+      "labels": [
+        "healthy",
+        "outer",
+        "inner"
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          68,
+          3,
+          29
+        ],
+        [
+          98,
+          17,
+          5
+        ]
+      ],
+      "n": 220
+    },
+    "transductive_zscore": {
+      "model": "random_forest",
+      "accuracy": 0.21363636363636362,
+      "macro_f1": 0.18898385565052234,
+      "binary_f1": 0.2834757834757835,
+      "labels": [
+        "healthy",
+        "outer",
+        "inner"
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          56,
+          21,
+          23
+        ],
+        [
+          53,
+          41,
+          26
+        ]
+      ],
+      "n": 220
+    },
+    "few_shot": {
+      "model": "random_forest",
+      "seeds": 5,
+      "uses_real_labels": true,
+      "curve": [
+        {
+          "k_per_class": 1,
+          "macro_f1_mean": 0.28814593068100847,
+          "macro_f1_std": 0.03622143549913784,
+          "binary_f1_mean": 0.43221889602151264,
+          "binary_f1_std": 0.05433215324870674,
+          "n_test_mean": 218.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 3,
+          "macro_f1_mean": 0.3798951383687005,
+          "macro_f1_std": 0.053002446641979666,
+          "binary_f1_mean": 0.5698427075530507,
+          "binary_f1_std": 0.07950366996296951,
+          "n_test_mean": 214.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 5,
+          "macro_f1_mean": 0.41615843623061044,
+          "macro_f1_std": 0.04976843784616559,
+          "binary_f1_mean": 0.6242376543459157,
+          "binary_f1_std": 0.0746526567692484,
+          "n_test_mean": 210.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 10,
+          "macro_f1_mean": 0.5405722811763256,
+          "macro_f1_std": 0.0418754917518068,
+          "binary_f1_mean": 0.8108584217644885,
+          "binary_f1_std": 0.06281323762771023,
+          "n_test_mean": 200.0,
+          "seeds": 5
+        }
+      ]
+    }
+  },
+  "summary": {
+    "best_model": "random_forest",
+    "baseline_macro_f1": 0.19978070175438598,
+    "baseline_binary_f1": 0.29967105263157895,
+    "best_unsup_method": "transductive_zscore",
+    "best_unsup_macro_f1": 0.18898385565052234,
+    "few_shot_best_k": 10,
+    "few_shot_best_macro_f1": 0.5405722811763256,
+    "honesty": {
+      "unsupervised_methods": [
+        "coral",
+        "transductive_zscore"
+      ],
+      "uses_real_labels": [
+        "few_shot"
+      ],
+      "real_test_has_no_healthy": true,
+      "note": "CORAL/z-score \u50c5\u7528 target \u672a\u6a19\u8a3b\u7279\u5fb5\uff08\u7121\u76e3\u7763 DA\uff09\uff1bfew_shot \u7528\u4e86\u5c11\u91cf\u771f\u5be6\u6a19\u7c64\u3002\u771f\u5be6\u6e2c\u8a66\u96c6\u7121 healthy \u985e\uff0c3 \u985e macro-F1 \u542b\u4e00\u500b 0 \u5206\u9805\uff0c\u6545\u53e6\u5831 outer/inner \u4e8c\u985e binary_f1\u3002"
+    }
+  }
+}

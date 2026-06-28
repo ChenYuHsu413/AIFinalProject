@@ -175,6 +175,12 @@ def paderborn_samples():
     return services.paderborn_samples()
 
 
+@app.get("/paderborn/domain_adapt")
+def paderborn_domain_adapt():
+    """CE1 領域自適應消融：baseline / CORAL / 工況感知標準化 / few-shot 學習曲線。"""
+    return services.paderborn_domain_adapt()
+
+
 from pydantic import BaseModel  # noqa: E402
 
 

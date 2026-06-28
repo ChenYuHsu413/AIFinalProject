@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { ConfusionMatrix } from "@/components/dashboard/ConfusionMatrix";
@@ -24,6 +33,35 @@ interface PaderbornEval {
     baseline_macro_f1: number;
     generalization_macro_f1: number;
     gap: number;
+  };
+}
+interface AdaptMethod {
+  model: string;
+  accuracy: number;
+  macro_f1: number;
+  binary_f1: number;
+}
+interface FewShotPoint {
+  k_per_class: number;
+  macro_f1_mean: number;
+  macro_f1_std: number;
+  binary_f1_mean: number;
+  binary_f1_std: number;
+  n_test_mean: number;
+}
+interface DomainAdaptData {
+  results: {
+    baseline: AdaptMethod;
+    coral?: AdaptMethod;
+    transductive_zscore?: AdaptMethod;
+    few_shot?: { model: string; seeds: number; curve: FewShotPoint[] };
+  };
+  summary: {
+    baseline_macro_f1: number;
+    best_unsup_method: string | null;
+    best_unsup_macro_f1: number | null;
+    few_shot_best_k: number | null;
+    few_shot_best_macro_f1: number | null;
   };
 }
 interface Sample {
@@ -54,11 +92,15 @@ const CLASS_ZH: Record<string, string> = {
 
 export default function ModuleCPage() {
   const [data, setData] = useState<PaderbornEval | null>(null);
+  const [adapt, setAdapt] = useState<DomainAdaptData | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
     apiGet<PaderbornEval>("/paderborn/eval").then(setData).catch(() => setErr(true));
+    apiGet<DomainAdaptData>("/paderborn/domain_adapt")
+      .then((d) => setAdapt(d.results ? d : null))
+      .catch(() => {});
     apiGet<Sample[]>("/paderborn/samples").then(setSamples).catch(() => {});
   }, []);
 
@@ -133,8 +175,158 @@ export default function ModuleCPage() {
         </>
       )}
 
+      {adapt && <DomainAdapt data={adapt} />}
+
       {samples.length > 0 && <LiveInference samples={samples} />}
     </div>
+  );
+}
+
+// ===========================================================================
+// CE1 domain adaptation — can we close the artificial->real gap?
+// Unsupervised feature alignment (CORAL / transductive z-score) uses target
+// features only; few-shot admits a few REAL labels (disclosed) and traces a
+// learning curve.  Honest finding: affine alignment doesn't help, a handful of
+// real labels does.
+// ===========================================================================
+const METHOD_ZH: Record<string, string> = {
+  baseline: "無自適應 (baseline)",
+  coral: "CORAL 協方差對齊",
+  transductive_zscore: "工況感知標準化",
+};
+
+function DomainAdapt({ data }: { data: DomainAdaptData }) {
+  const { results, summary } = data;
+  const unsup: { key: string; m: AdaptMethod }[] = [
+    { key: "baseline", m: results.baseline },
+    ...(results.coral ? [{ key: "coral", m: results.coral }] : []),
+    ...(results.transductive_zscore
+      ? [{ key: "transductive_zscore", m: results.transductive_zscore }]
+      : []),
+  ];
+  const curve = results.few_shot?.curve ?? [];
+  const bestUnsupBeatsBaseline =
+    summary.best_unsup_macro_f1 != null &&
+    summary.best_unsup_macro_f1 > summary.baseline_macro_f1 + 1e-9;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-1 text-lg font-semibold">CE1 · 領域自適應：能不能修補人工→真實落差？</h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        在<b>同一</b>「人工→真實」切分上試三種補救：兩種<b>無監督</b>特徵對齊（僅用目標未標註特徵）
+        與一種 <b>few-shot</b>（納入少量真實標籤）。
+      </p>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="無監督特徵對齊 vs baseline（macro-F1）">
+          <div className="space-y-3">
+            {unsup.map(({ key, m }) => (
+              <div key={key}>
+                <Bar
+                  label={METHOD_ZH[key] ?? key}
+                  right={`${m.macro_f1.toFixed(3)}`}
+                  value={m.macro_f1}
+                  colorClass={key === "baseline" ? "bg-muted-foreground/50" : "bg-cyan-400"}
+                />
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  outer/inner 二類 F1 {m.binary_f1.toFixed(3)}
+                  {key !== "baseline" && " · 僅用目標未標註特徵（無監督）"}
+                </p>
+              </div>
+            ))}
+          </div>
+          <Note tone={bestUnsupBeatsBaseline ? "info" : "warn"} className="mt-4">
+            {bestUnsupBeatsBaseline ? (
+              <>
+                最佳無監督手段（{METHOD_ZH[summary.best_unsup_method ?? ""] ?? summary.best_unsup_method}）
+                將 macro-F1 抬到 {summary.best_unsup_macro_f1?.toFixed(3)}。
+              </>
+            ) : (
+              <>
+                <b>無監督仿射對齊未能改善</b>（皆 ≤ baseline {summary.baseline_macro_f1.toFixed(3)}）——
+                人工 EDM/雕刻故障與真實疲勞劣化的差異<b>不是單純的協方差/平移位移</b>，線性對齊修不動。
+              </>
+            )}
+          </Note>
+        </Card>
+
+        <Card title="Few-shot 學習曲線（每類 k 筆真實標籤）">
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={curve} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  className="text-border"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="k_per_class"
+                  tick={{ fontSize: 11, fill: "currentColor" }}
+                  className="text-muted-foreground"
+                  tickLine={false}
+                  axisLine={false}
+                  label={{ value: "k / 類", position: "insideBottomRight", fontSize: 10, offset: -2 }}
+                />
+                <YAxis
+                  domain={[0, 1]}
+                  tick={{ fontSize: 11, fill: "currentColor" }}
+                  className="text-muted-foreground"
+                  tickLine={false}
+                  axisLine={false}
+                  width={36}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "var(--popover-foreground)",
+                  }}
+                  labelStyle={{ color: "var(--muted-foreground)" }}
+                  labelFormatter={(k) => `k=${k} / 類`}
+                  formatter={(v, name) => [Number(v).toFixed(3), name as string]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="macro_f1_mean"
+                  name="macro-F1 (3 類)"
+                  stroke="#22d3ee"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="binary_f1_mean"
+                  name="outer/inner F1"
+                  stroke="#a3e635"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {summary.few_shot_best_k != null && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              每類 {summary.few_shot_best_k} 筆真實標籤 → macro-F1{" "}
+              <span className="font-semibold text-cyan-300">
+                {summary.few_shot_best_macro_f1?.toFixed(3)}
+              </span>
+              （baseline {summary.baseline_macro_f1.toFixed(3)}，
+              {results.few_shot?.seeds} 次抽樣平均）。
+            </p>
+          )}
+        </Card>
+      </div>
+
+      <Note tone="warn" className="mt-4">
+        <b>誠實性：</b>CORAL / 工況感知標準化<b>僅用目標未標註特徵</b>（合法無監督 DA）；
+        few-shot <b>用了少量真實標籤</b>、屬 few-shot 非零樣本。改善幅度如實呈現 ——
+        無監督修不動、需少量真實標籤才有效，量化了「要多少真實標籤才夠」。
+      </Note>
+    </section>
   );
 }
 

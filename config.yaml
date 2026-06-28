@@ -234,6 +234,13 @@ paderborn:
   best_model: outputs/models/paderborn_clf.joblib
   metrics: outputs/metrics/paderborn_eval.json          # baseline CV vs artificial->real
   predictions: outputs/metrics/paderborn_predictions.csv
+  # CE1 — domain adaptation for the artificial->real gap (see adapt_paderborn.py).
+  domain_adapt:
+    methods: [coral, transductive_zscore, few_shot]
+    coral_reg: 1.0
+    few_shot_k: [1, 3, 5, 10]          # real samples PER damaged class admitted to training
+    few_shot_seeds: 5                  # random draws per k, averaged (mean ± std)
+    metrics: outputs/metrics/paderborn_domain_adapt.json
 
 # ---------------------------------------------------------------------------
 # Module Servo — PHM servomotor-driven ballscrew degradation (PROJECT MAIN LINE)

@@ -350,6 +350,20 @@ def test_servo_cnn_results():
         assert ordered[-1] > ordered[0]
 
 
+def test_paderborn_domain_adapt():
+    """CE1 ablation endpoint: 200 with baseline/methods + few-shot curve when
+    built, or an empty object before adapt_paderborn has run."""
+    resp = client.get("/paderborn/domain_adapt")
+    assert resp.status_code == 200
+    d = resp.json()
+    if d:  # built (committed JSON present)
+        assert d["method"] == "paderborn_artificial_to_real_domain_adaptation"
+        assert 0.0 <= d["results"]["baseline"]["macro_f1"] <= 1.0
+        curve = d["results"]["few_shot"]["curve"]
+        # learning curve is non-empty and bounded
+        assert curve and all(0.0 <= p["macro_f1_mean"] <= 1.0 for p in curve)
+
+
 def test_servo_simulate_options():
     resp = client.get("/servo/simulate/options")
     assert resp.status_code == 200

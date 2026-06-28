@@ -87,6 +87,11 @@
 
 - **結論**：模型在人工故障上**完美**分類，但對**真實加速壽命損傷幾乎泛化失敗**（near-chance）；真實混淆矩陣顯示
   約 **90/220** 真實受損量測被誤判為「健康」。與 Paderborn 文獻一致：人工(EDM/雕刻)故障訊號特徵不同於真實疲勞損傷。
+
+> **CE1 延伸（2026-06-28，領域自適應救此落差）**：在同一切分上試補救——**無監督仿射對齊無效**
+> （CORAL 0.038、transductive z-score 0.189，皆 ≤ baseline 0.200；CORAL 跨 reg 0.01–100 全 < 0.20），證明此
+> shift 非單純協方差/平移位移；**few-shot 有效**：每類 k=1/3/5/10 真實標籤 → macro-F1 0.288/0.380/0.416/0.541。
+> 詳見 [`MODULE_C_PADERBORN_EXTENSIONS_PLAN.md`](MODULE_C_PADERBORN_EXTENSIONS_PLAN.md) §4 CE1。
 - **誠實細節**：真實測試集**全為受損軸承（無健康類）**，三類 macro-F1 含一個 0 分的 healthy（無樣本）會機械性拉低；
   即使只看 outer/inner 兩類，鑑別力亦僅 ~0.3。落差為真，magnitude 受此影響需如實說明。
 
