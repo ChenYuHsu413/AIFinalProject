@@ -8,9 +8,18 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from src.models.eval_xjtu_domain_adapt import coral_align, per_condition_zscore
-from src.models.adapt_paderborn import _binary_f1, _few_shot_curve, _macro_f1
+from src.models.adapt_paderborn import (
+    _baseline_importances,
+    _binary_f1,
+    _feature_diagnosis,
+    _few_shot_curve,
+    _macro_f1,
+    _make_pipe,
+    _spearman,
+)
 
 
 def _cov_dist(A: np.ndarray, B: np.ndarray) -> float:
@@ -107,3 +116,41 @@ def test_metrics_helpers_label_handling():
     assert 0.0 < _binary_f1(y_true, y_pred) <= 1.0
     # 3-class macro averages over healthy(0), outer, inner -> strictly below binary
     assert _macro_f1(y_true, y_pred) < _binary_f1(y_true, y_pred)
+
+
+# --- B: CORAL + few-shot combo --------------------------------------------
+def test_few_shot_coral_combo_same_shape():
+    """align=True returns a curve of the same shape as plain few-shot (no leakage)."""
+    rng = np.random.RandomState(4)
+    train, real, feats = _synth_paderborn(rng)
+    ks = [1, 5]
+    plain = _few_shot_curve(train, real, feats, "random_forest", ks, seeds=2, rs=42)
+    combo = _few_shot_curve(train, real, feats, "random_forest", ks, seeds=2, rs=42, align=True)
+    assert [p["k_per_class"] for p in combo] == ks
+    for pp, pc in zip(plain, combo):
+        assert pc["n_test_mean"] == pp["n_test_mean"]  # same leakage-free test size
+        assert 0.0 <= pc["macro_f1_mean"] <= 1.0
+
+
+# --- A: feature-transferability diagnosis ----------------------------------
+def test_spearman_matches_known_sign():
+    a = np.array([1.0, 2.0, 3.0, 4.0])
+    assert _spearman(a, a) == pytest.approx(1.0)
+    assert _spearman(a, a[::-1]) == pytest.approx(-1.0)
+    assert _spearman(a, np.ones(4)) == 0.0  # degenerate -> 0, no NaN
+
+
+def test_feature_diagnosis_structure_and_importance_source():
+    """Diagnosis returns per-feature importance+shift, a bounded correlation, and
+    falls back to mutual-info when the classifier exposes no importances."""
+    rng = np.random.RandomState(5)
+    train, real, feats = _synth_paderborn(rng)
+    pipe = _make_pipe("random_forest", feats, 42).fit(train[feats], train["fault_class"])
+    diag = _feature_diagnosis(train, real, feats, pipe)
+    assert {p["feature"] for p in diag["per_feature"]} == set(feats)
+    assert all("importance" in p and "shift" in p for p in diag["per_feature"])
+    assert -1.0 <= diag["spearman_importance_vs_shift"] <= 1.0
+    assert len(diag["top_discriminative"]) == min(5, len(feats))
+    # RF exposes feature_importances_ -> array length matches feats
+    imp = _baseline_importances(pipe, feats, train)
+    assert len(imp) == len(feats)

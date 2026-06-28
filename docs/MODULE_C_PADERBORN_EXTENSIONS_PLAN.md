@@ -12,8 +12,11 @@
 > **核心結論（誠實）**：baseline macro-F1 **0.200**（自洽重現 MVP）；**兩種無監督仿射對齊未能改善**
 > （CORAL **0.038**、z-score **0.189**，皆 ≤ baseline；CORAL 跨 reg 0.01–100 全 < 0.20）——人工 EDM/雕刻
 > 故障與真實疲勞劣化的差異**不是單純協方差/平移位移**，線性對齊修不動；**few-shot 有效且可量化**：每類
-> k=1/3/5/10 真實標籤 → macro-F1 **0.288 / 0.380 / 0.416 / 0.541**（±~0.04，5 次抽樣平均）。
-> 因真實測試集無 healthy 類，另報 outer/inner 二類 `binary_f1`。
+> k=1/3/5/10/20/40 真實標籤 → macro-F1 **0.288 / 0.380 / 0.416 / 0.541 / 0.640 / 0.650**（±~0.02–0.05，
+> 5 次抽樣平均；於 ~0.65 趨緩、仍不及 in-dist 1.0）。因真實測試集無 healthy 類，另報 outer/inner 二類 `binary_f1`。
+> **機制診斷（A）**：逐特徵 artificial→real 標準化均值位移 vs baseline 重要度的 **Spearman = 0.50**——
+> baseline 最倚重的判別特徵正是位移最大者（如 `vib_impulse_factor`/`vib_kurtosis`/`vib_mean`），故線性對齊救不回判別軸。
+> **組合（B）**：**先 CORAL 對齊再 few-shot 反而更差**（各 k 皆 ≤ 純 few-shot），與診斷一致。
 > **CE4（即時預測端點）先前已完成**（`predict_paderborn.py` + `/paderborn/samples`、`/paderborn/predict`）。
 > CE2/CE3 仍為規劃草稿、尚未動工（需重抓 Paderborn 原始 `.mat`；優先序 **CE2 > CE3**）。
 
@@ -97,14 +100,22 @@
 | CORAL 協方差對齊 | **0.038** | 0.057 | 無監督（僅 target 特徵） |
 | 工況感知標準化（transductive z-score） | **0.189** | 0.283 | 無監督 |
 | few-shot k=1/類 | 0.288 ± 0.036 | — | 用真實標籤 |
-| few-shot k=3/類 | 0.380 ± 0.053 | — | 用真實標籤 |
 | few-shot k=5/類 | 0.416 ± 0.050 | — | 用真實標籤 |
-| few-shot k=10/類 | **0.541 ± 0.042** | — | 用真實標籤 |
+| few-shot k=10/類 | 0.541 ± 0.042 | — | 用真實標籤 |
+| few-shot k=20/類 | 0.640 ± 0.016 | — | 用真實標籤 |
+| few-shot k=40/類 | **0.650 ± 0.013** | — | 用真實標籤 |
 
 - **無監督仿射對齊無效**：CORAL 反而更糟（0.038）、z-score 幾無變化（0.189），皆 ≤ baseline 0.200。
   另跨 `coral_reg` 0.01→100 掃描全落在 0.04–0.17（reg→大趨近 identity 才回到 baseline）——確認非調參問題，
   而是 artificial→real shift **不是單純協方差/平移位移**，線性對齊修不動。
-- **few-shot 有效且可量化**：每類僅 10 筆真實標籤即把 macro-F1 自 0.20 抬到 **0.54**，量化「要多少真實標籤才夠」。
+- **few-shot 有效且可量化**：每類僅 10 筆真實標籤即把 macro-F1 自 0.20 抬到 0.54、k=40 達 **0.65**（於 ~0.65 趨緩、
+  仍不及 in-dist 1.0，因人工/真實分布本質不同），量化「要多少真實標籤才夠」。
+- **機制診斷（A · feature transferability）**：逐特徵在同類別內的 artificial→real **標準化均值位移**
+  對 baseline RandomForest 重要度的 **Spearman = 0.50**——baseline 最倚重的判別特徵（`vib_impulse_factor`
+  位移 2.5、`vib_kurtosis` 2.1、`vib_mean` 2.8）正是位移最大者。**機制性解釋**了無監督線性對齊為何失敗：
+  判別軸本身被破壞，協方差對齊無法復原。
+- **CORAL+few-shot 組合（B）**：先無監督對齊再加 k 筆真實標籤，**各 k 皆 ≤ 純 few-shot**
+  （0.131/0.277/0.381/0.501/0.586/0.633）——與診斷一致：CORAL 既破壞判別軸，預對齊只是傷害，需更多標籤才追平。
 - baseline 0.200 與 MVP `paderborn_eval.json` 泛化 0.20 一致（自洽檢查通過）。
 
 ### CE2：MCSA 頻譜邊帶特徵 —— 名實相符的電流診斷
@@ -143,8 +154,10 @@
 | 步 | 工作 | 驗收 | 狀態 |
 | --- | --- | --- | --- |
 | 1 | CORAL 對齊版人工→真實 | 對照表 baseline vs CORAL（macro-F1 / 混淆矩陣），無目標標籤洩漏 | ✅ CORAL 0.038 < baseline 0.200 |
-| 2 | few-shot（每類 k 筆真實）微調 | 隨 k 的學習曲線；標明用了真實標籤 | ✅ k=1→10：0.288→0.541 |
+| 2 | few-shot（每類 k 筆真實）微調 | 隨 k 的學習曲線；標明用了真實標籤 | ✅ k=1→40：0.288→0.650（~0.65 趨緩） |
 | 3 | 消融對照表 + 回寫 | baseline / CORAL / few-shot 並列；誠實標註改善幅度 | ✅ 見 §4 表 + 前端消融卡 |
+| A | 機制診斷（位移 vs 重要度） | Spearman 量化判別軸位移；解釋無監督對齊失敗 | ✅ Spearman 0.50；前端散點 |
+| B | CORAL+few-shot 組合 | 對照純 few-shot | ✅ 各 k 皆 ≤ 純 few-shot |
 
 ### CE2 — MCSA 頻譜邊帶
 | 步 | 工作 | 驗收 |

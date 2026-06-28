@@ -57,9 +57,26 @@
 - `FINAL_REPORT.md`：頂部狀態戳、§8 CE1 表 + 誠實結論、§12 結果彙整列、模組 C 誠實聲明。
 - `MODULE_B_RESULTS.md`：模組 C 段補 CE1 一行。
 
+## 5. CE1 深化（同日後補）：機制診斷 + CORAL+few-shot 組合 + k 外推
+
+把 CE1 的被動結論升級為**有機制、有量化**的發現（皆現有 parquet、零新資料）：
+
+- **A · 機制診斷（feature transferability）**：`_feature_diagnosis` 逐特徵算同類別內 artificial→real
+  **標準化均值位移**（Cohen's-d 式）對 baseline RandomForest 重要度的 **Spearman = 0.50**——
+  baseline 最倚重的判別特徵（`vib_impulse_factor` 位移 2.5、`vib_kurtosis` 2.1、`vib_mean` 2.8）正是位移最大者。
+  **機制性解釋**了無監督線性對齊為何失敗：判別軸本身被破壞，協方差對齊無法復原。輸出 `results.diagnosis`。
+- **B · CORAL+few-shot 組合 + k 外推**：few-shot k 延伸到 `[1,3,5,10,20,40]`（純 few-shot 0.288→0.541→**0.650**，
+  於 ~0.65 趨緩、仍不及 in-dist 1.0）；新增 `align=True` 的 **CORAL+few-shot 組合曲線**——**各 k 皆 ≤ 純 few-shot**
+  （0.131→0.633），與診斷一致（CORAL 既破壞判別軸，預對齊只是傷害）。輸出 `results.few_shot.curve_coral`。
+- **整合**：同一端點 `/paderborn/domain_adapt` 多回傳 `diagnosis` + `curve_coral`；前端模組 C 頁加
+  **機制診斷散點**（重要度 × 位移 + Spearman + top-5 判別特徵）與 few-shot 雙線（純 vs +CORAL）。
+- **測試**：`test_adapt_paderborn.py` 加 4 項（組合曲線形狀/無洩漏、Spearman 正負號、診斷結構與重要度來源）；
+  後端測試加 `diagnosis`/`curve_coral` 斷言。**全測試 132 passed / 1 skipped**；前端 tsc/eslint/build 全過。
+- **docs**：EXTENSIONS_PLAN §4 表 + 狀態戳、FINAL_REPORT §8/§12、DEMO_SCRIPT §6 + Q&A 同步。
+
 ## 待辦 / 後續
 
-- ~~CE1 領域自適應（救人工→真實 0.80 落差）。~~ **✅ 完成（本日）**。
+- ~~CE1 領域自適應（救人工→真實 0.80 落差）。~~ **✅ 完成（本日，含 A 機制診斷 / B 組合+k 外推深化）**。
 - CE2（MCSA 頻譜邊帶）/ CE3（全 4 工況跨工況泛化）：**需重抓 Paderborn 原始 `.mat`**（`data/raw/paderborn` 目前不存在）。
 - few-shot 可延伸：CORAL + few-shot 組合、學習曲線外推到「達 baseline 1.00 需多少真實標籤」。
 - HF 後端重新部署（新端點 `/paderborn/domain_adapt` + 白名單 JSON 就緒，設定不需改）。

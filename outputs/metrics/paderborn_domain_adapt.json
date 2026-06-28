@@ -161,8 +161,265 @@
           "binary_f1_std": 0.06281323762771023,
           "n_test_mean": 200.0,
           "seeds": 5
+        },
+        {
+          "k_per_class": 20,
+          "macro_f1_mean": 0.6403750717015368,
+          "macro_f1_std": 0.01550587938273073,
+          "binary_f1_mean": 0.9605626075523052,
+          "binary_f1_std": 0.023258819074096108,
+          "n_test_mean": 180.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 40,
+          "macro_f1_mean": 0.6501861058106281,
+          "macro_f1_std": 0.012768288636149965,
+          "binary_f1_mean": 0.975279158715942,
+          "binary_f1_std": 0.019152432954224967,
+          "n_test_mean": 140.0,
+          "seeds": 5
+        }
+      ],
+      "curve_coral": [
+        {
+          "k_per_class": 1,
+          "macro_f1_mean": 0.13138592059324994,
+          "macro_f1_std": 0.04652032909618618,
+          "binary_f1_mean": 0.1970788808898749,
+          "binary_f1_std": 0.06978049364427928,
+          "n_test_mean": 218.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 3,
+          "macro_f1_mean": 0.27663551226073185,
+          "macro_f1_std": 0.04569684737141953,
+          "binary_f1_mean": 0.41495326839109775,
+          "binary_f1_std": 0.0685452710571293,
+          "n_test_mean": 214.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 5,
+          "macro_f1_mean": 0.381074021959814,
+          "macro_f1_std": 0.06656177493305458,
+          "binary_f1_mean": 0.571611032939721,
+          "binary_f1_std": 0.09984266239958188,
+          "n_test_mean": 210.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 10,
+          "macro_f1_mean": 0.500878579400081,
+          "macro_f1_std": 0.04789013343967328,
+          "binary_f1_mean": 0.7513178691001214,
+          "binary_f1_std": 0.07183520015950991,
+          "n_test_mean": 200.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 20,
+          "macro_f1_mean": 0.5860984028498833,
+          "macro_f1_std": 0.021517226563664445,
+          "binary_f1_mean": 0.8791476042748251,
+          "binary_f1_std": 0.032275839845496646,
+          "n_test_mean": 180.0,
+          "seeds": 5
+        },
+        {
+          "k_per_class": 40,
+          "macro_f1_mean": 0.6327288271375219,
+          "macro_f1_std": 0.025920899401729088,
+          "binary_f1_mean": 0.9490932407062826,
+          "binary_f1_std": 0.038881349102593624,
+          "n_test_mean": 140.0,
+          "seeds": 5
         }
       ]
+    },
+    "diagnosis": {
+      "per_feature": [
+        {
+          "feature": "vib_rms",
+          "importance": 0.06447183115874397,
+          "shift": 0.3195151731622693
+        },
+        {
+          "feature": "vib_peak",
+          "importance": 0.06042331956838442,
+          "shift": 0.7696079935369141
+        },
+        {
+          "feature": "vib_peak2peak",
+          "importance": 0.06848469514591055,
+          "shift": 0.8359089151085646
+        },
+        {
+          "feature": "vib_kurtosis",
+          "importance": 0.06959013829429618,
+          "shift": 2.1401602027315505
+        },
+        {
+          "feature": "vib_skewness",
+          "importance": 0.020063570251032812,
+          "shift": 1.4219555900923697
+        },
+        {
+          "feature": "vib_crest_factor",
+          "importance": 0.05408813935919748,
+          "shift": 2.0692760599019895
+        },
+        {
+          "feature": "vib_shape_factor",
+          "importance": 0.049424046230703504,
+          "shift": 1.4389463378703562
+        },
+        {
+          "feature": "vib_impulse_factor",
+          "importance": 0.08468442193536156,
+          "shift": 2.5042623096470957
+        },
+        {
+          "feature": "vib_std",
+          "importance": 0.06628717076743601,
+          "shift": 0.3194506221732577
+        },
+        {
+          "feature": "vib_mean",
+          "importance": 0.06645695124624564,
+          "shift": 2.813416595342066
+        },
+        {
+          "feature": "cur1_rms",
+          "importance": 0.0244819584383144,
+          "shift": 0.6390249780944954
+        },
+        {
+          "feature": "cur1_peak",
+          "importance": 0.006686175796859633,
+          "shift": 0.14521453716299987
+        },
+        {
+          "feature": "cur1_peak2peak",
+          "importance": 0.017898360423756157,
+          "shift": 0.4419213390666066
+        },
+        {
+          "feature": "cur1_kurtosis",
+          "importance": 0.002798596233495186,
+          "shift": 0.5367632376652128
+        },
+        {
+          "feature": "cur1_skewness",
+          "importance": 0.0026221510181393334,
+          "shift": 0.03607299491178957
+        },
+        {
+          "feature": "cur1_crest_factor",
+          "importance": 0.005645392677499078,
+          "shift": 0.5922923531829232
+        },
+        {
+          "feature": "cur1_shape_factor",
+          "importance": 0.0043003855037433494,
+          "shift": 0.38854257830192823
+        },
+        {
+          "feature": "cur1_impulse_factor",
+          "importance": 0.003510848690143306,
+          "shift": 0.6029517835117397
+        },
+        {
+          "feature": "cur1_std",
+          "importance": 0.028606614538358936,
+          "shift": 0.6472079210050349
+        },
+        {
+          "feature": "cur1_mean",
+          "importance": 0.05202820557930231,
+          "shift": 0.265152792886032
+        },
+        {
+          "feature": "cur2_rms",
+          "importance": 0.018868780442268026,
+          "shift": 0.7520582873261082
+        },
+        {
+          "feature": "cur2_peak",
+          "importance": 0.03694944200313762,
+          "shift": 0.4496980817844771
+        },
+        {
+          "feature": "cur2_peak2peak",
+          "importance": 0.04669514798490476,
+          "shift": 0.427967116613136
+        },
+        {
+          "feature": "cur2_kurtosis",
+          "importance": 0.003311255235896242,
+          "shift": 0.09826082618950739
+        },
+        {
+          "feature": "cur2_skewness",
+          "importance": 0.0027223818524901547,
+          "shift": 0.09333879560643835
+        },
+        {
+          "feature": "cur2_crest_factor",
+          "importance": 0.02339581549219581,
+          "shift": 0.6520295872161801
+        },
+        {
+          "feature": "cur2_shape_factor",
+          "importance": 0.005381528867282896,
+          "shift": 0.4444006218950622
+        },
+        {
+          "feature": "cur2_impulse_factor",
+          "importance": 0.02405296066929875,
+          "shift": 0.6489753097363662
+        },
+        {
+          "feature": "cur2_std",
+          "importance": 0.017697362149967033,
+          "shift": 0.7492148446965801
+        },
+        {
+          "feature": "cur2_mean",
+          "importance": 0.06837235244563485,
+          "shift": 0.37561563785847696
+        }
+      ],
+      "spearman_importance_vs_shift": 0.5021134593993326,
+      "top_discriminative": [
+        {
+          "feature": "vib_impulse_factor",
+          "importance": 0.08468442193536156,
+          "shift": 2.5042623096470957
+        },
+        {
+          "feature": "vib_kurtosis",
+          "importance": 0.06959013829429618,
+          "shift": 2.1401602027315505
+        },
+        {
+          "feature": "vib_peak2peak",
+          "importance": 0.06848469514591055,
+          "shift": 0.8359089151085646
+        },
+        {
+          "feature": "cur2_mean",
+          "importance": 0.06837235244563485,
+          "shift": 0.37561563785847696
+        },
+        {
+          "feature": "vib_mean",
+          "importance": 0.06645695124624564,
+          "shift": 2.813416595342066
+        }
+      ],
+      "note": "\u9010\u7279\u5fb5 artificial\u2192real \u6a19\u6e96\u5316\u5747\u503c\u4f4d\u79fb\uff08\u540c\u985e\u5225\u5167\uff09\u5c0d baseline \u91cd\u8981\u5ea6\u7684 Spearman \u76f8\u95dc\u3002\u6b63\u76f8\u95dc\uff1d\u8d8a\u88ab baseline \u501a\u91cd\u7684\u5224\u5225\u7279\u5fb5\u3001\u4f4d\u79fb\u8d8a\u5927\uff0c\u6545\u7dda\u6027\u5354\u65b9\u5dee\u5c0d\u9f4a\uff08CORAL\uff09\u7121\u6cd5\u5fa9\u539f\u5224\u5225\u8ef8\u3002"
     }
   },
   "summary": {
@@ -171,8 +428,9 @@
     "baseline_binary_f1": 0.29967105263157895,
     "best_unsup_method": "transductive_zscore",
     "best_unsup_macro_f1": 0.18898385565052234,
-    "few_shot_best_k": 10,
-    "few_shot_best_macro_f1": 0.5405722811763256,
+    "few_shot_best_k": 40,
+    "few_shot_best_macro_f1": 0.6501861058106281,
+    "spearman_importance_vs_shift": 0.5021134593993326,
     "honesty": {
       "unsupervised_methods": [
         "coral",

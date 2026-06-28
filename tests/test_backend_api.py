@@ -359,9 +359,14 @@ def test_paderborn_domain_adapt():
     if d:  # built (committed JSON present)
         assert d["method"] == "paderborn_artificial_to_real_domain_adaptation"
         assert 0.0 <= d["results"]["baseline"]["macro_f1"] <= 1.0
-        curve = d["results"]["few_shot"]["curve"]
-        # learning curve is non-empty and bounded
-        assert curve and all(0.0 <= p["macro_f1_mean"] <= 1.0 for p in curve)
+        fs = d["results"]["few_shot"]
+        # learning curve (plain + CORAL combo) is non-empty and bounded
+        assert fs["curve"] and all(0.0 <= p["macro_f1_mean"] <= 1.0 for p in fs["curve"])
+        assert "curve_coral" in fs
+        # feature-transferability diagnosis: bounded Spearman + per-feature rows
+        diag = d["results"]["diagnosis"]
+        assert -1.0 <= diag["spearman_importance_vs_shift"] <= 1.0
+        assert all({"feature", "importance", "shift"} <= set(p) for p in diag["per_feature"])
 
 
 def test_servo_simulate_options():

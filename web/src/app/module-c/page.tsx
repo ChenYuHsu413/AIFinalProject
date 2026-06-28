@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
+  ZAxis,
 } from "recharts";
 
 import { MetricCard } from "@/components/dashboard/MetricCard";
@@ -49,12 +53,27 @@ interface FewShotPoint {
   binary_f1_std: number;
   n_test_mean: number;
 }
+interface FeatureDiag {
+  feature: string;
+  importance: number;
+  shift: number;
+}
 interface DomainAdaptData {
   results: {
     baseline: AdaptMethod;
     coral?: AdaptMethod;
     transductive_zscore?: AdaptMethod;
-    few_shot?: { model: string; seeds: number; curve: FewShotPoint[] };
+    few_shot?: {
+      model: string;
+      seeds: number;
+      curve: FewShotPoint[];
+      curve_coral?: FewShotPoint[];
+    };
+    diagnosis?: {
+      per_feature: FeatureDiag[];
+      spearman_importance_vs_shift: number;
+      top_discriminative: FeatureDiag[];
+    };
   };
   summary: {
     baseline_macro_f1: number;
@@ -62,6 +81,7 @@ interface DomainAdaptData {
     best_unsup_macro_f1: number | null;
     few_shot_best_k: number | null;
     few_shot_best_macro_f1: number | null;
+    spearman_importance_vs_shift: number | null;
   };
 }
 interface Sample {
@@ -205,6 +225,14 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
       : []),
   ];
   const curve = results.few_shot?.curve ?? [];
+  const curveCoral = results.few_shot?.curve_coral ?? [];
+  // merge plain + CORAL few-shot series by k for a two-line chart
+  const fsData = curve.map((p) => ({
+    k: p.k_per_class,
+    fs: p.macro_f1_mean,
+    fsCoral: curveCoral.find((c) => c.k_per_class === p.k_per_class)?.macro_f1_mean ?? null,
+  }));
+  const diag = results.diagnosis;
   const bestUnsupBeatsBaseline =
     summary.best_unsup_macro_f1 != null &&
     summary.best_unsup_macro_f1 > summary.baseline_macro_f1 + 1e-9;
@@ -253,7 +281,7 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
         <Card title="Few-shot 學習曲線（每類 k 筆真實標籤）">
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={curve} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+              <LineChart data={fsData} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="currentColor"
@@ -261,7 +289,7 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
                   vertical={false}
                 />
                 <XAxis
-                  dataKey="k_per_class"
+                  dataKey="k"
                   tick={{ fontSize: 11, fill: "currentColor" }}
                   className="text-muted-foreground"
                   tickLine={false}
@@ -286,24 +314,26 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
                   }}
                   labelStyle={{ color: "var(--muted-foreground)" }}
                   labelFormatter={(k) => `k=${k} / 類`}
-                  formatter={(v, name) => [Number(v).toFixed(3), name as string]}
+                  formatter={(v, name) => [v == null ? "—" : Number(v).toFixed(3), name as string]}
                 />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line
                   type="monotone"
-                  dataKey="macro_f1_mean"
-                  name="macro-F1 (3 類)"
+                  dataKey="fs"
+                  name="few-shot"
                   stroke="#22d3ee"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
                 <Line
                   type="monotone"
-                  dataKey="binary_f1_mean"
-                  name="outer/inner F1"
-                  stroke="#a3e635"
+                  dataKey="fsCoral"
+                  name="CORAL + few-shot"
+                  stroke="#f59e0b"
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   dot={{ r: 3 }}
+                  connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -314,12 +344,86 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
               <span className="font-semibold text-cyan-300">
                 {summary.few_shot_best_macro_f1?.toFixed(3)}
               </span>
-              （baseline {summary.baseline_macro_f1.toFixed(3)}，
-              {results.few_shot?.seeds} 次抽樣平均）。
+              （baseline {summary.baseline_macro_f1.toFixed(3)}，{results.few_shot?.seeds} 次抽樣平均）。
+              <b>先 CORAL 對齊再給標籤反而更差</b> —— 與下方診斷一致：判別軸已被破壞。
             </p>
           )}
         </Card>
       </div>
+
+      {diag && (
+        <Card title="機制診斷：判別特徵正是位移最大的（為何線性對齊修不動）" className="mt-6">
+          <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+            <div className="h-[260px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 8, right: 12, bottom: 16, left: -8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border" />
+                  <XAxis
+                    type="number"
+                    dataKey="importance"
+                    name="baseline 重要度"
+                    tick={{ fontSize: 11, fill: "currentColor" }}
+                    className="text-muted-foreground"
+                    tickLine={false}
+                    axisLine={false}
+                    label={{ value: "baseline 重要度 →", position: "insideBottom", fontSize: 10, offset: -8 }}
+                  />
+                  <YAxis
+                    type="number"
+                    dataKey="shift"
+                    name="人工→真實位移"
+                    tick={{ fontSize: 11, fill: "currentColor" }}
+                    className="text-muted-foreground"
+                    tickLine={false}
+                    axisLine={false}
+                    width={40}
+                    label={{ value: "位移 ↑", position: "insideLeft", angle: -90, fontSize: 10 }}
+                  />
+                  <ZAxis range={[50, 50]} />
+                  <Tooltip
+                    cursor={{ strokeDasharray: "3 3" }}
+                    contentStyle={{
+                      background: "var(--popover)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: "var(--popover-foreground)",
+                    }}
+                    formatter={(v, name) => [Number(v).toFixed(3), name as string]}
+                    labelFormatter={() => ""}
+                  />
+                  <Scatter data={diag.per_feature} fill="#22d3ee" fillOpacity={0.7} />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+            <div>
+              <p className="text-sm">
+                Spearman（重要度, 位移）={" "}
+                <span className="font-semibold text-amber-300">
+                  {diag.spearman_importance_vs_shift.toFixed(2)}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                正相關＝越被 baseline 倚重的判別特徵、artificial→real 位移越大。判別軸本身被破壞，
+                故線性協方差對齊（CORAL）救不回——只有真實標籤（few-shot）能重建判別邊界。
+              </p>
+              <p className="mt-3 mb-1 text-xs font-semibold text-muted-foreground">
+                最具判別力特徵（重要度 / 位移）
+              </p>
+              <ul className="space-y-1 text-xs">
+                {diag.top_discriminative.map((f) => (
+                  <li key={f.feature} className="flex justify-between gap-2">
+                    <span className="font-mono">{f.feature}</span>
+                    <span className="text-muted-foreground">
+                      {f.importance.toFixed(3)} / 位移 {f.shift.toFixed(2)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Note tone="warn" className="mt-4">
         <b>誠實性：</b>CORAL / 工況感知標準化<b>僅用目標未標註特徵</b>（合法無監督 DA）；
