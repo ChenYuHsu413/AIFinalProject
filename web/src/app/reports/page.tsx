@@ -78,17 +78,32 @@ export default function ReportsPage() {
         <MetricCard
           label="分類 macro-F1"
           value={ref?.clf.macro_f1?.toFixed(3) ?? "—"}
-          footerMuted={info?.clf_model ?? "reference clf"}
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>各健康狀態平均表現，0~1，越接近 1 越好</span>
+              <span className="text-xs opacity-70">{info?.clf_model ?? "reference clf"}</span>
+            </span>
+          }
         />
         <MetricCard
           label="回歸 R²"
           value={ref?.reg.r2?.toFixed(3) ?? "—"}
-          footerMuted={info?.reg_model ?? "reference reg"}
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>模型解釋了多少變化，最高 1，越接近 1 越好</span>
+              <span className="text-xs opacity-70">{info?.reg_model ?? "reference reg"}</span>
+            </span>
+          }
         />
         <MetricCard
           label="回歸 MAE"
           value={ref?.reg.mae?.toFixed(3) ?? "—"}
-          footerMuted="退化分數 DV 誤差"
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>退化值 DV 的平均誤差，越小越好</span>
+              <span className="text-xs opacity-70">退化分數 DV 誤差</span>
+            </span>
+          }
         />
       </section>
 
@@ -102,6 +117,9 @@ export default function ReportsPage() {
               />
               <Row k="MLP 回歸 R²" v={ref.dl.mlp_regression?.r2?.toFixed(3) ?? "—"} />
               <Row k="MLP 回歸 MAE" v={ref.dl.mlp_regression?.mae?.toFixed(3) ?? "—"} />
+              <p className="pt-1 text-xs text-muted-foreground">
+                macro-F1 / R² 越接近 1 越好、MAE 越小越好。
+              </p>
               {ref.dl.note && (
                 <p className="pt-1 text-xs text-muted-foreground">{ref.dl.note}</p>
               )}
@@ -166,17 +184,32 @@ function CnnReport({ cnn }: { cnn: ServoCnnResults | null }) {
         <MetricCard
           label="CNN 分類準確率"
           value={clf.accuracy.toFixed(3)}
-          footerMuted="留出測試（依檔分離）"
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>整體答對的比例，0~1，越接近 1 越好</span>
+              <span className="text-xs opacity-70">留出測試（依檔分離）</span>
+            </span>
+          }
         />
         <MetricCard
           label="CNN 分類 macro-F1"
           value={clf.macro_f1.toFixed(3)}
-          footerMuted={cnn?.architecture?.cnn ?? "1D-CNN"}
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>各健康狀態平均表現，越接近 1 越好</span>
+              <span className="text-xs opacity-70">{cnn?.architecture?.cnn ?? "1D-CNN"}</span>
+            </span>
+          }
         />
         <MetricCard
           label="輸入"
           value={`${cnn?.window?.channels?.length ?? 8}×${cnn?.window?.len ?? 256}`}
-          footerMuted={`${cnn?.window?.n_train ?? 0}/${cnn?.window?.n_test ?? 0} 段（train/test）`}
+          footerMuted={
+            <span className="flex flex-col gap-0.5">
+              <span>輸入波形大小：通道數 × 每段取樣點（非分數）</span>
+              <span className="text-xs opacity-70">{`${cnn?.window?.n_train ?? 0}/${cnn?.window?.n_test ?? 0} 段（train/test）`}</span>
+            </span>
+          }
         />
       </div>
 
