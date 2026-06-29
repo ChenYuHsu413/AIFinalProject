@@ -18,7 +18,7 @@
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aifinalproject-test.streamlit.app/)
 
 <p align="center">
-  <img src="docs/0620.png" alt="專案總覽 — CRISP-DM 全流程、最佳模型、系統功能、教學重點、限制與未來方向" width="720">
+  <img src="outputs/figures/servo_modality_matrix.png" alt="失效模式 × 感測模態 — 各模組與伺服馬達的對應：Servo（核心）> C 馬達電流 > B/B+ 軸承 > A 合成方法基礎" width="860">
 </p>
 
 <p align="center">
