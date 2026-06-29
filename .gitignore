@@ -108,3 +108,6 @@ outputs/figures/eda_*.png
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Claude Code / agent config & runtime (machine-specific)
+.claude/
