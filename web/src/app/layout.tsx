@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { SidebarProvider } from "@/components/sidebar-context";
+import { ThemeScript } from "@/components/theme-script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,12 +46,8 @@ export default function RootLayout({
       <head>
         {/* Apply the persisted / system theme before first paint (no FOUC).
             Defaults to the OS preference; an explicit choice is stored in
-            localStorage by ThemeToggle. See Next.js "preventing flash" guide. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem("theme");var d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;var e=document.documentElement;e.classList.toggle("dark",d);e.style.colorScheme=d?"dark":"light";}catch(e){document.documentElement.classList.add("dark");}})();`,
-          }}
-        />
+            localStorage by ThemeToggle. */}
+        <ThemeScript />
       </head>
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
         <SidebarProvider>
