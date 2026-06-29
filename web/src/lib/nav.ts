@@ -131,15 +131,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "模組 A · 靜態風險 (AI4I)",
-    accent: "blue",
+    title: "模組 C · 馬達電流診斷 (Paderborn)",
+    accent: "rose",
     supplementary: true,
-    items: [
-      { label: "手動單筆預測", href: "/module-a/predict", icon: Target },
-      { label: "What-if 敏感度分析", href: "/module-a/what-if", icon: Lightbulb },
-      { label: "批次 CSV 上傳", href: "/module-a/batch", icon: Upload },
-      { label: "模型評估結果", href: "/module-a/evaluation", icon: BarChart3 },
-    ],
+    items: [{ label: "馬達電流故障診斷", href: "/module-c", icon: Zap }],
   },
   {
     title: "模組 B · 動態健康度 (IMS)",
@@ -161,10 +156,16 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "模組 C · 馬達電流診斷 (Paderborn)",
-    accent: "rose",
+    // 合成資料、無馬達、最不貼近伺服 — 置於補充模組最後，定位為方法學基礎對照。
+    title: "模組 A · 靜態風險 (AI4I 合成 · 方法基礎)",
+    accent: "slate",
     supplementary: true,
-    items: [{ label: "馬達電流故障診斷", href: "/module-c", icon: Zap }],
+    items: [
+      { label: "手動單筆預測", href: "/module-a/predict", icon: Target },
+      { label: "What-if 敏感度分析", href: "/module-a/what-if", icon: Lightbulb },
+      { label: "批次 CSV 上傳", href: "/module-a/batch", icon: Upload },
+      { label: "模型評估結果", href: "/module-a/evaluation", icon: BarChart3 },
+    ],
   },
   {
     title: null,

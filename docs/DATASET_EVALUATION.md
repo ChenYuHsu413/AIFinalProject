@@ -74,9 +74,9 @@ IMS（單軌跡） ──▶ XJTU-SY（多軌跡/多工況） ──▶ Paderbor
   已完成              已完成（Module B+）       已完成（Module C · MVP）       推遲
 ```
 
-**未來工作（已排序）**：(1) Paderborn 模組 C **MVP 已完成**（馬達電流 MCSA + 振動分類、人工→真實泛化）；
-延伸列 MCSA 頻譜邊帶特徵 / 全 4 工況 / FastAPI 端點。
-(2) 其餘皆推遲（FEMTO / Mendeley / PMSM、1D-CNN Autoencoder、ESP32）。
+**未來工作（已排序）**：(1) Paderborn 模組 C **MVP 已完成**（馬達電流 MCSA + 振動分類、人工→真實泛化），
+延伸軌 **CE1 領域自適應 + CE4 FastAPI 端點已完成**；**CE2 MCSA 頻譜邊帶 / CE3 全 4 工況不納入本專案（2026-06-29 決定不做）**。
+(2) 其餘皆推遲（FEMTO / Mendeley / PMSM、ESP32）；**模組 B 1D-CNN Autoencoder 已確定不做**（DL 已由 Servo 主線達成）。
 
 **ESP32 補充**：ESP32 定位為**實場資料接入／IoT 展示**，非現階段訓練資料來源。需誠實
 指出：ESP32＋MEMS 加速度計的取樣率（單軸約數 kHz）遠低於 IMS 的 20 kHz×4，無法進行

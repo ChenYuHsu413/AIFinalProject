@@ -4,7 +4,7 @@
 > **動態健康度 / 剩餘壽命（RUL）** 軌，將專案從「靜態風險評估」升級為
 > 「靜態風險 + 動態健康度」雙模組。
 >
-> **狀態（2026-06-23）**：步驟 1–5 已於 2026-06-22 實作完成（見第 5 節交付表）；步驟 6（1D-CNN AE，見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)）規劃中、尚未實作。
+> **狀態（2026-06-29）**：步驟 1–5 已於 2026-06-22 實作完成（見第 5 節交付表）；步驟 6（1D-CNN AE）**不納入本專案**——DL 對照已由 Servo 主線兩階段深度學習達成，IMS 單軌跡 AE 取消（見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)）。
 
 ---
 
@@ -134,7 +134,7 @@ outputs/models/ims_rul.joblib  +  outputs/metrics/ims_rul.json
 | 3 | 標籤 + 組表（方案 A） | RUL 單調遞減、health ∈ [0,100] ✅ |
 | 4 | RUL：監督式回歸（對照，已知失敗）→ **趨勢外推法（採用）** | 退化區 MAE ≈ 25 h、FPT 提前 3.1 天 ✅ |
 | 5 | Dashboard 頁籤 | 健康曲線 100→0 + FPT/告警 + RUL 預測圖 ✅ |
-| 6 | 1D-CNN Autoencoder 異常偵測（進階，見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)） | 重建誤差 FPT 與統計 FPT 並列印證（未做） |
+| 6 | 1D-CNN Autoencoder 異常偵測（進階，見 [`MODULE_B_DL_PLAN.md`](MODULE_B_DL_PLAN.md)） | 重建誤差 FPT 與統計 FPT 並列印證（**不採用，2026-06-29**） |
 
 ---
 

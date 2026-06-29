@@ -1,0 +1,100 @@
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft JhengHei','PingFang TC','Noto Sans CJK TC',sans-serif">
+  <rect x="0" y="0" width="1000" height="600" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="500" y="44" text-anchor="middle" font-size="26" font-weight="700" fill="#1a237e">失效模式 × 感測模態 — 各模組與伺服馬達的對應</text>
+  <text x="500" y="72" text-anchor="middle" font-size="14" fill="#607d8b">主線為真實伺服馬達；對照軌依「與馬達本體的貼近程度」排列（模組 A 已淡化為方法基礎）</text>
+
+  <!-- Proximity gradient bar -->
+  <defs>
+    <linearGradient id="prox" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#cfd8dc"/>
+      <stop offset="1" stop-color="#5e35b1"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="92" width="920" height="10" rx="5" fill="url(#prox)"/>
+  <text x="44" y="118" font-size="12" fill="#90a4ae">← 最不貼近</text>
+  <text x="500" y="118" text-anchor="middle" font-size="12" fill="#607d8b" font-weight="600">與伺服馬達的貼近程度</text>
+  <text x="956" y="118" text-anchor="end" font-size="12" fill="#5e35b1" font-weight="700">最貼近（馬達本體）→</text>
+
+  <!-- ===== Cards: A (far) -> B/B+ -> C -> Servo (core) ===== -->
+
+  <!-- Module A : muted / de-emphasized -->
+  <g>
+    <rect x="40" y="140" width="210" height="300" rx="12" fill="#eceff1" stroke="#b0bec5" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <rect x="40" y="140" width="210" height="40" rx="12" fill="#cfd8dc"/>
+    <text x="145" y="166" text-anchor="middle" font-size="17" font-weight="700" fill="#546e7a">模組 A</text>
+    <text x="145" y="206" text-anchor="middle" font-size="12" fill="#78909c">資料集</text>
+    <text x="145" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="#607d8b">AI4I 2020（合成）</text>
+    <line x1="60" y1="240" x2="230" y2="240" stroke="#cfd8dc" stroke-width="1"/>
+    <text x="60" y="266" font-size="12" fill="#90a4ae">失效對象</text>
+    <text x="60" y="286" font-size="13" font-weight="600" fill="#607d8b">通用製程風險</text>
+    <text x="60" y="304" font-size="12" fill="#90a4ae">（無馬達）</text>
+    <text x="60" y="338" font-size="12" fill="#90a4ae">感測模態</text>
+    <text x="60" y="358" font-size="13" font-weight="600" fill="#607d8b">靜態製程參數</text>
+    <text x="60" y="392" font-size="12" fill="#90a4ae">真實性</text>
+    <text x="60" y="412" font-size="13" font-weight="600" fill="#607d8b">合成 · 無時間維度</text>
+    <rect x="60" y="424" width="170" height="0" fill="none"/>
+    <text x="145" y="464" text-anchor="middle" font-size="12" font-weight="700" fill="#90a4ae">最不貼近 · 方法基礎</text>
+  </g>
+
+  <!-- Module B / B+ -->
+  <g>
+    <rect x="270" y="140" width="210" height="300" rx="12" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+    <rect x="270" y="140" width="210" height="40" rx="12" fill="#1976d2"/>
+    <text x="375" y="166" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">模組 B / B+</text>
+    <text x="375" y="206" text-anchor="middle" font-size="12" fill="#5c6bc0">資料集</text>
+    <text x="375" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="#0d47a1">IMS / XJTU-SY（實測）</text>
+    <line x1="290" y1="240" x2="460" y2="240" stroke="#bbdefb" stroke-width="1"/>
+    <text x="290" y="266" font-size="12" fill="#5c6bc0">失效對象</text>
+    <text x="290" y="286" font-size="13" font-weight="600" fill="#0d47a1">軸承故障</text>
+    <text x="290" y="304" font-size="12" fill="#1976d2">（機械失效模式）</text>
+    <text x="290" y="338" font-size="12" fill="#5c6bc0">感測模態</text>
+    <text x="290" y="358" font-size="13" font-weight="600" fill="#0d47a1">振動訊號</text>
+    <text x="290" y="392" font-size="12" fill="#5c6bc0">真實性</text>
+    <text x="290" y="412" font-size="13" font-weight="600" fill="#0d47a1">真實 run-to-failure</text>
+    <text x="375" y="464" text-anchor="middle" font-size="12" font-weight="700" fill="#1565c0">伺服的失效部位（軸承）</text>
+  </g>
+
+  <!-- Module C -->
+  <g>
+    <rect x="500" y="140" width="210" height="300" rx="12" fill="#fff3e0" stroke="#ef6c00" stroke-width="2"/>
+    <rect x="500" y="140" width="210" height="40" rx="12" fill="#ef6c00"/>
+    <text x="605" y="166" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">模組 C</text>
+    <text x="605" y="206" text-anchor="middle" font-size="12" fill="#bf6000">資料集</text>
+    <text x="605" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="#bf360c">Paderborn（試驗台）</text>
+    <line x1="520" y1="240" x2="690" y2="240" stroke="#ffe0b2" stroke-width="1"/>
+    <text x="520" y="266" font-size="12" fill="#bf6000">失效對象</text>
+    <text x="520" y="286" font-size="13" font-weight="600" fill="#bf360c">軸承故障</text>
+    <text x="520" y="304" font-size="12" fill="#ef6c00">（經馬達電流觀測）</text>
+    <text x="520" y="338" font-size="12" fill="#bf6000">感測模態</text>
+    <text x="520" y="358" font-size="13" font-weight="700" fill="#bf360c">馬達電流 MCSA</text>
+    <text x="520" y="392" font-size="12" fill="#bf6000">真實性</text>
+    <text x="520" y="412" font-size="13" font-weight="600" fill="#bf360c">真實 PMSM 試驗台</text>
+    <text x="605" y="464" text-anchor="middle" font-size="12" font-weight="700" fill="#e65100">最貼近馬達（電氣模態）</text>
+  </g>
+
+  <!-- Module Servo (core) -->
+  <g>
+    <rect x="730" y="140" width="230" height="300" rx="12" fill="#ede7f6" stroke="#5e35b1" stroke-width="3"/>
+    <rect x="730" y="140" width="230" height="40" rx="12" fill="#5e35b1"/>
+    <text x="845" y="166" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">主線 · Servo</text>
+    <text x="845" y="206" text-anchor="middle" font-size="12" fill="#7e57c2">資料集</text>
+    <text x="845" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="#4527a0">PHM FMCRD（真實）</text>
+    <line x1="750" y1="240" x2="940" y2="240" stroke="#d1c4e9" stroke-width="1"/>
+    <text x="750" y="266" font-size="12" fill="#7e57c2">失效對象</text>
+    <text x="750" y="286" font-size="13" font-weight="700" fill="#4527a0">伺服馬達整體退化</text>
+    <text x="750" y="338" font-size="12" fill="#7e57c2">感測模態</text>
+    <text x="750" y="358" font-size="13" font-weight="600" fill="#4527a0">多通道聚合特徵</text>
+    <text x="750" y="392" font-size="12" fill="#7e57c2">輸出</text>
+    <text x="750" y="412" font-size="13" font-weight="600" fill="#4527a0">健康分類 + DV 回歸</text>
+    <text x="845" y="464" text-anchor="middle" font-size="12" font-weight="700" fill="#4527a0">專案核心 = 馬達本體</text>
+  </g>
+
+  <!-- ===== Bottom bracket: B and C share the same failure mode, different modality ===== -->
+  <path d="M375 480 L375 506 L605 506 L605 480" fill="none" stroke="#455a64" stroke-width="1.5"/>
+  <line x1="490" y1="506" x2="490" y2="520" stroke="#455a64" stroke-width="1.5"/>
+  <rect x="300" y="520" width="380" height="46" rx="8" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>
+  <text x="490" y="540" text-anchor="middle" font-size="13" font-weight="700" fill="#37474f">同一失效模式（軸承），兩種感測模態</text>
+  <text x="490" y="558" text-anchor="middle" font-size="12" fill="#607d8b">B / B+ 用「振動」、C 用「馬達電流」診斷，互為補充</text>
+</svg>

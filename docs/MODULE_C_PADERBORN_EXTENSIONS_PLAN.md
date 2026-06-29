@@ -5,7 +5,7 @@
 > 落差 0.80**）。本文規劃四條**延伸軌**，把模組 C 從「MVP 分類」推進成「有電流診斷深度、能跨工況、
 > 並嘗試修復人工→真實落差、可即時預測」的系統。結果回寫 [`MODULE_C_PADERBORN_PLAN.md`](MODULE_C_PADERBORN_PLAN.md) §4。
 >
-> **狀態（2026-06-28）**：**CE1（領域自適應）已完成**——新增 `src/models/adapt_paderborn.py`，
+> **狀態（2026-06-29）**：**CE1（領域自適應）已完成**——新增 `src/models/adapt_paderborn.py`，
 > 在同一「人工→真實」切分上跑 baseline / CORAL / 工況感知標準化 / few-shot 四評估，輸出
 > `outputs/metrics/paderborn_domain_adapt.json`；FastAPI `GET /paderborn/domain_adapt`；Next.js 模組 C 頁加
 > 「CE1 領域自適應」消融卡（無監督對齊長條 + few-shot 學習曲線）。測試 `tests/test_adapt_paderborn.py`（5 項）。
@@ -18,7 +18,9 @@
 > baseline 最倚重的判別特徵正是位移最大者（如 `vib_impulse_factor`/`vib_kurtosis`/`vib_mean`），故線性對齊救不回判別軸。
 > **組合（B）**：**先 CORAL 對齊再 few-shot 反而更差**（各 k 皆 ≤ 純 few-shot），與診斷一致。
 > **CE4（即時預測端點）先前已完成**（`predict_paderborn.py` + `/paderborn/samples`、`/paderborn/predict`）。
-> CE2/CE3 仍為規劃草稿、尚未動工（需重抓 Paderborn 原始 `.mat`；優先序 **CE2 > CE3**）。
+> **CE2 / CE3 不納入本專案（2026-06-29 決定不做）**：兩者皆需重抓 Paderborn 原始 `.mat`（已於專案整理時清除），
+> 且 CE1（領域自適應）+ CE4（即時預測端點）已足以支撐「診斷並嘗試修復 domain shift、可即時預測」的模組 C 報告主軸，
+> CE2/CE3 邊際效益有限。下方 §4 / §6 的 CE2 / CE3 規劃內容**保留供未來參考**，但不在本專案交付範圍。
 
 ---
 
@@ -118,13 +120,13 @@
   （0.131/0.277/0.381/0.501/0.586/0.633）——與診斷一致：CORAL 既破壞判別軸，預對齊只是傷害，需更多標籤才追平。
 - baseline 0.200 與 MVP `paderborn_eval.json` 泛化 0.20 一致（自洽檢查通過）。
 
-### CE2：MCSA 頻譜邊帶特徵 —— 名實相符的電流診斷
+### CE2：MCSA 頻譜邊帶特徵 —— 名實相符的電流診斷　【不採用，2026-06-29｜以下保留供未來參考】
 
 **做法**：對 `phase_current_1/2` 做 FFT，量取**供電頻率 f_s 附近的故障特徵邊帶**（外/內環故障在 f_s ± k·f_defect 產生邊帶）；新增 `cur1_band_*` / `cur2_band_*` 能量特徵。
 **重用**：`vibration_features` 的 FFT / 頻帶能量模式（IMS 已有 `freq_domain_features` 的 band-energy 寫法可參考）。
 **誠實**：故障特徵頻率須由軸承幾何與轉速正確推導；標明是否假設固定轉速。
 
-### CE3：全 4 工況 + 跨工況泛化
+### CE3：全 4 工況 + 跨工況泛化　【不採用，2026-06-29｜以下保留供未來參考】
 
 **做法**：`config.conditions` 由 1 擴為 4（N15_M07_F10 / N09_M07_F10 / N15_M01_F10 / N15_M07_F04）；除既有人工→真實外，新增**留一工況**分類泛化（訓練 3 工況、測第 4 工況），量化跨工況 domain shift。
 **重用**：`train_rul_loco` 的留一工況切分思路（改為分類指標）。
@@ -159,13 +161,13 @@
 | A | 機制診斷（位移 vs 重要度） | Spearman 量化判別軸位移；解釋無監督對齊失敗 | ✅ Spearman 0.50；前端散點 |
 | B | CORAL+few-shot 組合 | 對照純 few-shot | ✅ 各 k 皆 ≤ 純 few-shot |
 
-### CE2 — MCSA 頻譜邊帶
+### CE2 — MCSA 頻譜邊帶　【不採用，2026-06-29】
 | 步 | 工作 | 驗收 |
 | --- | --- | --- |
 | 1 | 電流頻帶能量特徵 | 新增 `cur*_band_*`；合成訊號驗證 |
 | 2 | 重跑分類 + 對照時域版 | macro-F1 是否提升（baseline 與真實兩者） |
 
-### CE3 — 全 4 工況 + 跨工況泛化
+### CE3 — 全 4 工況 + 跨工況泛化　【不採用，2026-06-29】
 | 步 | 工作 | 驗收 |
 | --- | --- | --- |
 | 1 | 擴 config + 重建特徵表（4 工況） | parquet 含 4 工況 |
