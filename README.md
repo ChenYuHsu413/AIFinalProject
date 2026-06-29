@@ -28,6 +28,12 @@
   <a href="https://aifinalproject-test.streamlit.app/">Streamlit（對照 / fallback）</a>
 </p>
 
+<p align="center">
+  <img src="outputs/figures/servo_dashboard.png" alt="Next.js Command Center — Servo 健康儀表板：機群健康總覽，四台伺服馬達的指針儀表（健康分數 / RUL / 異常特徵 / 建議動作），健康由真實參考模型即時計算" width="860">
+  <br>
+  <sub><em>Next.js Command Center — Servo 健康儀表板「機群健康總覽」：四台設備的指針儀表（健康分數 + RUL + 異常特徵 + 建議動作，深色模式示意）</em></sub>
+</p>
+
 > **專案定位**：端到端**預測性維護原型**，以**伺服馬達健康主線（模組 Servo · 真實 PHM FMCRD）** 為核心，
 > 另含四條**對照軌**——依與伺服馬達的貼近程度為 **C（馬達電流 MCSA）> B / B+（IMS / XJTU 軸承）>
 > A（AI4I 合成製程，最不貼近，僅方法基礎）**。對照軌補上電氣模態、機械失效模式與方法學基礎；模組 A 為
