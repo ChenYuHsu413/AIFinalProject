@@ -23,8 +23,8 @@ import {
   type ServoModelInfo,
   type ServoReferenceMetrics,
 } from "@/lib/api";
-import { useFleet } from "@/lib/fleet";
-import { useFleetOps } from "@/lib/ops";
+import { useFleet, type FleetSource } from "@/lib/fleet";
+import { useFleetOps, type OpsSource } from "@/lib/ops";
 import type { Equipment, FleetAlert } from "@/lib/mock";
 import { HEALTH_COLOR, HEALTH_ZH } from "@/lib/servo";
 
@@ -226,7 +226,7 @@ function EquipmentComparison({
   source,
 }: {
   fleet: Equipment[];
-  source: "model" | "mock";
+  source: FleetSource;
 }) {
   const data = fleet.map((u) => ({
     name: u.name,
@@ -239,7 +239,7 @@ function EquipmentComparison({
   return (
     <section className="mt-8">
       <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">設備別比較</h2>
-      {source === "model" ? (
+      {source !== "mock" ? (
         <Note tone="info" className="mb-4">
           各設備健康分數 / 退化值 (DV) 由<b>真實參考模型</b>在代表性 demo 運轉段上即時計算
           （後端 <code className="font-mono">/servo/fleet</code>）；設備識別為示意。
@@ -321,7 +321,7 @@ function AlarmStatistics({
   source,
 }: {
   alerts: FleetAlert[];
-  source: "model" | "mock";
+  source: OpsSource;
 }) {
   const sev = { critical: 0, warning: 0, info: 0 };
   for (const a of alerts) sev[a.severity] += 1;
@@ -337,7 +337,7 @@ function AlarmStatistics({
   return (
     <section className="mt-8">
       <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">告警統計</h2>
-      {source === "model" ? (
+      {source !== "mock" ? (
         <Note tone="info" className="mb-4">
           告警由<b>真實模型驅動的機群</b>衍生（後端 <code className="font-mono">/servo/alerts</code>）；
           事件 ID / 時間屬示意性運維包裝。

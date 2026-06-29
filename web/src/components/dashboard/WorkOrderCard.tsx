@@ -4,16 +4,16 @@ import type { WorkOrder } from "@/lib/mock";
 import { cn } from "@/lib/utils";
 
 const PRIORITY: Record<WorkOrder["priority"], { label: string; cls: string }> = {
-  high: { label: "高", cls: "text-red-300 bg-red-500/15 ring-red-500/30" },
-  medium: { label: "中", cls: "text-amber-300 bg-amber-500/15 ring-amber-500/30" },
-  low: { label: "低", cls: "text-emerald-300 bg-emerald-500/15 ring-emerald-500/30" },
+  high: { label: "高", cls: "text-red-700 dark:text-red-300 bg-red-500/15 ring-red-500/30" },
+  medium: { label: "中", cls: "text-amber-700 dark:text-amber-300 bg-amber-500/15 ring-amber-500/30" },
+  low: { label: "低", cls: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 ring-emerald-500/30" },
 };
 
 const STATUS: Record<WorkOrder["status"], { label: string; cls: string }> = {
-  draft: { label: "草稿", cls: "text-slate-300" },
-  scheduled: { label: "已排程", cls: "text-sky-300" },
-  in_progress: { label: "處理中", cls: "text-amber-300" },
-  done: { label: "已完成", cls: "text-emerald-300" },
+  draft: { label: "草稿", cls: "text-slate-600 dark:text-slate-300" },
+  scheduled: { label: "已排程", cls: "text-sky-600 dark:text-sky-300" },
+  in_progress: { label: "處理中", cls: "text-amber-600 dark:text-amber-300" },
+  done: { label: "已完成", cls: "text-emerald-600 dark:text-emerald-300" },
 };
 
 export function WorkOrderCard({ order }: { order: WorkOrder }) {

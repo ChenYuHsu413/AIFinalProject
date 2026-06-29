@@ -25,9 +25,9 @@ export function FeatureImportancePanel({
                 className={cn(
                   "tabular-nums",
                   Math.abs(t.z) > 3
-                    ? "text-red-300"
+                    ? "text-red-600 dark:text-red-300"
                     : Math.abs(t.z) > 1.5
-                      ? "text-amber-300"
+                      ? "text-amber-600 dark:text-amber-300"
                       : "text-muted-foreground",
                 )}
               >

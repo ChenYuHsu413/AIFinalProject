@@ -187,7 +187,7 @@ export default function ModuleCPage() {
                 labels={data.results.artificial_to_real.labels}
                 matrix={data.results.artificial_to_real.confusion_matrix}
               />
-              <p className="mt-2 text-xs text-amber-300">
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-300">
                 真實損傷幾乎全被誤判 —— 印證泛化落差。
               </p>
             </Card>
@@ -341,7 +341,7 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
           {summary.few_shot_best_k != null && (
             <p className="mt-2 text-xs text-muted-foreground">
               每類 {summary.few_shot_best_k} 筆真實標籤 → macro-F1{" "}
-              <span className="font-semibold text-cyan-300">
+              <span className="font-semibold text-cyan-600 dark:text-cyan-300">
                 {summary.few_shot_best_macro_f1?.toFixed(3)}
               </span>
               （baseline {summary.baseline_macro_f1.toFixed(3)}，{results.few_shot?.seeds} 次抽樣平均）。
@@ -399,7 +399,7 @@ function DomainAdapt({ data }: { data: DomainAdaptData }) {
             <div>
               <p className="text-sm">
                 Spearman（重要度, 位移）={" "}
-                <span className="font-semibold text-amber-300">
+                <span className="font-semibold text-amber-600 dark:text-amber-300">
                   {diag.spearman_importance_vs_shift.toFixed(2)}
                 </span>
               </p>
@@ -498,7 +498,7 @@ function LiveInference({ samples }: { samples: Sample[] }) {
             ))}
           </select>
           {isReal && (
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-300 ring-1 ring-inset ring-amber-500/30">
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30">
               真實損傷（訓練未見過此分佈）
             </span>
           )}

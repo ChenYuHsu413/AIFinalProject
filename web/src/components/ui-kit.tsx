@@ -69,9 +69,9 @@ export function Note({
   className?: string;
 }) {
   const cls = {
-    info: "border-sky-500/30 bg-sky-500/10 text-sky-200",
-    warn: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-    danger: "border-red-500/30 bg-red-500/10 text-red-200",
+    info: "border-sky-500/30 bg-sky-500/10 text-sky-800 dark:text-sky-200",
+    warn: "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200",
+    danger: "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-200",
   }[tone];
   return (
     <div className={cn("rounded-lg border px-4 py-2.5 text-sm", cls, className)}>

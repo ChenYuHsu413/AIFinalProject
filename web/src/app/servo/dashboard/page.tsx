@@ -10,6 +10,7 @@ import { HealthScoreGauge } from "@/components/dashboard/HealthScoreGauge";
 import { FeatureImportancePanel } from "@/components/dashboard/FeatureImportancePanel";
 import { TelemetryTrends } from "@/components/dashboard/TelemetryTrends";
 import { HealthBadge, RiskBadge } from "@/components/dashboard/badges";
+import { MotorHealthGrid } from "@/components/dashboard/MotorHealthCard";
 import {
   API_BASE,
   apiGet,
@@ -20,8 +21,17 @@ import {
 } from "@/lib/api";
 import { HEALTH_COLOR, HEALTH_ORDER, HEALTH_ZH } from "@/lib/servo";
 import { TELEMETRY } from "@/lib/mock";
+import { useFleet } from "@/lib/fleet";
+import { useFleetOps } from "@/lib/ops";
+import { toMotorViews } from "@/lib/dashboard";
 
 export default function ServoDashboardPage() {
+  const { fleet } = useFleet();
+  const { alerts, workOrders } = useFleetOps();
+  const views = toMotorViews(fleet, alerts, workOrders).sort(
+    (a, b) => a.healthScore - b.healthScore,
+  );
+
   const [cols, setCols] = useState<string[] | null>(null);
   const [samples, setSamples] = useState<ServoSample[]>([]);
   const [idx, setIdx] = useState(0);
@@ -67,6 +77,18 @@ export default function ServoDashboardPage() {
       />
 
       <ProvenancePanel />
+
+      {/* Fleet at a glance — operation-oriented cards, consistent with home. */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide">
+          機群健康總覽 · 操作視角
+        </h2>
+        <MotorHealthGrid views={views} />
+      </section>
+
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide">
+        單筆運轉段健康估測
+      </h2>
 
       {loadErr && (
         <Note tone="danger" className="mb-6">
@@ -241,7 +263,7 @@ function Result({
 
       <Link
         href={`/servo/assistant?sample=${sampleIdx}`}
-        className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200 transition-colors hover:bg-violet-500/20"
+        className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-700 dark:text-violet-200 transition-colors hover:bg-violet-500/20"
       >
         <Bot className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
@@ -270,7 +292,7 @@ function ProvenancePanel() {
   return (
     <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-        <span className="font-semibold text-emerald-300">✅ 訓練於真實 PHM FMCRD 資料集</span>
+        <span className="font-semibold text-emerald-700 dark:text-emerald-300">✅ 訓練於真實 PHM FMCRD 資料集</span>
         <span className="text-muted-foreground">
           {p.source.total_uncompressed_gb} GB · {p.source.n_files} 檔 ·{" "}
           {p.features?.aggregated_segments?.toLocaleString()} 段
@@ -278,7 +300,7 @@ function ProvenancePanel() {
         <span className="text-muted-foreground">
           留出 macro-F1 {p.model.clf_macro_f1.toFixed(3)} · DV R² {p.model.reg_r2.toFixed(3)}
         </span>
-        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
           placeholder = {String(p.model.placeholder)}
         </span>
       </div>
@@ -288,7 +310,7 @@ function ProvenancePanel() {
         </p>
       )}
       <details className="mt-2">
-        <summary className="cursor-pointer text-[11px] text-emerald-300/90 hover:text-emerald-200">
+        <summary className="cursor-pointer text-[11px] text-emerald-700/90 hover:text-emerald-600 dark:text-emerald-300/90 dark:hover:text-emerald-200">
           查看資料溯源圖（DV 各類分布 + 留出測試混淆矩陣）
         </summary>
         {/* eslint-disable-next-line @next/next/no-img-element */}
