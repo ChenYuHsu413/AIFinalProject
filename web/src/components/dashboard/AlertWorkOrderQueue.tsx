@@ -95,12 +95,18 @@ export function AlertWorkOrderQueue({
                   {status.label}
                 </td>
                 <td className="px-4 py-3">
-                  <Link
-                    href="/alerts"
-                    className="inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline"
-                  >
-                    處理 <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  {view ? (
+                    <Link
+                      href={`/equipment/${view.id}`}
+                      className="inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline"
+                    >
+                      處理 <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
+                      處理 <ArrowRight className="h-3 w-3" />
+                    </span>
+                  )}
                 </td>
               </tr>
             );
