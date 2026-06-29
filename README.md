@@ -421,8 +421,8 @@ python -m src.models.predict
 
 ## 11. 啟動 UI（Next.js 主前端 / Streamlit fallback）
 
-> **狀態（2026-06-26）**：主要展示 UI 已改為 **Next.js 前端「AI Servo Motor Health Command Center」**
-> （`web/`，深色工業風、以 Servo 為主線、A/B/B+/C 收於 Legacy）。Streamlit 保留為 fallback 與對照。
+> **狀態（2026-06-29）**：主要展示 UI 為 **Next.js 前端「AI Servo Motor Health Command Center」**
+> （`web/`，**首頁為 Command Center 戰情室**、**亮/暗色可切換**、以 Servo 為主線、A/B/B+/C 收於 Legacy）。Streamlit 保留為 fallback 與對照。
 > 前端啟動見 [`web/README.md`](web/README.md) 與 §16E；本機：
 > `cd web && NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev`（→ `http://localhost:3000`）。
 
@@ -435,7 +435,7 @@ streamlit run app/streamlit_app.py
 兩個 UI 共用同一組 FastAPI 端點。頁面（依模組分組，含首頁總覽）：
 
 **🏠 入口**
-- **首頁總覽** — 以 Servo 主線為核心的一頁式導覽；補充模組（A/B/B+/C）入口磚。
+- **首頁總覽** — Next.js 前端為 **Command Center 戰情室**（全廠狀態 / 立即處理 / 產線地圖 / 操作導向設備卡 + 指針儀表 / 工單佇列 / AI 維護摘要）；Streamlit 為以 Servo 為核心的一頁式導覽 + 補充模組（A/B/B+/C）入口磚。
 
 **🛰 模組 Servo · 伺服馬達健康（主線）**
 - **Servo 健康儀表板** — 健康狀態（LN/LO/MED/HI）、退化分數、風險、主要異常特徵、模型信心、建議處置；分類器狀態與退化值風險明顯矛盾時顯示一致性警告。
@@ -714,9 +714,9 @@ ExecStart=/home/ubuntu/FinalProject/.venv/bin/streamlit run \
 
 ### E. 前端 — Next.js Command Center
 
-> **狀態（2026-06-26）**：已建立 `web/`（Next.js App Router + TypeScript + Tailwind v4 +
-> shadcn）暗色工業風前端 **AI Servo Motor Health Command Center**，以 Servo 主線為主角、
-> 模組 A/B/B+/C 收於 Legacy。Servo 五頁接真 API；機群/告警/工單暫為 mock。詳見
+> **狀態（2026-06-29）**：已建立 `web/`（Next.js App Router + TypeScript + Tailwind v4 +
+> shadcn）**亮/暗色可切換**的工業風前端 **AI Servo Motor Health Command Center**，**首頁為 Command Center
+> 戰情室**、以 Servo 主線為主角、模組 A/B/B+/C 收於 Legacy。Servo 五頁接真 API；機群/告警/工單暫為 mock。詳見
 > [`docs/WEB_REVAMP_PLAN.md`](docs/WEB_REVAMP_PLAN.md)。
 
 本機開發：

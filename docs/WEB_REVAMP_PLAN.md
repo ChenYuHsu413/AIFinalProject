@@ -1,5 +1,14 @@
 # 網頁改版規劃 — Streamlit 單體 → FastAPI + Next.js 前後端分離
 
+> **戰情室改版 + 主題切換（2026-06-29）**：首頁由「KPI 列／設備健康卡／系統狀態／告警」重排為
+> **產線值班員 Command Center 戰情室**（全廠狀態列 / 立即處理 / 產線地圖 / 操作導向設備卡 / 工單佇列 /
+> 健康趨勢 / AI 維護摘要）；新增 `lib/dashboard.ts` 集中資料轉換、`lib/cache.ts` + loading skeleton 消除
+> mock→model 的數值閃跳。**`HealthScoreGauge` 升級為指針速度表**（分段色帶 + 三角指針 + 門檻刻度），
+> 並加數字滾動動畫。**主題解除 dark 寫死**，改系統偏好 + 可切換 + 記憶（`ThemeScript`／`ThemeToggle`），
+> 並做全站淺色配色校正（狀態色補 `dark:` 變體、chart 變數上色）。移除死碼 `AlertTable`。
+> PR [#15](https://github.com/ChenYuHsu413/AIFinalProject/pull/15)–[#19](https://github.com/ChenYuHsu413/AIFinalProject/pull/19)；
+> 詳見 [`../outputs/reports/WORK_REPORT_2026-06-29.md`](../outputs/reports/WORK_REPORT_2026-06-29.md) §3–§4。
+
 > **狀態（2026-06-26）**：Phase 0（API 契約盤點）完成。已掃描 `app/streamlit_app.py`
 > （2076 行）與既有 9 個 FastAPI endpoint，產出缺口表與四階段計畫。目標定位為**作品集 /
 > 履歷對外展示**，時程寬裕（一個月以上），採**漸進遷移**：先補完後端 API、保留 Streamlit
