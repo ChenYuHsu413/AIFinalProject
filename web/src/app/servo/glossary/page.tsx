@@ -68,7 +68,7 @@ export default function GlossaryPage() {
         {Object.entries(featureSets).map(([key, spec]) => (
           <details key={key} className="group rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm">
             <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium">
-              <span className="text-violet-300">{spec.label}</span>
+              <span className="text-violet-600 dark:text-violet-300">{spec.label}</span>
               <span className="text-xs text-muted-foreground">
                 （{key}）— {spec.columns.length} 個特徵
               </span>

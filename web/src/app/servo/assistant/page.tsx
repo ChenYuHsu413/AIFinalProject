@@ -242,8 +242,8 @@ function SourceBadge({ source }: { source: string }) {
     <span
       className={`mb-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
         fallback
-          ? "bg-slate-500/15 text-slate-300 ring-1 ring-inset ring-slate-500/30"
-          : "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30"
+          ? "bg-slate-500/15 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/30"
+          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30"
       }`}
     >
       {fallback ? "⚪ 離線範本" : `🟢 ${PROVIDER_LABEL[source] ?? source}`}

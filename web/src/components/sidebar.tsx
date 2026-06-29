@@ -147,10 +147,10 @@ function SidebarInner({
         {!collapsed && (
           <div className="px-1 text-xs text-muted-foreground">
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
                 決策輔助
               </span>
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-300 ring-1 ring-inset ring-amber-500/30">
+              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30">
                 不控制馬達
               </span>
             </div>

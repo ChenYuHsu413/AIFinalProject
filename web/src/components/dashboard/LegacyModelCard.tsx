@@ -14,11 +14,11 @@ export interface LegacyModel {
 }
 
 const ACCENT: Record<LegacyModel["accent"], { icon: string; ring: string }> = {
-  blue: { icon: "text-sky-300 bg-sky-500/15", ring: "ring-sky-500/25" },
-  emerald: { icon: "text-emerald-300 bg-emerald-500/15", ring: "ring-emerald-500/25" },
-  amber: { icon: "text-amber-300 bg-amber-500/15", ring: "ring-amber-500/25" },
-  rose: { icon: "text-rose-300 bg-rose-500/15", ring: "ring-rose-500/25" },
-  slate: { icon: "text-slate-400 bg-slate-500/15", ring: "ring-slate-500/25" },
+  blue: { icon: "text-sky-600 dark:text-sky-300 bg-sky-500/15", ring: "ring-sky-500/25" },
+  emerald: { icon: "text-emerald-600 dark:text-emerald-300 bg-emerald-500/15", ring: "ring-emerald-500/25" },
+  amber: { icon: "text-amber-600 dark:text-amber-300 bg-amber-500/15", ring: "ring-amber-500/25" },
+  rose: { icon: "text-rose-600 dark:text-rose-300 bg-rose-500/15", ring: "ring-rose-500/25" },
+  slate: { icon: "text-slate-600 dark:text-slate-400 bg-slate-500/15", ring: "ring-slate-500/25" },
 };
 
 /** Small entry card for legacy/comparison modules A / B / B+ / C. */

@@ -23,26 +23,26 @@ export const HEALTH_COLOR: Record<
 > = {
   LN: {
     bar: "bg-emerald-500",
-    text: "text-emerald-400",
-    chip: "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
+    text: "text-emerald-600 dark:text-emerald-400",
+    chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
     hex: "#34d399",
   },
   LO: {
     bar: "bg-lime-500",
-    text: "text-lime-400",
-    chip: "bg-lime-500/15 text-lime-300 ring-1 ring-inset ring-lime-500/30",
+    text: "text-lime-600 dark:text-lime-400",
+    chip: "bg-lime-500/15 text-lime-700 dark:text-lime-300 ring-1 ring-inset ring-lime-500/30",
     hex: "#a3e635",
   },
   MED: {
     bar: "bg-amber-500",
-    text: "text-amber-400",
-    chip: "bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30",
+    text: "text-amber-600 dark:text-amber-400",
+    chip: "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30",
     hex: "#fbbf24",
   },
   HI: {
     bar: "bg-red-500",
-    text: "text-red-400",
-    chip: "bg-red-500/15 text-red-300 ring-1 ring-inset ring-red-500/30",
+    text: "text-red-600 dark:text-red-400",
+    chip: "bg-red-500/15 text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-500/30",
     hex: "#f87171",
   },
 };
@@ -55,9 +55,9 @@ export const RISK_ZH: Record<string, string> = {
 
 /** Dark-theme risk chip classes. */
 export const RISK_COLOR: Record<string, string> = {
-  Low: "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
-  Medium: "bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30",
-  High: "bg-red-500/15 text-red-300 ring-1 ring-inset ring-red-500/30",
+  Low: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
+  Medium: "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30",
+  High: "bg-red-500/15 text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-500/30",
 };
 
 export type RiskLevel = "Low" | "Medium" | "High";

@@ -61,7 +61,7 @@ export default function KnowledgePage() {
             key={d.source}
             className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-500/30">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-300 ring-1 ring-inset ring-violet-500/30">
               <FileText className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -101,7 +101,7 @@ export default function KnowledgePage() {
               <details key={i} className="group rounded-lg border border-border/70 bg-card/70 backdrop-blur-sm">
                 <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-sm">
                   <span className="font-medium">{h.title || h.source}</span>
-                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
                     相關度 {h.score}
                   </span>
                   <span className="ml-auto text-muted-foreground transition-transform group-open:rotate-90">

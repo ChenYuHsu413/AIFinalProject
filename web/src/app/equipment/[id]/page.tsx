@@ -181,7 +181,7 @@ function RealPredictionSection({ state }: { state: string }) {
         <h2 className="text-sm font-semibold uppercase tracking-wide">
           參考模型預測
         </h2>
-        <span className="text-[11px] text-emerald-300">
+        <span className="text-[11px] text-emerald-600 dark:text-emerald-300">
           接真 API · /servo/predict
         </span>
       </div>
@@ -280,7 +280,7 @@ function RealPredictionSection({ state }: { state: string }) {
 
           <Link
             href={current ? `/servo/assistant?sample=${current.idx}` : "/servo/assistant"}
-            className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-200 transition-colors hover:bg-violet-500/15"
+            className="flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-700 dark:text-violet-200 transition-colors hover:bg-violet-500/15"
           >
             <Bot className="mt-0.5 h-4 w-4 shrink-0" />
             <span>到「LLM 維護助理」用這筆結果生成完整維修建議與工單草稿。</span>
