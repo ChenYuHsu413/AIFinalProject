@@ -28,9 +28,10 @@
   <a href="https://aifinalproject-test.streamlit.app/">Streamlit（對照 / fallback）</a>
 </p>
 
-> **專案定位**：端到端**預測性維護原型**，由三軌組成——模組 A（UCI **AI4I 2020** 靜態
-> 風險分類）、模組 B（**IMS** 軸承動態健康度 / RUL）、模組 B+（**XJTU-SY** 多軌跡、多工況
-> 泛化驗證）。
+> **專案定位**：端到端**預測性維護原型**，以**伺服馬達健康主線（模組 Servo · 真實 PHM FMCRD）** 為核心，
+> 另含四條**對照軌**——依與伺服馬達的貼近程度為 **C（馬達電流 MCSA）> B / B+（IMS / XJTU 軸承）>
+> A（AI4I 合成製程，最不貼近，僅方法基礎）**。對照軌補上電氣模態、機械失效模式與方法學基礎；模組 A 為
+> 合成資料，定位為入門對照、非伺服結果的主要依據（見 [`outputs/figures/servo_modality_matrix.png`](outputs/figures/servo_modality_matrix.png)）。
 >
 > **本系統是**：以運轉條件估計故障風險與健康分數、以振動退化趨勢偵測退化起點並估計
 > RUL，並依規則產生維護建議的決策輔助工具。
@@ -81,6 +82,10 @@
 
 系統由四條**互補但獨立**的軌道組成，將專案從「靜態風險評估」延伸到「動態健康度預測」、
 以多軌跡 / 多工況資料**驗證泛化邊界**，再以 Paderborn 馬達定子電流（MCSA）**補上電氣模態**：
+
+> **定位提醒**：A/B/B+/C 皆為**對照軌**，輔助真實伺服馬達主線（模組 Servo）。依與伺服馬達的貼近程度為
+> **C（馬達電流，最貼近馬達）> B / B+（軸承，伺服的機械失效模式）> A（合成通用 PdM，最不貼近，僅方法基礎）**。
+> 下表保留 A→B→B+→C 的方法演進順序呈現；其中 A 為合成資料，已淡化為入門對照。
 
 ```mermaid
 flowchart TB
@@ -855,10 +860,14 @@ docker run --rm pmm-app:ci python -c "from src.models import predict, explain, t
   [`docs/MODULE_C_PADERBORN_PLAN.md`](docs/MODULE_C_PADERBORN_PLAN.md)。
 
 ### 未來工作（已排序）
-- **模組 C 延伸**：MCSA 頻譜邊帶特徵（真正的電流診斷）、納入全 4 工況、即時預測 FastAPI 端點。
+
+> **範圍更新（2026-06-29）**：CE2（MCSA 頻譜邊帶）、CE3（全 4 工況跨工況泛化）、模組 B（IMS）1D-CNN
+> Autoencoder 深度對照 **已確定不做**，自待辦移除（理由見 [`docs/MODULE_C_PADERBORN_EXTENSIONS_PLAN.md`](docs/MODULE_C_PADERBORN_EXTENSIONS_PLAN.md)、
+> [`docs/MODULE_B_DL_PLAN.md`](docs/MODULE_B_DL_PLAN.md)）。
+
+- **模組 C 延伸**：CE1 領域自適應、CE4 即時預測 FastAPI 端點**已完成**。
 - **（以下皆推遲）** 其餘公開資料集（FEMTO / Mendeley / PMSM）、更強的領域自適應 / 更多工況以
-  突破跨工況絕對 RUL、**模組 B（IMS）的 1D-CNN Autoencoder 深度對照**（Servo 主線已完成 Phase A/B
-  深度學習，見下）、ESP32 邊緣 IoT 實場接入、成本敏感門檻調整 /
+  突破跨工況絕對 RUL、ESP32 邊緣 IoT 實場接入、成本敏感門檻調整 /
   模型校準、MLOps（重訓 / 漂移 / 版本 / 審計）、規則式維護建議升級為 LLM 結構化敘述。
 
 ---

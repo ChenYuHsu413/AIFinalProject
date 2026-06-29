@@ -10,7 +10,7 @@ export interface LegacyModel {
   task: string;
   href: string;
   icon: LucideIcon;
-  accent: "blue" | "emerald" | "amber" | "rose";
+  accent: "blue" | "emerald" | "amber" | "rose" | "slate";
 }
 
 const ACCENT: Record<LegacyModel["accent"], { icon: string; ring: string }> = {
@@ -18,6 +18,7 @@ const ACCENT: Record<LegacyModel["accent"], { icon: string; ring: string }> = {
   emerald: { icon: "text-emerald-300 bg-emerald-500/15", ring: "ring-emerald-500/25" },
   amber: { icon: "text-amber-300 bg-amber-500/15", ring: "ring-amber-500/25" },
   rose: { icon: "text-rose-300 bg-rose-500/15", ring: "ring-rose-500/25" },
+  slate: { icon: "text-slate-400 bg-slate-500/15", ring: "ring-slate-500/25" },
 };
 
 /** Small entry card for legacy/comparison modules A / B / B+ / C. */

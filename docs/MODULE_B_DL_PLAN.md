@@ -7,8 +7,10 @@
 >
 > **核心決策**：做 **1D-CNN Autoencoder 異常偵測**，**不**做 DL 的 RUL 回歸，也**不**做健康階段分類。
 >
-> **狀態（2026-06-23）**：**已推遲**——團隊決定優先補強資料集（XJTU 多軌跡泛化，見 [`MODULE_B_PLUS_XJTU_PLAN.md`](MODULE_B_PLUS_XJTU_PLAN.md)）；本深度學習對照暫緩，尚未實作（`src/models/train_autoencoder.py` 尚未建立）。對照主線規劃見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)、
-> 實測結果見 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)。
+> **狀態（2026-06-29）**：**不納入本專案（決定不做）**——深度學習方法亮點已由 **Servo 主線兩階段 DL**
+> 達成（Phase A：PyTorch MLP + 神經 autoencoder；Phase B：真 1D-CNN on 原始波形，見 [`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)），
+> 故無須再於 IMS 單軌跡上做 1D-CNN AE；加上 IMS 原始資料已於專案整理時清除，本對照軌取消，`src/models/train_autoencoder.py` 不再規劃建立。
+> 以下規劃內容**保留供未來參考**。對照主線規劃見 [`MODULE_B_IMS_PLAN.md`](MODULE_B_IMS_PLAN.md)、實測結果見 [`MODULE_B_RESULTS.md`](MODULE_B_RESULTS.md)。
 
 ---
 

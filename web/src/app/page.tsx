@@ -44,10 +44,11 @@ import {
 } from "@/lib/api";
 
 const LEGACY: LegacyModel[] = [
-  { code: "模組 A", name: "靜態風險", dataset: "AI4I 2020 (合成)", task: "故障分類", href: "/module-a/predict", icon: Target, accent: "blue" },
+  { code: "模組 C", name: "電流診斷", dataset: "Paderborn", task: "MCSA 故障分類", href: "/module-c", icon: Zap, accent: "rose" },
   { code: "模組 B", name: "動態健康度", dataset: "IMS 軸承", task: "RUL / 健康度", href: "/module-b/overview", icon: HeartPulse, accent: "emerald" },
   { code: "模組 B+", name: "多軌跡泛化", dataset: "XJTU-SY", task: "跨軸承泛化", href: "/module-b-plus/generalization", icon: Dna, accent: "amber" },
-  { code: "模組 C", name: "電流診斷", dataset: "Paderborn", task: "MCSA 故障分類", href: "/module-c", icon: Zap, accent: "rose" },
+  // 合成資料、最不貼近伺服 — 置於最後並以灰階淡化，定位為方法學基礎對照。
+  { code: "模組 A", name: "靜態風險", dataset: "AI4I 2020 (合成·基礎)", task: "故障分類", href: "/module-a/predict", icon: Target, accent: "slate" },
 ];
 
 export default function Overview() {

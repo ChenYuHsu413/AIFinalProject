@@ -9,11 +9,11 @@ const TRACKS = [
     tone: "text-violet-300",
   },
   {
-    code: "模組 A（對照）",
-    name: "靜態風險",
-    data: "AI4I 2020（合成）",
-    task: "單點故障分類",
-    tone: "text-sky-300",
+    code: "模組 C（對照 · 最貼近馬達）",
+    name: "馬達電流診斷",
+    data: "Paderborn PMSM 試驗台",
+    task: "MCSA 故障分類（人工→真實泛化）",
+    tone: "text-rose-300",
   },
   {
     code: "模組 B（對照）",
@@ -30,11 +30,11 @@ const TRACKS = [
     tone: "text-amber-300",
   },
   {
-    code: "模組 C（對照）",
-    name: "馬達電流診斷",
-    data: "Paderborn PMSM 試驗台",
-    task: "MCSA 故障分類（人工→真實泛化）",
-    tone: "text-rose-300",
+    code: "模組 A（對照 · 合成基礎）",
+    name: "靜態風險",
+    data: "AI4I 2020（合成）",
+    task: "單點故障分類",
+    tone: "text-slate-400",
   },
 ];
 
@@ -52,7 +52,7 @@ export default function AboutPage() {
     <div className="mx-auto max-w-4xl px-4 py-6 lg:px-6">
       <PageTitle
         title="關於本專案"
-        desc="AI 伺服馬達健康監控與智慧維護指揮中心 —— 三軌定位、A / B / B+ / C 對照與誠實性聲明。"
+        desc="AI 伺服馬達健康監控與智慧維護指揮中心 —— 以 Servo 為主線、A / B / B+ / C 對照（依貼近馬達程度 C > B/B+ > A）與誠實性聲明。"
       />
 
       <Card title="三軌定位" className="mb-6">
