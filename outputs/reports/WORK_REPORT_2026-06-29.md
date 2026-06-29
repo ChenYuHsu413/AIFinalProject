@@ -2,9 +2,11 @@
 
 > **狀態（2026-06-29）**：完成三件事——(1) 跨報告/前端**淡化模組 A**、新增「失效模式 × 感測模態」
 > 相關性圖、descope CE2/CE3 與模組 B 1D-CNN；(2) 修復 CI py3.12 的 **pandas 3.0.4 段錯誤**並留下除錯記錄；
-> (3) **前端 Command Center 改版**（戰情室首頁 + 指針儀表 + 主題切換 + 淺色配色），詳見 §3。
+> (3) **前端 Command Center 改版**（戰情室首頁 + 指針儀表 + 主題切換 + 淺色配色，詳見 §3）+ 收尾雜項（詳見 §4）。
 > PR：[#14](https://github.com/ChenYuHsu413/AIFinalProject/pull/14)（`docs/de-emphasize-module-a`）、
-> [#15](https://github.com/ChenYuHsu413/AIFinalProject/pull/15)（`feat/command-center-revamp`，已合併、CI 全綠）。
+> [#15](https://github.com/ChenYuHsu413/AIFinalProject/pull/15)（首頁改版）、
+> [#16](https://github.com/ChenYuHsu413/AIFinalProject/pull/16)–[#19](https://github.com/ChenYuHsu413/AIFinalProject/pull/19)（收尾：theme-script / CI node24 / 工單連結 / gitignore）；
+> 今日 #15–#19 皆已合併、CI 全綠。
 > 相關文件：[`../../docs/FINAL_REPORT.md`](../../docs/FINAL_REPORT.md)、[`REPORT_OUTLINE.md`](REPORT_OUTLINE.md)。
 
 ## 1. 模組定位重整（淡化 A）
@@ -82,6 +84,33 @@
   第二次誤判 `from === to` 而跳過動畫。改用「只在 rAF tick 內更新的 `displayRef`」即正常。
 
 驗證：`next build` 通過（22 路由）、eslint / tsc 乾淨、淺色逐頁抽查無低對比、無 hydration mismatch / console error。
+
+## 4. 收尾與雜項（PR #16–#19）+ 文件同步
+
+- **#16 主題 script**：`layout` 的 inline 主題 script 抽成 `ThemeScript`（server 端
+  `type="text/javascript"` 維持無 FOUC、client 端 `text/plain`），消除 React dev-only
+  「Encountered a script tag」警告。toggle 與無閃爍行為不變。
+- **#17 CI action bump（Node 24）**：清 GitHub Actions 的 Node.js 20 deprecation 警告——
+  `actions/checkout` v4→v7、`setup-python` v5→v6、`setup-node` v4→v6、
+  `docker/setup-buildx-action` v3→v4、`docker/build-push-action` v6→v7
+  （用 GitHub API 查證最新 major、先在 PR 上 watch CI 綠才合併）。
+- **#18 工單佇列連結**：佇列「處理」由固定連 `/alerts` 改連到該列設備 `/equipment/<id>`
+  （無對應設備時不可點）。〔來自另一個開發 session〕
+- **#19 .gitignore**：忽略本機專屬的 `.claude/`（`launch.json` dev 設定、`scheduled_tasks.lock` 鎖檔）。
+
+### 文件同步（隨改版更新過時敘述）
+
+派 agent 掃 `README.md` / `web/README.md` / `docs/` 找與本次改版矛盾的敘述並更新：
+
+- **「暗色/深色工業風＝僅深色」** → 改為**亮/暗色可切換**：`web/README.md`、`README.md` §11/§16E、
+  `docs/FINAL_REPORT.md`（同步更新狀態戳日期）。
+- **首頁敘述** 由「KPI 列／機群健康卡／系統狀態／告警」 → **Command Center 戰情室**：
+  上述各檔 + `docs/DEMO_SCRIPT.md`（重寫 demo step 1 走查順序）。
+- **`web/README.md`** 補 **Node ≥20.9** 需求（先前未標，Node 18 會跑不動）。
+- **`docs/WEB_REVAMP_PLAN.md`** 補一條 2026-06-29 戰情室改版的日期戳記錄（不動歷史條目）。
+- 已確認 **`docs/DEPLOYMENT.md` 已是 Node 24**、無 doc 釘住舊 action 版本——無需改。
+
+今日共 5 個 PR（#15–#19）進 main、CI 全綠；工作區乾淨。
 
 ## 工具備忘
 - 本機 `gh` 安裝後 PATH 未即時更新；以登錄檔 Machine+User PATH 重載即可使用：
