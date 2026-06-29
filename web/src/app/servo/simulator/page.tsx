@@ -184,10 +184,15 @@ function ClfResult({
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="資料量" value={String(res.n_samples)} />
-        <Stat label="特徵數" value={String(res.n_features)} />
-        <Stat label="Accuracy" value={res.accuracy!.toFixed(3)} />
-        <Stat label="Macro-F1" value={res.macro_f1!.toFixed(3)} valueClass="text-primary" />
+        <Stat label="資料量" value={String(res.n_samples)} sub="這次拿來訓練的樣本筆數，越多通常越穩" />
+        <Stat label="特徵數" value={String(res.n_features)} sub="每筆資料用到幾個輸入欄位" />
+        <Stat label="Accuracy" value={res.accuracy!.toFixed(3)} sub="整體答對的比例，0~1，越接近 1 越好" />
+        <Stat
+          label="Macro-F1"
+          value={res.macro_f1!.toFixed(3)}
+          valueClass="text-primary"
+          sub="各健康狀態平均表現，0~1，越接近 1 越好（少數類也算數，比 Accuracy 更公平）"
+        />
       </div>
       <p className="text-xs text-muted-foreground">
         訓練時間 {res.train_time_s.toFixed(3)} 秒 · 演算法 {algoLabel}
@@ -232,10 +237,15 @@ function RegResult({
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="資料量" value={String(res.n_samples)} />
-        <Stat label="MAE" value={res.mae!.toFixed(3)} />
-        <Stat label="RMSE" value={res.rmse!.toFixed(3)} />
-        <Stat label="R²" value={res.r2!.toFixed(3)} valueClass="text-primary" />
+        <Stat label="資料量" value={String(res.n_samples)} sub="這次拿來訓練的樣本筆數，越多通常越穩" />
+        <Stat label="MAE" value={res.mae!.toFixed(3)} sub="平均差多少（單位同退化值 DV），越小越好" />
+        <Stat label="RMSE" value={res.rmse!.toFixed(3)} sub="誤差的均方根，會放大大錯，越小越好" />
+        <Stat
+          label="R²"
+          value={res.r2!.toFixed(3)}
+          valueClass="text-primary"
+          sub="模型解釋了多少變化，最高 1；越接近 1 越好，為負代表比直接猜平均還差"
+        />
       </div>
       <p className="text-xs text-muted-foreground">
         訓練時間 {res.train_time_s.toFixed(3)} 秒 · 演算法 {algoLabel}
@@ -339,9 +349,21 @@ function DlPanel({ dl }: { dl?: ServoReferenceMetrics["dl"] }) {
         <div className="border-t border-border/70 px-5 py-4">
           {dl.note && <p className="mb-3 text-xs text-muted-foreground">{dl.note}</p>}
           <div className="grid gap-3 sm:grid-cols-3">
-            <Stat label="MLP 分類 macro-F1" value={dl.mlp_classification_macro_f1.toFixed(3)} />
-            <Stat label="MLP 回歸 R²" value={(dl.mlp_regression?.r2 ?? 0).toFixed(3)} />
-            <Stat label="MLP 回歸 MAE" value={(dl.mlp_regression?.mae ?? 0).toFixed(3)} />
+            <Stat
+              label="MLP 分類 macro-F1"
+              value={dl.mlp_classification_macro_f1.toFixed(3)}
+              sub="神經網路版分類分數，0~1，越接近 1 越好"
+            />
+            <Stat
+              label="MLP 回歸 R²"
+              value={(dl.mlp_regression?.r2 ?? 0).toFixed(3)}
+              sub="神經網路版回歸，越接近 1 越好"
+            />
+            <Stat
+              label="MLP 回歸 MAE"
+              value={(dl.mlp_regression?.mae ?? 0).toFixed(3)}
+              sub="神經網路版平均誤差，越小越好"
+            />
           </div>
           {recOrder.length > 0 && (
             <div className="mt-4">

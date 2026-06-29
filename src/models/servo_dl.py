@@ -170,8 +170,8 @@ def run() -> Path:
         "method": "servo_dl_torch",
         "eval": eval_mode,
         "placeholder": bool(cfg.get("placeholder", True)),
-        "note": ("PyTorch MLP 分類/回歸 + 神經 autoencoder（健康資料擬合的重建誤差）。"
-                 "真正的 1D-CNN 需原始 PHM 時序波形（非此處的逐段聚合特徵），列為後續工作。"),
+        "note": ("PyTorch MLP 分類/回歸 + 神經 autoencoder（健康資料擬合的重建誤差），"
+                 "輸入為逐段聚合特徵；直接吃原始 FMCRD 波形的真 1D-CNN 已另在「1D-CNN（原始波形）」一節完成。"),
         "framework": f"pytorch {torch.__version__}",
         "architecture": {
             "mlp_hidden": [64, 32],
