@@ -39,9 +39,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${geistSans.variable} ${geistMono.variable} ${notoSansTC.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSansTC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Apply the persisted / system theme before first paint (no FOUC).
+            Defaults to the OS preference; an explicit choice is stored in
+            localStorage by ThemeToggle. See Next.js "preventing flash" guide. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("theme");var d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;var e=document.documentElement;e.classList.toggle("dark",d);e.style.colorScheme=d?"dark":"light";}catch(e){document.documentElement.classList.add("dark");}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-background text-foreground" suppressHydrationWarning>
         <SidebarProvider>
           <div className="flex h-screen">

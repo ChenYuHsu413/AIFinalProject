@@ -9,6 +9,7 @@ import { apiGet, type Health, type ServoModelInfo } from "@/lib/api";
 import { NAV_GROUPS } from "@/lib/nav";
 import { FLEET } from "@/lib/mock";
 import { useSidebar } from "@/components/sidebar-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /** Derive a [section, page] breadcrumb trail from the current path. */
 function useCrumbs(): { label: string; href?: string }[] {
@@ -103,7 +104,7 @@ export function Header() {
       <div className="flex items-center gap-3 px-4 text-xs">
         {servo?.placeholder && (
           <span
-            className="hidden rounded-md bg-amber-500/15 px-2 py-0.5 font-medium text-amber-300 ring-1 ring-inset ring-amber-500/30 sm:inline"
+            className="hidden rounded-md bg-amber-500/15 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30 sm:inline"
             title="目前以 placeholder 合成資料訓練，非真實 PHM 伺服馬達資料"
           >
             placeholder 合成資料
@@ -136,6 +137,8 @@ export function Header() {
             {err ? "離線" : connected ? "已連線" : "連線中"}
           </span>
         </span>
+
+        <ThemeToggle />
 
         <a
           href="https://github.com/ChenYuHsu413/AIFinalProject"
