@@ -387,13 +387,14 @@ function StreamingReplay({ bearingKeys }: { bearingKeys: string[] }) {
       <h2 className="mb-1 text-lg font-semibold">即時串流回放（會動的監測台 · E3）</h2>
       <p className="mb-4 text-sm text-muted-foreground">
         選一顆軸承播放：健康指標 HI 一格格長、跨過退化起點 FPT 後目前點轉紅，狀態框即時顯示健康度 / RUL / 風險（重用 E2 邏輯）。
-        RUL 以當前可見前綴外推（回溯式，與逐前綴重算等價）。
+        RUL 以當前可見前綴外推（回溯式；失效門檻為離線預先校準後固定，非逐前綴重算）。
       </p>
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <select
             value={selected}
+            aria-label="選擇軸承軌跡"
             onChange={(e) => selectBearing(e.target.value)}
             className="rounded-md border border-border bg-card px-2 py-1.5 text-sm"
           >

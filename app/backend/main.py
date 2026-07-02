@@ -77,7 +77,7 @@ def predict(req: PredictRequest):
         return services.predict_one(req.to_raw_record())
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -90,7 +90,7 @@ async def batch_predict(file: UploadFile = File(...)):
         results = services.predict_batch_from_csv(content)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"count": len(results), "results": results}
 
@@ -102,7 +102,7 @@ def predict_explain(req: PredictRequest):
         return services.predict_explain(req.to_raw_record())
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -125,7 +125,7 @@ def predict_batch(records: List[PredictRequest]):
         results = services.predict_batch_records(raw)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"count": len(results), "results": results}
 
@@ -141,7 +141,7 @@ def predict_full(req: PredictRequest):
         return services.predict_one_full(req.to_raw_record())
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -196,7 +196,7 @@ def paderborn_predict(req: PaderbornPredictRequest):
         return services.paderborn_predict_one(req.features)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -275,6 +275,8 @@ def ims_snapshot(index: int):
     """單一快照原始振動波形 + FFT 頻譜；無原始資料時回 available:false。"""
     try:
         return services.ims_snapshot(index)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -325,7 +327,7 @@ def servo_predict(req: ServoPredictRequest):
         return services.servo_predict_one(req.features)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 

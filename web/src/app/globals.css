@@ -58,18 +58,20 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.511 0.262 276.966);
+  /* Same cyan brand hue as the dark theme (and the hardcoded sidebar logo),
+     darkened for contrast on white — light/dark are the same product. */
+  --primary: oklch(0.52 0.12 205);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.962 0.044 280);
-  --accent-foreground: oklch(0.511 0.262 276.966);
+  --accent: oklch(0.96 0.03 205);
+  --accent-foreground: oklch(0.52 0.12 205);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.511 0.262 276.966);
+  --ring: oklch(0.52 0.12 205);
   /* Status-hued chart series, darkened for legibility on the light surface
      (the dark theme defines its own brighter set below). */
   --chart-1: oklch(0.58 0.13 205); /* cyan    */
@@ -92,7 +94,9 @@
    slate/zinc base · cyan primary · emerald / amber / red status accents.
    Tuned so cards read as low-contrast glass panels on a deep slate field. */
 .dark {
-  --background: oklch(0 0 0);
+  /* Deep slate (not pure black): softer card edges, matches the "slate field"
+     intent, and gives the sidebar room to sit half a step lighter. */
+  --background: oklch(0.145 0.012 248);
   --foreground: oklch(0.955 0.005 248);
   --card: oklch(0.205 0.014 248);
   --card-foreground: oklch(0.955 0.005 248);
@@ -115,7 +119,7 @@
   --chart-3: oklch(0.72 0.15 162); /* emerald*/
   --chart-4: oklch(0.82 0.15 82);  /* amber  */
   --chart-5: oklch(0.64 0.21 26);  /* red    */
-  --sidebar: oklch(0 0 0);
+  --sidebar: oklch(0.17 0.012 248);
   --sidebar-foreground: oklch(0.93 0.005 248);
   --sidebar-primary: oklch(0.78 0.13 205);
   --sidebar-primary-foreground: oklch(0.17 0.02 248);

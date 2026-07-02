@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Bot, Loader2, MapPin, RefreshCw, Wrench } from "lucide-react";
@@ -123,27 +123,36 @@ function RealPredictionSection({ state }: { state: string }) {
   const [busy, setBusy] = useState(true);
   const [err, setErr] = useState(false);
 
+  // request sequence — the [state] effect can rerun (mock → model) while a
+  // predictRow from the previous run is still in flight; the stale response
+  // must not overwrite the newer one.
+  const seqRef = useRef(0);
+
   async function predictRow(row: ServoSample, columns: string[]) {
+    const seq = ++seqRef.current;
     setBusy(true);
     setErr(false); // clear any prior error so a successful retry recovers
     try {
       const features: Record<string, number> = {};
       for (const col of columns) features[col] = Number(row[col]);
-      setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+      const p = await apiPost<ServoPrediction>("/servo/predict", { features });
+      if (seq === seqRef.current) setPred(p);
     } catch {
-      setErr(true);
+      if (seq === seqRef.current) setErr(true);
     } finally {
-      setBusy(false);
+      if (seq === seqRef.current) setBusy(false);
     }
   }
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const [info, rows] = await Promise.all([
           apiGet<ServoModelInfo>("/servo/model_info"),
           apiGet<ServoSample[]>("/servo/samples"),
         ]);
+        if (cancelled) return;
         const matched = rows
           .map((row, idx) => ({ row, idx }))
           .filter((m) => String(m.row["ylabel"]) === state);
@@ -160,10 +169,15 @@ function RealPredictionSection({ state }: { state: string }) {
         setPos(0);
         await predictRow(list[0].row, info.feature_columns);
       } catch {
-        setErr(true);
-        setBusy(false);
+        if (!cancelled) {
+          setErr(true);
+          setBusy(false);
+        }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [state]);
 
   function reroll() {

@@ -45,17 +45,28 @@ export default function ModuleAWhatIfPage() {
   const [err, setErr] = useState(false);
 
   useEffect(() => {
+    let cancelled = false; // drop out-of-order responses when the sweep variable changes
     const sw = SWEEPS[varKey];
     const xs: number[] = [];
     for (let v = sw.from; v <= sw.to; v += sw.step) xs.push(Number(v.toFixed(2)));
     const records: PredictReq[] = xs.map((v) => ({ ...BASE, [sw.key]: v }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: show the spinner for every sweep switch, not just the first load
+    setBusy(true);
     apiPost<BatchResp>("/predict/batch", records)
       .then((r) => {
+        if (cancelled) return;
         setErr(false);
         setData(xs.map((x, i) => ({ x, p: +(r.results[i].failure_probability * 100).toFixed(2) })));
       })
-      .catch(() => setErr(true))
-      .finally(() => setBusy(false));
+      .catch(() => {
+        if (!cancelled) setErr(true);
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [varKey]);
 
   const sw = SWEEPS[varKey];

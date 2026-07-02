@@ -31,11 +31,17 @@ export function useFleet(): { fleet: Equipment[]; source: FleetSource } {
 
     // C: instant real value from the last successful fetch. Seeding from the
     // cache here (post-mount, not in the initializer) is intentional double
-    // render: skeleton → cached value.
+    // render: skeleton → cached value. Items are shape-checked because the
+    // payload may predate a schema change — toMotorViews hard-dereferences
+    // topFeature, so a stale cached fleet without it would crash every render
+    // until localStorage is cleared by hand.
     const cached = readCache<Equipment[]>(CACHE_KEY);
-    if (cached?.length) {
+    const usable = Array.isArray(cached)
+      ? cached.filter((u) => u && typeof u.topFeature?.feature === "string")
+      : [];
+    if (usable.length) {
       /* eslint-disable react-hooks/set-state-in-effect */
-      setFleet(cached);
+      setFleet(usable);
       setSource("cache");
       /* eslint-enable react-hooks/set-state-in-effect */
     }

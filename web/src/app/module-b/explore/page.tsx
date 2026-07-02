@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { TrendChart } from "@/components/dashboard/TrendChart";
@@ -22,29 +22,44 @@ export default function ModuleBExplorePage() {
   const [indicator, setIndicator] = useState<string>("");
   const [busy, setBusy] = useState(true);
   const [err, setErr] = useState(false);
+  // request sequence — rapid indicator switches must not let an older, slower
+  // response overwrite the newer one.
+  const seqRef = useRef(0);
 
   function load(ind?: string) {
+    const seq = ++seqRef.current;
     setBusy(true);
     setErr(false);
     const q = ind ? `?indicator=${encodeURIComponent(ind)}` : "";
     apiGet<ImsHi>(`/ims/health_indicator${q}`)
       .then((h) => {
+        if (seq !== seqRef.current) return;
         setHi(h);
         setIndicator(h.indicator);
       })
-      .catch(() => setErr(true))
-      .finally(() => setBusy(false));
+      .catch(() => {
+        if (seq === seqRef.current) setErr(true);
+      })
+      .finally(() => {
+        if (seq === seqRef.current) setBusy(false);
+      });
   }
 
   // initial load (set state only inside async callbacks; load() is for the picker)
   useEffect(() => {
+    const seq = ++seqRef.current;
     apiGet<ImsHi>("/ims/health_indicator")
       .then((h) => {
+        if (seq !== seqRef.current) return;
         setHi(h);
         setIndicator(h.indicator);
       })
-      .catch(() => setErr(true))
-      .finally(() => setBusy(false));
+      .catch(() => {
+        if (seq === seqRef.current) setErr(true);
+      })
+      .finally(() => {
+        if (seq === seqRef.current) setBusy(false);
+      });
   }, []);
 
   const curve =

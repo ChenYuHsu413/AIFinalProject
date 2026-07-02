@@ -55,10 +55,13 @@ function seriesFor(range: RangeKey): TrendPoint[] {
     const avg = Math.round(70 - trend + wob);
     const worst = Math.max(12, Math.round(avg - 30 - (i % 3) * 2));
     const alerts = Math.max(0, Math.round(2 + Math.sin((i + seed) / 1.3) * 1.6));
+    // Elapsed H:MM keeps every label unique — `% 60` alone repeats (24H would
+    // render twelve "00'" ticks and duplicate ReferenceDot/React keys).
+    const mins = i * cfg.step;
     const t =
       range === "7D"
         ? `D${String(i + 1).padStart(2, "0")}`
-        : `${String((i * cfg.step) % 60).padStart(2, "0")}'`;
+        : `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}`;
     return { t, avg, worst, alerts };
   });
 }

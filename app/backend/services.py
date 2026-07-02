@@ -265,8 +265,12 @@ def xjtu_replay(condition: str, bearing: str) -> Dict[str, Any]:
     """Precomputed streaming-replay frames for one bearing (<=100 frames).
 
     Reuses build_health_indicator / detect_fpt / extrapolate_rul / maintenance_advice
-    once on the full series — the rolling RUL fit is backward-looking, so frame k
-    equals what the system would compute having seen only the first k snapshots."""
+    once on the full series. The rolling RUL fit is backward-looking, but the
+    failure threshold (``fail_percentile`` over the whole trajectory) is
+    calibrated offline on the full series and held fixed — so frames are a
+    faithful replay given a pre-calibrated threshold, NOT a strict
+    "first-k-snapshots-only" online computation (same caveat as the Streamlit
+    version of this demo)."""
     from src.models.maintenance_advice import maintenance_advice
     from src.models.rul_extrapolation import (
         build_health_indicator,
