@@ -76,6 +76,32 @@ def available_providers() -> List[str]:
     return out
 
 
+def _sanitize_prediction(prediction: Dict[str, Any]) -> Dict[str, Any]:
+    """Defensive copy of a client-supplied prediction dict.
+
+    The API schema accepts ``prediction`` as an arbitrary dict, but this module
+    hard-indexes ``top_features`` entries and applies numeric format specs —
+    a missing key or a string score would otherwise raise (HTTP 500), including
+    inside the offline fallback templates.
+    """
+    p = dict(prediction or {})
+    for k in ("predicted_health_state", "health_state_zh", "risk_level"):
+        p[k] = str(p.get(k) or ("?" if k != "health_state_zh" else ""))
+    for k in ("degradation_score", "health_score", "model_confidence"):
+        try:
+            p[k] = float(p.get(k, 0))
+        except (TypeError, ValueError):
+            p[k] = 0.0
+    tops = []
+    for t in p.get("top_features") or []:
+        if isinstance(t, dict):
+            tops.append({"feature": str(t.get("feature", "?")),
+                         "z": t.get("z", "?"),
+                         "hint": str(t.get("hint", ""))})
+    p["top_features"] = tops
+    return p
+
+
 def _format_structured(prediction: Dict[str, Any],
                        chunks: Optional[List[Dict[str, Any]]]) -> str:
     state = prediction.get("predicted_health_state", "?")
@@ -170,6 +196,7 @@ def _call_llm(system: str, user: str) -> Tuple[str, str]:
 def generate_report(prediction: Dict[str, Any],
                     chunks: Optional[List[Dict[str, Any]]] = None) -> Dict[str, str]:
     """Full maintenance write-up. Returns {'text','source'} (source=provider|fallback)."""
+    prediction = _sanitize_prediction(prediction)
     structured = _format_structured(prediction, chunks)
     try:
         text, prov = _call_llm(
@@ -183,6 +210,7 @@ def generate_report(prediction: Dict[str, Any],
 def answer_question(question: str, prediction: Dict[str, Any],
                     chunks: Optional[List[Dict[str, Any]]] = None) -> Dict[str, str]:
     """Conservative Q&A grounded in the prediction + knowledge chunks."""
+    prediction = _sanitize_prediction(prediction)
     structured = _format_structured(prediction, chunks)
     try:
         text, prov = _call_llm(

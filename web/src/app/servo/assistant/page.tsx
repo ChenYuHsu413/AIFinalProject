@@ -32,13 +32,16 @@ export default function AssistantPage() {
   const [idx, setIdx] = useState(0);
   const [pred, setPred] = useState<ServoPrediction | null>(null);
   const [predBusy, setPredBusy] = useState(false);
+  const [predErr, setPredErr] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
 
   const [report, setReport] = useState<AssistantResponse | null>(null);
   const [reportBusy, setReportBusy] = useState(false);
+  const [reportErr, setReportErr] = useState(false);
   const [question, setQuestion] = useState("目前狀況要先檢查什麼？");
   const [answer, setAnswer] = useState<AssistantResponse | null>(null);
   const [qaBusy, setQaBusy] = useState(false);
+  const [qaErr, setQaErr] = useState(false);
 
   // Load options, then predict the sample the dashboard handed over via
   // ?sample=<idx> (the "到 LLM 維護助理" link). Falls back to a default MED
@@ -81,10 +84,13 @@ export default function AssistantPage() {
     setPredBusy(true);
     setReport(null);
     setAnswer(null);
+    setPredErr(false);
     try {
       const features: Record<string, number> = {};
       for (const col of c) features[col] = Number(rows[i][col]);
       setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+    } catch {
+      setPredErr(true);
     } finally {
       setPredBusy(false);
     }
@@ -93,12 +99,15 @@ export default function AssistantPage() {
   async function genReport() {
     if (!pred) return;
     setReportBusy(true);
+    setReportErr(false);
     try {
       setReport(
         await apiPost<AssistantResponse>("/servo/assistant/report", {
           prediction: pred,
         }),
       );
+    } catch {
+      setReportErr(true);
     } finally {
       setReportBusy(false);
     }
@@ -107,6 +116,7 @@ export default function AssistantPage() {
   async function askQa() {
     if (!pred || !question.trim()) return;
     setQaBusy(true);
+    setQaErr(false);
     try {
       setAnswer(
         await apiPost<AssistantResponse>("/servo/assistant/qa", {
@@ -114,6 +124,8 @@ export default function AssistantPage() {
           prediction: pred,
         }),
       );
+    } catch {
+      setQaErr(true);
     } finally {
       setQaBusy(false);
     }
@@ -136,12 +148,13 @@ export default function AssistantPage() {
             樣本
             <select
               value={idx}
+              disabled={predBusy}
               onChange={(e) => {
                 const i = Number(e.target.value);
                 setIdx(i);
                 runPredict(i, cols, samples);
               }}
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40"
+              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
             >
               {samples.map((s, i) => {
                 const l = String(s["ylabel"] ?? "?");
@@ -155,7 +168,9 @@ export default function AssistantPage() {
           </label>
         </div>
 
-        {predBusy || !pred ? (
+        {predErr ? (
+          <Note tone="danger">估測失敗，請確認後端連線後重新選擇樣本。</Note>
+        ) : predBusy || !pred ? (
           <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> 估測中…
           </div>
@@ -203,6 +218,11 @@ export default function AssistantPage() {
             {reportBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
             產生維護報告（含工單草稿）
           </Button>
+          {reportErr && (
+            <Note tone="danger" className="mt-3">
+              產生報告失敗，請確認後端連線後重試。
+            </Note>
+          )}
           {report && (
             <div className="mt-4">
               <SourceBadge source={report.source} />
@@ -224,6 +244,11 @@ export default function AssistantPage() {
             {qaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircleQuestion className="h-4 w-4" />}
             詢問助理
           </Button>
+          {qaErr && (
+            <Note tone="danger" className="mt-3">
+              詢問失敗，請確認後端連線後重試。
+            </Note>
+          )}
           {answer && (
             <div className="mt-4">
               <SourceBadge source={answer.source} />

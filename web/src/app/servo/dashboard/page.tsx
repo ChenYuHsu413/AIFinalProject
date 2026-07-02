@@ -36,7 +36,11 @@ export default function ServoDashboardPage() {
   const [samples, setSamples] = useState<ServoSample[]>([]);
   const [idx, setIdx] = useState(0);
   const [pred, setPred] = useState<ServoPrediction | null>(null);
+  // index of the sample `pred` was computed from — the picker (`idx`) can move
+  // on after a prediction, so the true-label comparison must not follow it.
+  const [predIdx, setPredIdx] = useState(0);
   const [loadErr, setLoadErr] = useState(false);
+  const [predErr, setPredErr] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -56,18 +60,23 @@ export default function ServoDashboardPage() {
 
   async function predict() {
     if (!cols || !samples[idx]) return;
+    const i = idx;
     setBusy(true);
+    setPredErr(false);
     try {
-      const row = samples[idx];
+      const row = samples[i];
       const features: Record<string, number> = {};
       for (const c of cols) features[c] = Number(row[c]);
       setPred(await apiPost<ServoPrediction>("/servo/predict", { features }));
+      setPredIdx(i);
+    } catch {
+      setPredErr(true);
     } finally {
       setBusy(false);
     }
   }
 
-  const trueLabel = samples[idx]?.["ylabel"] as string | undefined;
+  const trueLabel = samples[predIdx]?.["ylabel"] as string | undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -130,8 +139,14 @@ export default function ServoDashboardPage() {
         </div>
       </div>
 
+      {predErr && (
+        <Note tone="danger" className="mb-6">
+          估測失敗，請確認後端連線後重試。
+        </Note>
+      )}
+
       {pred ? (
-        <Result pred={pred} trueLabel={trueLabel} sampleIdx={idx} />
+        <Result pred={pred} trueLabel={trueLabel} sampleIdx={predIdx} />
       ) : (
         !loadErr && (
           <div className="rounded-xl border border-dashed border-border/70 bg-card/40 p-12 text-center text-sm text-muted-foreground">

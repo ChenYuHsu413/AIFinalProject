@@ -33,6 +33,7 @@ export default function SimulatorPage() {
 
   const [res, setRes] = useState<ServoSimResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [trainErr, setTrainErr] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -65,6 +66,7 @@ export default function SimulatorPage() {
   async function train() {
     if (!effectiveAlgo) return;
     setBusy(true);
+    setTrainErr(false);
     try {
       setRes(
         await apiPost<ServoSimResult>("/servo/simulate", {
@@ -74,6 +76,8 @@ export default function SimulatorPage() {
           n,
         }),
       );
+    } catch {
+      setTrainErr(true);
     } finally {
       setBusy(false);
     }
@@ -140,6 +144,11 @@ export default function SimulatorPage() {
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
           開始訓練（後端小模型）
         </Button>
+        {trainErr && (
+          <Note tone="danger" className="mt-3">
+            訓練失敗，請確認後端連線後重試。
+          </Note>
+        )}
       </div>
 
       <DlPanel dl={ref?.dl} />

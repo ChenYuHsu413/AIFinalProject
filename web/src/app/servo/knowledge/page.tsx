@@ -18,6 +18,7 @@ export default function KnowledgePage() {
   const [q, setQ] = useState("位置誤差 變大 卡滯");
   const [hits, setHits] = useState<KnowledgeHit[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [searchErr, setSearchErr] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -32,12 +33,15 @@ export default function KnowledgePage() {
   async function searchKb() {
     if (!q.trim()) return;
     setBusy(true);
+    setSearchErr(false);
     try {
       setHits(
         await apiGet<KnowledgeHit[]>(
           `/knowledge/search?q=${encodeURIComponent(q)}&top_k=5`,
         ),
       );
+    } catch {
+      setSearchErr(true);
     } finally {
       setBusy(false);
     }
@@ -88,6 +92,12 @@ export default function KnowledgePage() {
             檢索
           </Button>
         </div>
+
+        {searchErr && (
+          <Note tone="danger" className="mt-4">
+            檢索失敗，請確認後端連線後重試。
+          </Note>
+        )}
 
         {hits && hits.length === 0 && (
           <Note tone="warn" className="mt-4">

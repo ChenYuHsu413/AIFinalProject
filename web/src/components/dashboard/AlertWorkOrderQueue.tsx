@@ -45,7 +45,11 @@ export function AlertWorkOrderQueue({
             const sev = SEVERITY[a.severity];
             const SevIcon = sev.icon;
             const view = byName.get(a.equipment);
-            const wo = workOrders.find((w) => w.equipment === a.equipment);
+            // Only an ACTIVE work order overrides the alert's own status — a
+            // finished old order must not paint a fresh alert as resolved.
+            const wo = workOrders.find(
+              (w) => w.equipment === a.equipment && w.status !== "done",
+            );
             const status = wo ? WO_STATUS[wo.status] : ALERT_STATUS[a.status];
             return (
               <tr

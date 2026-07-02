@@ -487,6 +487,7 @@ function LiveInference({ samples }: { samples: Sample[] }) {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <select
             value={idx}
+            aria-label="選擇量測樣本"
             onChange={(e) => selectSample(Number(e.target.value))}
             className="rounded-md border border-border bg-card px-2 py-1.5 text-sm"
           >

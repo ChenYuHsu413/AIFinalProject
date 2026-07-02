@@ -30,6 +30,15 @@ export function CountUp({
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Hidden tab: rAF is throttled to never fire, which would freeze the value
+    // at its start point (0 on first load) until the tab regains focus — jump
+    // straight to the target instead.
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      displayRef.current = value;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-shot jump; rAF would never fire here
+      setDisplay(value);
+      return;
+    }
     const dur = reduce ? 1 : duration;
     let raf = 0;
     let startTs = 0;

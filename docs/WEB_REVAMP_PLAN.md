@@ -1,5 +1,12 @@
 # 網頁改版規劃 — Streamlit 單體 → FastAPI + Next.js 前後端分離
 
+> **Code review 修復 + 主題統一（2026-07-02）**：全專案 code review 後修復前端主要缺陷——
+> 5 頁 API 呼叫補 catch + 錯誤提示（後端離線不再永久轉圈）、儀表板 trueLabel 錯配、趨勢圖 24H
+> X 軸重複標籤、what-if/explore/equipment 詳情頁的請求競態、快取形狀驗證、告警佇列誤標
+> Resolved、CountUp 背景分頁凍結、兩處 `<select>` 補 aria-label。**主題統一**：亮色主色
+> 紫→cyan（與暗色、logo 一致）、暗色背景純黑→帶藍調深 slate（側欄淺半階）。
+> 詳見 [`../outputs/reports/WORK_REPORT_2026-07-02.md`](../outputs/reports/WORK_REPORT_2026-07-02.md)。
+
 > **戰情室改版 + 主題切換（2026-06-29）**：首頁由「KPI 列／設備健康卡／系統狀態／告警」重排為
 > **產線值班員 Command Center 戰情室**（全廠狀態列 / 立即處理 / 產線地圖 / 操作導向設備卡 / 工單佇列 /
 > 健康趨勢 / AI 維護摘要）；新增 `lib/dashboard.ts` 集中資料轉換、`lib/cache.ts` + loading skeleton 消除
