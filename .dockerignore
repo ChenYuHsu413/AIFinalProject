@@ -40,6 +40,9 @@ data/processed/*
 !data/processed/xjtu_features.parquet
 # /ims/health_indicator (Module B explore/overview) on Hugging Face
 !data/processed/ims_set2_features.parquet
+# Live Monitor v3 replay packs (/monitor/scenarios, /monitor/scenario/*) — the
+# live SSE stream only needs the generator + model, but replay mode reads these.
+!data/processed/servo_v3
 
 # Local logs
 *.log
