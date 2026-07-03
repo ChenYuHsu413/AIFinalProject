@@ -63,11 +63,19 @@ export function LiveView() {
   const [frame, setFrame] = useState<LiveFrame | null>(null);
   const [smooth, setSmooth] = useState<Record<string, number>>({});
   const [events, setEvents] = useState<FeedEvent[]>([]);
-  const prev = useRef<{ alarm: number; alerted: boolean; sid: number }>({
+  // AI lead-time proof: how early the model warns before the ground-truth alarm.
+  const [lead, setLead] = useState<{ last: number | null; avg: number | null; count: number }>({
+    last: null,
+    avg: null,
+    count: 0,
+  });
+  const prev = useRef<{ alarm: number; alerted: boolean; sid: number; alertT: number | null }>({
     alarm: 0,
     alerted: false,
     sid: -1,
+    alertT: null,
   });
+  const leadsRef = useRef<number[]>([]);
   const smoothRef = useRef<Record<string, number>>({});
   const latestRef = useRef<LiveFrame | null>(null);
   const bufferRef = useRef<LiveFrame[]>([]);
@@ -98,13 +106,30 @@ export function LiveView() {
       if (f.sid !== p.sid) {
         newEvents.push({ t: f.global_t, kind: "event", text: `新事件注入：${f.scenario_name}` });
         p.alerted = false;
+        p.alertT = null;
       }
       if (!p.alerted && f.pred_prob >= 0.5) {
         newEvents.push({ t: f.global_t, kind: "predict", text: `⚠ 模型預警：疑似 ${f.pred_cat}` });
         p.alerted = true;
+        p.alertT = f.global_t; // remember when the AI first warned
       }
       if (p.alarm === 0 && f.alarm === 1) {
-        newEvents.push({ t: f.global_t, kind: "alarm", text: `🔴 觸發告警：${f.scenario_name}` });
+        // lead time = how much earlier the model warned than the real alarm
+        const lt = p.alertT != null ? Math.max(0, f.global_t - p.alertT) : null;
+        newEvents.push({
+          t: f.global_t,
+          kind: "alarm",
+          text:
+            lt != null
+              ? `🔴 觸發告警：${f.scenario_name}（AI 提前 ${lt.toFixed(1)} 秒示警）`
+              : `🔴 觸發告警：${f.scenario_name}`,
+        });
+        if (lt != null) {
+          leadsRef.current.push(lt);
+          const arr = leadsRef.current;
+          const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+          setLead({ last: lt, avg, count: arr.length });
+        }
       }
       p.alarm = f.alarm;
       p.sid = f.sid;
@@ -133,10 +158,12 @@ export function LiveView() {
       bufferRef.current = [];
       latestRef.current = null;
       smoothRef.current = {};
-      prev.current = { alarm: 0, alerted: false, sid: -1 };
+      leadsRef.current = [];
+      prev.current = { alarm: 0, alerted: false, sid: -1, alertT: null };
       setEvents([]);
       setFrame(null);
       setSmooth({});
+      setLead({ last: null, avg: null, count: 0 });
       setRunning(true);
     }
   };
@@ -263,6 +290,20 @@ export function LiveView() {
               <span className="font-medium">{alerted ? frame?.pred_cat : "—"}</span>
             </div>
           </Card>
+
+          {/* AI lead-time proof: the value of early warning, quantified */}
+          <Card className="border-emerald-500/40 bg-emerald-500/5">
+            <p className="text-xs text-muted-foreground">AI 提前告警（本次）</p>
+            <p className="mt-1 text-3xl font-black tabular-nums text-emerald-600 dark:text-emerald-400">
+              {lead.last != null ? `${lead.last.toFixed(1)}s` : "—"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lead.count > 0
+                ? `本場平均 ${lead.avg!.toFixed(1)}s · 已累積 ${lead.count} 次故障`
+                : "尚未觸發告警；模型會在真實告警前先示警"}
+            </p>
+          </Card>
+
           <Card className="flex items-center justify-center">
             <HealthRing value={frame ? sHealth : 100} />
           </Card>

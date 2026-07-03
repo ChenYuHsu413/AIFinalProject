@@ -70,7 +70,8 @@ src/monitor/servo_v3_generator.py（vendored，唯一資料源，進 git）
    │
    └─ (B) 即時串流：④ live_stream.py 即時生成情境 → 降頻 → 跑模型 → 逐幀
           ⑤ 後端 SSE /monitor/stream（async，隨機注入 30 故障、不連續重複，?speed=）
-          ⑥ 前端「即時」模式：EventSource → 捲動即時趨勢 + 雷達/健康/告警即時 + 事件串流
+          ⑥ 前端「即時」模式：EventSource → canvas 捲動趨勢 + 量條/健康/告警即時 + 事件串流
+             + **AI 提前告警 KPI**（本次/平均提前秒數，量化早期預警價值）+ 全頁告警紅閃 + 開始/暫停
 ```
 
 - **回放包自包含**：模型預測在建置時烤進 JSON。**即時串流**則在後端載入
