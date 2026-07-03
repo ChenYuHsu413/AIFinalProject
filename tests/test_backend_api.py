@@ -500,3 +500,44 @@ def test_paderborn_predict_http():
     body = out.json()
     assert body["predicted_class"] in body["labels"]
     assert 0.0 <= body["confidence"] <= 1.0
+
+
+def test_monitor_scenarios_and_pack():
+    """Live Monitor v3: scenarios list + one replay pack round-trip (or skip)."""
+    resp = client.get("/monitor/scenarios")
+    assert resp.status_code == 200
+    body = resp.json()
+    if not body.get("available"):
+        pytest.skip("monitor replay packs not built")
+    assert len(body["scenarios"]) == 30
+    assert len(body["subsystems"]) == 6
+    sid = body["scenarios"][1]["scenario_id"]  # a fault scenario (not healthy)
+    pack = client.get(f"/monitor/scenario/{sid}")
+    assert pack.status_code == 200
+    pj = pack.json()
+    assert pj["meta"]["scenario_id"] == sid
+    assert len(pj["frames"]) == pj["meta"]["n_frames"]
+    f0 = pj["frames"][0]
+    for k in ("t", "health", "pred_prob", *body["subsystems"]):
+        assert k in f0
+
+
+def test_monitor_scenario_missing_returns_404():
+    assert client.get("/monitor/scenario/999").status_code == 404
+
+
+def test_monitor_live_prepare_scenario():
+    """Live-stream frame prep yields per-frame telemetry + radar + prediction."""
+    from src.monitor.live_stream import _prepare_scenario
+
+    frames = _prepare_scenario(2, out_hz=20, win=300)  # motor over-temperature
+    assert len(frames) == 300
+    f0 = frames[0]
+    for k in ("t", "stage_int", "health", "pred_prob", "pred_cat",
+              "temperature", "current", "vibration"):
+        assert k in f0
+    # early-warning fires before the end; temperature radar saturates on this fault
+    assert frames[-1]["pred_prob"] >= 0.5
+    assert frames[-1]["temperature"] >= 0.9
+    # SSE wiring (/monitor/stream) is an infinite StreamingResponse — not covered
+    # here because TestClient buffers streaming bodies; verified live via curl.

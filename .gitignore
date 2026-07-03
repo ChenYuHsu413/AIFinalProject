@@ -45,6 +45,8 @@ data/raw/xjtu/
 data/raw/paderborn/
 # Module Servo raw PHM time-series CSV(s) — downloaded by the user, never commit
 data/raw/servo/
+# Live Monitor v3 synthetic demo — raw 30-scenario CSVs (~480 MB), never commit
+data/raw/servo_v3/
 
 # Module B (IMS) processed artefacts — small, committed so the live demo works
 # without the 1.5 GB raw dataset (override the broad ignores above).
@@ -82,6 +84,14 @@ data/raw/servo/
 !outputs/metrics/servo_dl_results.json
 !outputs/metrics/servo_cnn_results.json
 !outputs/metrics/servo_data_provenance.json
+
+# Live Monitor v3 (synthetic demo) artefacts. Everything rebuilds from the
+# committed vendored generator (src/monitor/servo_v3_generator.py) — no raw
+# download needed. Commit the replay packs, the eval, AND the classifier (the
+# live SSE stream runs inference on it at runtime).
+!data/processed/servo_v3/
+!outputs/metrics/monitor_v3_eval.json
+!outputs/models/monitor_v3_clf.joblib
 
 # Module A + comparison-study artefacts — committed so the dashboard's
 # evaluation tab and the written report render without re-running training

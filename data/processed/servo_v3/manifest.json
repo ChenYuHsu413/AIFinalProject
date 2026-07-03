@@ -1,0 +1,253 @@
+{
+  "scenarios": [
+    {
+      "scenario_id": 1,
+      "scenario_name": "Healthy Baseline",
+      "fault_category": "NORMAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": null,
+      "held_out": true
+    },
+    {
+      "scenario_id": 2,
+      "scenario_name": "Motor Over Temperature",
+      "fault_category": "TEMPERATURE",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 3,
+      "scenario_name": "Drive Over Temperature",
+      "fault_category": "TEMPERATURE",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 4,
+      "scenario_name": "Encoder Drift",
+      "fault_category": "ENCODER",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 5,
+      "scenario_name": "Encoder Noise",
+      "fault_category": "ENCODER",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 6,
+      "scenario_name": "Encoder Signal Loss",
+      "fault_category": "ENCODER",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 7,
+      "scenario_name": "Excessive Following Error",
+      "fault_category": "POSITION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": true
+    },
+    {
+      "scenario_id": 8,
+      "scenario_name": "Overspeed",
+      "fault_category": "SPEED",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 9,
+      "scenario_name": "Acceleration Overshoot",
+      "fault_category": "MOTION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 10,
+      "scenario_name": "Deceleration Failure",
+      "fault_category": "MOTION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 11,
+      "scenario_name": "Over Current",
+      "fault_category": "CURRENT",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 12,
+      "scenario_name": "Torque Saturation",
+      "fault_category": "TORQUE",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 13,
+      "scenario_name": "Mechanical Jam",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": true
+    },
+    {
+      "scenario_id": 14,
+      "scenario_name": "Bearing Wear",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 15,
+      "scenario_name": "Bearing Lubrication Failure",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 16,
+      "scenario_name": "Rotor Imbalance",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 17,
+      "scenario_name": "Coupling Misalignment",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 18,
+      "scenario_name": "Ball Screw Wear",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 19,
+      "scenario_name": "Backlash",
+      "fault_category": "MECHANICAL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": true
+    },
+    {
+      "scenario_id": 20,
+      "scenario_name": "High Vibration",
+      "fault_category": "VIBRATION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 21,
+      "scenario_name": "Power Supply Fluctuation",
+      "fault_category": "POWER",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 22,
+      "scenario_name": "Voltage Drop",
+      "fault_category": "POWER",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 23,
+      "scenario_name": "Communication Timeout",
+      "fault_category": "COMMUNICATION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 24,
+      "scenario_name": "EtherCAT Packet Loss",
+      "fault_category": "COMMUNICATION",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 25,
+      "scenario_name": "Servo Gain Instability",
+      "fault_category": "CONTROL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": true
+    },
+    {
+      "scenario_id": 26,
+      "scenario_name": "Mechanical Resonance",
+      "fault_category": "CONTROL",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 27,
+      "scenario_name": "Brake Failure",
+      "fault_category": "SAFETY",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 28,
+      "scenario_name": "Emergency Stop",
+      "fault_category": "SAFETY",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 29,
+      "scenario_name": "Combined Fault",
+      "fault_category": "MULTI_FAULT",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    },
+    {
+      "scenario_id": 30,
+      "scenario_name": "Progressive Failure Shutdown",
+      "fault_category": "MULTI_FAULT",
+      "n_frames": 600,
+      "lead_to_alarm_s": 5.0,
+      "held_out": false
+    }
+  ],
+  "subsystems": [
+    "temperature",
+    "current",
+    "vibration",
+    "encoder",
+    "motion",
+    "communication"
+  ],
+  "out_hz": 40
+}

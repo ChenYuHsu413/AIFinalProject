@@ -293,6 +293,41 @@ def knowledge_search(q: str, top_k: int | None = None):
     return services.knowledge_search(q, top_k=top_k)
 
 
+# --- Live Monitor v3 (synthetic demo track) ----------------------------------
+@app.get("/monitor/scenarios")
+def monitor_scenarios():
+    """即時監控 demo：30 情境清單 + 子系統雷達軸 + 早期預警評估 headline。"""
+    return services.monitor_scenarios()
+
+
+@app.get("/monitor/scenario/{scenario_id}")
+def monitor_scenario(scenario_id: int):
+    """單一情境的完整回放包（降頻後 frames + 內建模型預測）；找不到回 404。"""
+    try:
+        return services.monitor_scenario(scenario_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/monitor/stream")
+async def monitor_stream(speed: float = 1.0, hz: int = 20):
+    """模擬感測器即時串流（SSE）：無限循環注入 30 故障，即時生成 + 早期預警推論。
+
+    合成資料、即時生成，非真實感測器。每筆 `data:` 為一 frame（telemetry + 雷達 +
+    模型預測）。`speed` 調整播放倍率、`hz` 取 10/20/40。
+    """
+    from fastapi.responses import StreamingResponse
+
+    from src.monitor.live_stream import stream_frames
+
+    return StreamingResponse(
+        stream_frames(speed=speed, out_hz=hz),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+                 "Connection": "keep-alive"},
+    )
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 

@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Library,
   Lightbulb,
+  Radar,
   Rocket,
   Search,
   Target,
@@ -129,6 +130,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "告警 / 工單", href: "/alerts", icon: BellRing },
       { label: "報表中心", href: "/reports", icon: FileBarChart },
     ],
+  },
+  {
+    // 獨立合成 demo 軌，不取代主線機群/告警。
+    title: "即時監控雷達（合成 demo）",
+    accent: "blue",
+    items: [{ label: "即時監控雷達", href: "/monitor", icon: Radar }],
   },
   {
     title: "模組 C · 馬達電流診斷 (Paderborn)",
