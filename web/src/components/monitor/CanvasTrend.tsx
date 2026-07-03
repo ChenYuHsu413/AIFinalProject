@@ -21,11 +21,13 @@ export function CanvasTrend({
   series,
   running,
   height = 360,
+  compact = false,
 }: {
   frames: () => ReadonlyArray<Row>;
   series: TrendSeries[];
   running: boolean;
   height?: number;
+  compact?: boolean; // small-multiples tile: hide the legend + paused note
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -194,28 +196,30 @@ export function CanvasTrend({
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        {series.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2 rounded-sm"
-              style={{ width: s.thick ? 14 : 10, backgroundColor: s.color }}
-            />
-            {s.label}
+      {!compact && (
+        <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {series.map((s) => (
+            <span key={s.key} className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 rounded-sm"
+                style={{ width: s.thick ? 14 : 10, backgroundColor: s.color }}
+              />
+              {s.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-0 border-l-2 border-dashed" style={{ borderColor: "#f59e0b" }} />
+            AI 示警
           </span>
-        ))}
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-0 border-l-2 border-dashed" style={{ borderColor: "#f59e0b" }} />
-          AI 示警
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-0 border-l-2" style={{ borderColor: "#ef4444" }} />
-          真實告警
-        </span>
-      </div>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-0 border-l-2" style={{ borderColor: "#ef4444" }} />
+            真實告警
+          </span>
+        </div>
+      )}
       <div ref={wrapRef} style={{ height }}>
         <canvas ref={canvasRef} />
-        {!running && (
+        {!running && !compact && (
           <p className="mt-2 text-xs text-muted-foreground">（已暫停，畫面凍結）</p>
         )}
       </div>

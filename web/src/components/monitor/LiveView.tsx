@@ -62,6 +62,9 @@ export function LiveView() {
   // 10 Hz SSE receipt, so the heavy chart re-renders evenly instead of jankily.
   const [frame, setFrame] = useState<LiveFrame | null>(null);
   const [smooth, setSmooth] = useState<Record<string, number>>({});
+  // trend view: "all" overlays every subsystem, "grid" shows 6 small-multiple
+  // tiles (one per subsystem), or a single subsystem key for a focused look.
+  const [trendView, setTrendView] = useState<"all" | "grid" | string>("grid");
   const [events, setEvents] = useState<FeedEvent[]>([]);
   // AI lead-time proof: how early the model warns before the ground-truth alarm.
   const [lead, setLead] = useState<{ last: number | null; avg: number | null; count: number }>({
@@ -177,10 +180,11 @@ export function LiveView() {
   const inAlarm = running && !!frame && frame.alarm === 1;
   const inTrip = running && !!frame && frame.trip === 1;
 
-  const canvasSeries: TrendSeries[] = [
-    ...SUBS.map((s) => ({ key: s, label: SUB_ZH[s], color: SUB_COLORS[s] })),
-    { key: "pred_prob", label: "預警", color: "#ef4444", thick: true },
-  ];
+  const predSeries: TrendSeries = { key: "pred_prob", label: "預警", color: "#ef4444", thick: true };
+  const canvasSeries: TrendSeries[] =
+    trendView === "all"
+      ? [...SUBS.map((s) => ({ key: s, label: SUB_ZH[s], color: SUB_COLORS[s] })), predSeries]
+      : [{ key: trendView, label: SUB_ZH[trendView], color: SUB_COLORS[trendView] }, predSeries];
 
   return (
     <div className="space-y-6">
@@ -254,12 +258,73 @@ export function LiveView() {
       {/* hero: scrolling multi-channel trend + status stack */}
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <Card title="即時趨勢（往左捲動 · 子系統嚴重度 + 模型預警，0–1）">
-          <CanvasTrend
-            frames={() => bufferRef.current}
-            series={canvasSeries}
-            running={running}
-            height={360}
-          />
+          {/* feature switch: 分格 6 圖 ⇄ 全部疊圖 ⇄ 單一子系統 */}
+          <div className="mb-3 inline-flex flex-wrap gap-1 rounded-lg border border-border/70 bg-card/70 p-1 text-xs">
+            {([
+              ["grid", "分格 6 圖"],
+              ["all", "全部疊圖"],
+            ] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setTrendView(v)}
+                className={`rounded-md px-2.5 py-1 font-medium ${
+                  trendView === v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            {SUBS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setTrendView(s)}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium ${
+                  trendView === s
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span
+                  className="inline-block h-2 w-2 rounded-sm"
+                  style={{ backgroundColor: SUB_COLORS[s] }}
+                />
+                {SUB_ZH[s]}
+              </button>
+            ))}
+          </div>
+          {trendView === "grid" ? (
+            // small multiples: one tile per subsystem; the AI-alert / real-alarm
+            // vertical markers still render per tile (read from the frame rows).
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {SUBS.map((s) => (
+                <div key={s}>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium">
+                    <span
+                      className="inline-block h-2 w-2 rounded-sm"
+                      style={{ backgroundColor: SUB_COLORS[s] }}
+                    />
+                    {SUB_ZH[s]}
+                  </div>
+                  <CanvasTrend
+                    frames={() => bufferRef.current}
+                    series={[{ key: s, label: SUB_ZH[s], color: SUB_COLORS[s] }]}
+                    running={running}
+                    height={140}
+                    compact
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <CanvasTrend
+              frames={() => bufferRef.current}
+              series={canvasSeries}
+              running={running}
+              height={360}
+            />
+          )}
         </Card>
 
         {/* status stack */}

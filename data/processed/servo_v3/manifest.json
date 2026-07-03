@@ -50,7 +50,7 @@
     },
     {
       "scenario_id": 7,
-      "scenario_name": "Excessive Following Error",
+      "scenario_name": "Position Following Error",
       "fault_category": "POSITION",
       "n_frames": 600,
       "lead_to_alarm_s": 5.0,
@@ -101,7 +101,7 @@
       "scenario_name": "Mechanical Jam",
       "fault_category": "MECHANICAL",
       "n_frames": 600,
-      "lead_to_alarm_s": 5.0,
+      "lead_to_alarm_s": 4.975,
       "held_out": true
     },
     {
@@ -202,7 +202,7 @@
     },
     {
       "scenario_id": 26,
-      "scenario_name": "Mechanical Resonance",
+      "scenario_name": "Resonance",
       "fault_category": "CONTROL",
       "n_frames": 600,
       "lead_to_alarm_s": 5.0,
@@ -234,7 +234,7 @@
     },
     {
       "scenario_id": 30,
-      "scenario_name": "Progressive Failure Shutdown",
+      "scenario_name": "Progressive Failure + Shutdown",
       "fault_category": "MULTI_FAULT",
       "n_frames": 600,
       "lead_to_alarm_s": 5.0,

@@ -6,7 +6,8 @@ offline build (`build_servo_v3.py`) and the online SSE stream (backend), so the
 early-warning model sees identical features in replay and live modes.
 
 Tags are limited to what the vendored generator (`servo_v3_generator.py`)
-emits (100 columns). The generator is the single reproducible data source.
+emits (~142 columns, v4.1 physics). The generator is the single reproducible
+data source.
 """
 from __future__ import annotations
 
@@ -20,14 +21,17 @@ SEED = 42               # reproduces the original 30-scenario physics
 # --- 6 radar subsystems: representative physical tags per axis -----------------
 # (all present in the generator output; see servo_v3_generator.generate_servo_data)
 SUBSYSTEMS: dict[str, list[str]] = {
-    "temperature": ["motor_temp_c", "drive_temp_c", "heatsink_temp_c", "bearing_temp_c"],
+    # igbt_temp_c (drive junction) is a v4.1 addition — a direct drive-thermal signal.
+    "temperature": ["motor_temp_c", "drive_temp_c", "heatsink_temp_c", "bearing_temp_c", "igbt_temp_c"],
     "current": ["current_rms_a", "phase_current_imbalance_pct"],
     # vibration_kurtosis is excluded from the radar (the generator raises it
     # broadly, even in non-vibration faults) — it stays a model feature only.
-    "vibration": ["vibration_rms_g", "vibration_peak_g", "bearing_bpfo_amp", "bearing_bpfi_amp"],
-    # encoder faults surface as position error / digital-twin position residual
-    # (the reduced generator has no encoder_error_count / crc flag).
-    "encoder": ["position_error_pulse", "digital_twin_pos_residual"],
+    # v4.1 completes the bearing bands: bsf (ball spin) + ftf (cage).
+    "vibration": ["vibration_rms_g", "vibration_peak_g",
+                  "bearing_bpfo_amp", "bearing_bpfi_amp", "bearing_bsf_amp", "bearing_ftf_amp"],
+    # v4.1 restores the real encoder_error_count (drift / noise / signal-loss land
+    # here directly); position error / digital-twin residual stay as backups.
+    "encoder": ["encoder_error_count", "position_error_pulse", "digital_twin_pos_residual"],
     "motion": ["speed_error_rpm", "torque_error_nm"],
     "communication": ["network_jitter_ms", "packet_loss_pct", "ethercat_sync_error_us"],
 }
@@ -41,6 +45,8 @@ FEATURE_TAGS: list[str] = sorted({t for tags in SUBSYSTEMS.values() for t in tag
     "encoder_velocity_count_s", "actual_torque_nm", "load_pct",
     "digital_twin_speed_residual", "digital_twin_torque_residual",
     "plc_scan_time_ms",
+    # v4.1 extra physical signals now available.
+    "following_error_abs_pulse", "resonance_amp",
 })
 
 # Ordinal fault stages.

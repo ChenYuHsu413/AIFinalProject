@@ -6,6 +6,7 @@ import {
   LineChart,
   PolarAngleAxis,
   PolarGrid,
+  PolarRadiusAxis,
   Radar,
   RadarChart,
   ReferenceLine,
@@ -230,6 +231,15 @@ function ReplayView() {
                       dataKey="label"
                       tick={{ fontSize: 13, fill: "currentColor" }}
                       className="text-muted-foreground"
+                    />
+                    {/* Fixed 0-1 radius so the outer ring is always severity 1;
+                        otherwise recharts auto-scales to the current max and the
+                        shape jumps around / looks full even when healthy. */}
+                    <PolarRadiusAxis
+                      domain={[0, 1]}
+                      tick={false}
+                      axisLine={false}
+                      tickCount={5}
                     />
                     <Radar
                       dataKey="value"

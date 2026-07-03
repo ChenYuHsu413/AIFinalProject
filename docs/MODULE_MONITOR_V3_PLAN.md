@@ -1,6 +1,6 @@
 # Live Monitor v3 規劃 — 即時監控雷達（合成 demo 軌）
 
-> **定位**：一條**獨立的合成資料 demo 軌**，把 AI 生成的 *Servo AI Dataset v3.0*
+> **定位**：一條**獨立的合成資料 demo 軌**，把 AI 生成的 *Servo AI Dataset v4.1 Enterprise*
 > 逐幀回放成「即時監控雷達」，用**六角子系統雷達**一眼看出哪個子系統在惡化，並以
 > **早期預警模型**在真正告警前先亮燈。**不是**真實產線遙測，**與真實 PHM 伺服主線
 > （模組 Servo）分開、不取代之**，也不佔 A/B/B+/C 的模組字母（避免暗示研究等級）。
@@ -8,11 +8,14 @@
 > [`DATA_PROVENANCE.md`](DATA_PROVENANCE.md)。
 >
 > **狀態（2026-07-03）**：**建置腳本 → 後端 → 前端全部完成並跑通**；並已升級為
-> **產生器單一源 + 即時感測器串流**。
-> - **Vendored 產生器**（`src/monitor/servo_v3_generator.py` + streaming 版）為**唯一資料源**，
->   一切從程式重現，**不再需要 480MB 原始檔**。統一為產生器的 **100 欄 schema**。
+> **產生器單一源 + 即時感測器串流**，**產生器物理升級至 v4.1 Enterprise**。
+> - **Vendored 產生器**（`src/monitor/servo_v3_generator.py`，檔名保留 v3、**物理為 v4.1**）為
+>   **唯一資料源**，一切從程式重現，**不再需要 476MB 原始檔**。schema 由 100 欄 → **142 欄**
+>   （v4.1 補回 `encoder_error_count`/`igbt_temp_c`/`following_error_abs_pulse`/`bearing_bsf,ftf_amp`/
+>   `resonance_amp`，並每情境帶 `equipment_profile`/`operation_profile` 差異化動力學）。
 > - **回放模式**：30 情境 × 600 frames（40 Hz）回放包；早期預警（留出情境）**F1 = 1.00**、
->   **中位提前量 = 5.0s**；六角雷達 argmax 物理對應合理。
+>   **中位提前量 = 5.0s**、**特徵維度 120**；六角雷達 argmax 物理對應合理（編碼器軸改用真正的
+>   `encoder_error_count`）。
 > - **即時模式（新）**：後端 **SSE `/monitor/stream`** 用產生器**即時生成 + 即時推論**，
 >   **隨機注入** 30 種故障（每條連線各自隨機、不連續重複）；前端 `/monitor` 加「即時 ⇄ 回放」切換，即時模式有 ● LIVE、
 >   往左捲動的即時趨勢、事件串流（注入→模型預警→告警），驗證通過（t+ 時鐘持續前進、跨情境循環）。
@@ -31,16 +34,16 @@
 
 | 項目 | 值 |
 | --- | --- |
-| 來源 | **Vendored 產生器**（`src/monitor/servo_v3_generator.py`，seed 42）—— *Servo AI Dataset v3.0* 的公開產生器 |
-| 規模 | **30 情境 × 15,000 列（15 秒 @ 1000 Hz）= 45 萬列**，**100 欄**（產生器 schema）|
-| 情境 | 1 healthy baseline + 29 故障，每情境一種故障、完整走 `normal → early_degradation → warning → alarm → trip` |
+| 來源 | **Vendored 產生器**（`src/monitor/servo_v3_generator.py`，seed 42）—— *Servo AI Dataset v4.1 Enterprise* 的公開產生器（檔名保留 v3，物理已升級 v4.1）|
+| 規模 | **30 情境 × 15,000 列（15 秒 @ 1000 Hz）= 45 萬列**，**142 欄**（v4.1 產生器 schema）|
+| 情境 | 1 healthy baseline + 29 故障，每情境一種故障 + **獨立 `equipment_profile`/`operation_profile`**（30 種設備型態，如 Heavy Press Axis / Robot Joint / Vertical Z），完整走 `normal → early_degradation → warning → alarm → trip` |
 | 故障類別 | 13 類（TEMPERATURE / ENCODER / MECHANICAL / CURRENT / MOTION / POWER / COMMUNICATION / CONTROL / SAFETY / VIBRATION / …），部分類別**僅單一情境** |
-| 內建標籤 | `fault_stage`、`warning/alarm/trip`、`health_index`、`failure_probability`、`rul_sec`、`root_cause`、`maintenance_action` |
-| 原始檔依賴 | **無**。一切由 vendored 產生器重現（原始 30 檔企業版 zip 為 138 欄，已不需要）。|
+| 內建標籤 | `fault_stage`、`warning/alarm/trip`、`health_index`、`failure_probability`、`rul_sec`、`root_cause`、`maintenance_action`（v4.1 另有 `predictive_maintenance_label`、digital-twin 殘差、FFT/軸承四頻帶）|
+| 原始檔依賴 | **無**。一切由 vendored v4.1 產生器重現（原始 30 檔 v4 企業版 zip 為 476MB / 121 欄 CSV，已不需要）。|
 
 ### 誠實性紅線（務必遵守）
-- 這是 **AI 合成資料**：欄位含 `line_id=TSMC_ASE_AUTO_LINE_SIM_V3`、`drive_model=Mitsubishi MR-J5-G simulated`、
-  alarm code `MITSUBISHI_SIM_*` —— 皆為**模擬/泛化標籤**，README 亦註明不複製任何 OEM/廠商實資料。
+- 這是 **AI 合成資料**：欄位含 `line_id=TSMC_ASE_AUTO_LINE_SIM_V4_1`、`drive_model=Mitsubishi MR-J5-G simulated`、
+  alarm code `V4_*`（如 `V4_MEC_002`）—— 皆為**模擬/泛化標籤**，README 亦註明不複製任何 OEM/廠商實資料。
   **不得**呈現為真實產線遙測，**不得**凌駕真實 PHM 主線。
 - **即時串流是「模擬感測器」**：資料由產生器即時產生、非真實硬體 sensor。介面（SSE frames）設計成未來可把
   來源換成 ESP32/PLC 而前端不變，但現階段就是模擬。
@@ -50,8 +53,8 @@
 - **提前量的變異來自時間抖動**：離線建置（回放包）用**固定**階段比例（53%/73%/88%）→ 中位提前量恆為 5.0s；
   **即時串流則每次注入隨機抖動 warning/alarm/trip 的時間**（`_jittered_stage_fracs`）→ 提前量自然散開（實測 ~3.5–7s）。
   這是為了讓「每次剛好 5.0s」的合成破綻更貼近真實（故障演進本有快慢），仍為合成、非真實硬體量測。
-- **公開產生器只有 100 欄**（比企業版 138 欄少 igbt_temp / encoder_error_count / crc / following_error）；
-  雷達的編碼器軸改用 `position_error + digital_twin_pos_residual` 等效表示。
+- **v4.1 產生器為 142 欄**（已補回先前缺的 `igbt_temp_c` / `encoder_error_count` / `following_error_abs_pulse`）；
+  雷達編碼器軸已改用真正的 `encoder_error_count`（`position_error` / `digital_twin_pos_residual` 留作備援）。
 - **類別標註為 in-distribution 參考**（單一情境類別無法留出泛化），非泛化宣稱。
 
 ---
@@ -89,7 +92,7 @@ src/monitor/servo_v3_generator.py（vendored，唯一資料源，進 git）
 **排除於雷達軸、僅留作模型特徵**。POWER/CONTROL 無專屬軸，經由下游 current/encoder 反映。）
 
 ### 2.2 早期預警模型（ML 貢獻）
-- **輸入**：**僅物理遙測**滑動窗特徵（mean/std/max，102 維），**不含**任何標籤衍生欄位。
+- **輸入**：**僅物理遙測**滑動窗特徵（mean/std/max，120 維），**不含**任何標籤衍生欄位。
 - **目標**：`warning-or-worse within horizon`（前瞻 2s）→ 模型能在真實 warning flag **之前**亮燈。
 - **評估**：**留出整條情境**（每 6 條留 1）→ 跨情境測試；headline 指標為
   **提前量（lead-to-alarm）= 真實 alarm 時間 − 模型示警時間**。
@@ -105,7 +108,7 @@ src/monitor/servo_v3_generator.py（vendored，唯一資料源，進 git）
 | 早期預警 F1（留出情境，horizon 2s） | **1.000** |
 | 中位提前量（預警 → 真實告警） | **5.0 s**（29/30 情境有告警）|
 | 雷達 argmax 對應真實故障子系統 | 30/30 物理合理（多數命中，少數映到相鄰子系統如扭矩→電流、軸承磨耗→溫度）|
-| 特徵維度 / 回放 frames | 102 / 每情境 600（40 Hz）|
+| 特徵維度 / 回放 frames | 120 / 每情境 600（40 Hz）|
 | 即時串流 | 10–20 Hz、隨機注入 30 故障；事件串流呈現「注入→模型預警→告警」（提前 ~5s）|
 
 > 指標偏高源於合成資料易分離（見 §1 誠實性）。本軌定位為 **demo**，非基準比較。

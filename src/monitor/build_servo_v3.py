@@ -1,8 +1,8 @@
 """Build the Live Monitor v3 demo artefacts from the vendored generator.
 
 Pipeline (offline, run once):
-  1. Generate the 30 scenarios (1000 Hz, 100 tags) with the vendored
-     `servo_v3_generator` (seed 42) — no 480 MB raw download needed.
+  1. Generate the 30 scenarios (1000 Hz, ~142 tags, v4.1 physics) with the
+     vendored `servo_v3_generator` (seed 42) — no 476 MB raw download needed.
   2. Compute a healthy baseline (mean/std per tag) from scenario_01.
   3. For every scenario, at a down-sampled cadence (default 40 Hz) compute:
        - sliding-window features over the physical telemetry tags,
@@ -219,7 +219,7 @@ def main() -> None:
                  "feat_cols": feat_cols}, resolve(OUT_MODEL))
 
     eval_json = {
-        "dataset": "Servo AI Dataset v3.0 (synthetic, AI-generated via vendored generator)",
+        "dataset": "Servo AI Dataset v4.1 Enterprise (synthetic, AI-generated via vendored generator)",
         "n_scenarios": n_scenarios,
         "out_hz": args.out_hz,
         "win_ms": args.win_ms,
