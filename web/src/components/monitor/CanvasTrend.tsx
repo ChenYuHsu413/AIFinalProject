@@ -29,7 +29,14 @@ export function CanvasTrend({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const rafRef = useRef<number | null>(null);
+  // Read latest props from refs so the draw loop sets up ONCE (props like
+  // `series`/`frames` get fresh identities each render and must not thrash it).
+  const framesRef = useRef(frames);
+  const seriesRef = useRef(series);
+  useEffect(() => {
+    framesRef.current = frames;
+    seriesRef.current = series;
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -84,7 +91,8 @@ export function CanvasTrend({
         ctx.globalAlpha = 1;
       }
 
-      const rows = frames();
+      const rows = framesRef.current();
+      const series = seriesRef.current;
       if (rows.length >= 2) {
         const tMin = rows[0].global_t;
         const tMax = rows[rows.length - 1].global_t;
@@ -115,6 +123,55 @@ export function CanvasTrend({
           ctx.stroke();
         }
 
+        // event markers: model-alert (pred crosses 0.5 up) vs ground-truth alarm,
+        // first occurrence per scenario, with the lead-time gap shaded + labelled.
+        const alertBySid = new Map<number, { x: number; t: number }>();
+        const alarmBySid = new Map<number, { x: number; t: number }>();
+        for (let i = 1; i < rows.length; i++) {
+          const sid = Number(rows[i].sid ?? 0);
+          const pPrev = Number(rows[i - 1].pred_prob ?? 0);
+          const pCur = Number(rows[i].pred_prob ?? 0);
+          const aPrev = Number(rows[i - 1].alarm ?? 0);
+          const aCur = Number(rows[i].alarm ?? 0);
+          const t = Number(rows[i].global_t);
+          if (pPrev < 0.5 && pCur >= 0.5 && !alertBySid.has(sid))
+            alertBySid.set(sid, { x: xOf(t), t });
+          if (aPrev === 0 && aCur === 1 && !alarmBySid.has(sid))
+            alarmBySid.set(sid, { x: xOf(t), t });
+        }
+        // gap band + lead label (alert -> alarm of the same scenario)
+        for (const [sid, am] of alarmBySid) {
+          const al = alertBySid.get(sid);
+          if (al && am.x > al.x) {
+            ctx.fillStyle = "rgba(245,158,11,0.13)";
+            ctx.fillRect(al.x, plotT, am.x - al.x, plotB - plotT);
+            ctx.fillStyle = "#d97706";
+            ctx.font = "bold 11px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.fillText(`提前 ${(am.t - al.t).toFixed(1)}s`, (al.x + am.x) / 2, plotT + 2);
+          }
+        }
+        // vertical lines
+        for (const [, al] of alertBySid) {
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(al.x, plotT);
+          ctx.lineTo(al.x, plotB);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        for (const [, am] of alarmBySid) {
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(am.x, plotT);
+          ctx.lineTo(am.x, plotB);
+          ctx.stroke();
+        }
+
         // x end labels
         ctx.fillStyle = textColor;
         ctx.globalAlpha = 0.7;
@@ -126,16 +183,14 @@ export function CanvasTrend({
         ctx.globalAlpha = 1;
       }
 
-      rafRef.current = requestAnimationFrame(draw);
     };
 
-    rafRef.current = requestAnimationFrame(draw);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-    // redraw loop is self-sustaining; `running` toggles re-mount via key upstream
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height, series]);
+    // setInterval (not requestAnimationFrame) so the chart keeps drawing even
+    // when the tab is backgrounded — a monitor view should not freeze.
+    draw();
+    const id = setInterval(draw, 33); // ~30 fps
+    return () => clearInterval(id);
+  }, [height]);
 
   return (
     <div>
@@ -149,6 +204,14 @@ export function CanvasTrend({
             {s.label}
           </span>
         ))}
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-0 border-l-2 border-dashed" style={{ borderColor: "#f59e0b" }} />
+          AI 示警
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-0 border-l-2" style={{ borderColor: "#ef4444" }} />
+          真實告警
+        </span>
       </div>
       <div ref={wrapRef} style={{ height }}>
         <canvas ref={canvasRef} />
