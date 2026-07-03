@@ -479,6 +479,37 @@ def knowledge_search(query: str, top_k: Optional[int] = None) -> List[Dict[str, 
     return search(query, top_k=top_k)
 
 
+# --- Live Monitor v3 (synthetic demo track) ----------------------------------
+def monitor_scenarios() -> Dict[str, Any]:
+    """List the 30 replay scenarios + demo metadata (manifest + eval headline).
+
+    ``available`` is False if the replay packs have not been built.
+    """
+    cfg = load_config()["monitor"]
+    manifest = _read_json_or_empty(cfg["manifest"])
+    if not manifest:
+        return {"available": False, "reason": "回放包尚未建立（run src.monitor.build_servo_v3）。"}
+    return {
+        "available": True,
+        "scenarios": manifest.get("scenarios", []),
+        "subsystems": manifest.get("subsystems", []),
+        "out_hz": manifest.get("out_hz"),
+        "eval": _read_json_or_empty(cfg["eval_metrics"]),
+    }
+
+
+def monitor_scenario(scenario_id: int) -> Dict[str, Any]:
+    """Full replay pack for one scenario (frames + baked-in model predictions).
+
+    Raises ValueError (-> 404) if the pack does not exist.
+    """
+    packs_dir = resolve(load_config()["monitor"]["packs_dir"])
+    path = packs_dir / f"scenario_{scenario_id:02d}.json"
+    if not path.exists():
+        raise ValueError(f"找不到情境 {scenario_id} 的回放包。")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 # --- Module Servo (main line) -------------------------------------------------
 def servo_model_info() -> Dict[str, Any]:
     from src.models.servo_predict import load_servo_models

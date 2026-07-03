@@ -284,6 +284,19 @@ servo:
   placeholder: false                 # trained on the REAL PHM FMCRD dataset
 
 # ---------------------------------------------------------------------------
+# Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
+# Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
+# NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.
+# ---------------------------------------------------------------------------
+monitor:
+  packs_dir: data/processed/servo_v3          # committed replay packs (predictions baked in)
+  manifest: data/processed/servo_v3/manifest.json
+  eval_metrics: outputs/metrics/monitor_v3_eval.json
+  model: outputs/models/monitor_v3_clf.joblib # early-warning + category clf (live SSE inference)
+  # Everything rebuilds from the vendored generator (src/monitor/servo_v3_generator.py);
+  # no raw download needed.
+
+# ---------------------------------------------------------------------------
 # LLM maintenance assistant. Consumes STRUCTURED model output (never replaces
 # the model). Works WITHOUT an API key via a deterministic fallback template.
 # ---------------------------------------------------------------------------

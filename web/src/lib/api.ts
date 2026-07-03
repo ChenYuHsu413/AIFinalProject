@@ -181,3 +181,69 @@ export interface ServoModelInfo {
   reg_r2: number | null;
   placeholder: boolean | null;
 }
+
+// --- Live Monitor v3 (synthetic demo track) ---------------------------------
+
+/** One replay frame from a monitor scenario pack (down-sampled cadence). */
+export interface MonitorFrame {
+  t: number;
+  stage_int: number;
+  health: number;
+  rul: number;
+  gt_prob: number;
+  warning: number;
+  alarm: number;
+  trip: number;
+  pred_prob: number;
+  pred_cat: string;
+  // one 0..1 severity per subsystem key (temperature/current/…)
+  [subsystem: string]: number | string;
+}
+
+/** GET /monitor/scenarios → one scenario summary row. */
+export interface MonitorScenarioSummary {
+  scenario_id: number;
+  scenario_name: string;
+  fault_category: string;
+  n_frames: number;
+  lead_to_alarm_s: number | null;
+  held_out: boolean;
+}
+
+/** GET /monitor/scenarios. */
+export interface MonitorScenarios {
+  available: boolean;
+  reason?: string;
+  scenarios: MonitorScenarioSummary[];
+  subsystems: string[];
+  out_hz: number;
+  eval: {
+    early_warning_f1_heldout?: number;
+    median_lead_to_alarm_s?: number;
+    horizon_s?: number;
+    dataset?: string;
+    note?: string;
+  };
+}
+
+/** GET /monitor/scenario/{id} → full replay pack. */
+export interface MonitorPack {
+  meta: {
+    scenario_id: number;
+    scenario_name: string;
+    fault_category: string;
+    alarm_code: string;
+    root_cause: string;
+    maintenance_action: string;
+    out_hz: number;
+    n_frames: number;
+    gt_warning_t: number | null;
+    gt_alarm_t: number | null;
+    model_alert_t: number | null;
+    lead_time_s: number | null;
+    lead_to_alarm_s: number | null;
+    predicted_category: string;
+  };
+  subsystems: string[];
+  frames: MonitorFrame[];
+}

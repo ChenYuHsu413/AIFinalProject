@@ -183,3 +183,33 @@ nav::-webkit-scrollbar-thumb {
 .command-pulse {
   animation: command-pulse 1.8s ease-in-out infinite;
 }
+/* Live Monitor alarm state: full-viewport pulsing red vignette + banner.
+   Edge glow (not a solid overlay) so telemetry stays readable. */
+@keyframes monitor-alarm-flash {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+.monitor-alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  box-shadow: inset 0 0 130px 26px rgba(239, 68, 68, 0.7);
+  animation: monitor-alarm-flash 0.95s ease-in-out infinite;
+}
+.monitor-alarm-overlay.is-trip {
+  box-shadow: inset 0 0 220px 70px rgba(220, 38, 38, 0.92);
+  animation-duration: 0.5s;
+}
+.monitor-alarm-banner {
+  position: fixed;
+  left: 50%;
+  top: 1rem;
+  z-index: 51;
+  transform: translateX(-50%);
+}
