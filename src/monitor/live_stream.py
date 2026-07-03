@@ -48,11 +48,25 @@ def _load():
     return _STATE["model"], _STATE["base"]
 
 
-def _prepare_scenario(scenario_id: int, out_hz: int, win: int) -> List[Dict[str, Any]]:
+DEFAULT_STAGE_FRACS = (0.53, 0.73, 0.88)
+
+
+def _jittered_stage_fracs(rng: "random.Random") -> tuple[float, float, float]:
+    """Randomize warning/alarm/trip onsets so fault evolution (and thus the
+    model's lead time) varies realistically instead of being a fixed constant."""
+    warn = rng.uniform(0.44, 0.60)
+    alarm = warn + rng.uniform(0.12, 0.28)
+    trip = min(alarm + rng.uniform(0.07, 0.14), 0.97)
+    return (round(warn, 3), round(alarm, 3), round(trip, 3))
+
+
+def _prepare_scenario(scenario_id: int, out_hz: int, win: int,
+                      stage_fracs: tuple[float, float, float] = DEFAULT_STAGE_FRACS
+                      ) -> List[Dict[str, Any]]:
     """Generate one scenario and pre-compute every streamed frame (fast, off-loop)."""
     model, base = _load()
     df = generate_servo_data(rows=SCENARIO_ROWS, scenario_id=scenario_id,
-                             sampling_hz=RAW_HZ, seed=SEED)
+                             sampling_hz=RAW_HZ, seed=SEED, stage_fracs=stage_fracs)
     step = RAW_HZ // out_hz
     idx = np.arange(0, len(df), step)
 
@@ -112,12 +126,15 @@ async def stream_frames(speed: float = 1.0, out_hz: int = 20) -> AsyncIterator[s
 
     # Prefetch the NEXT scenario while streaming the current one, so the
     # ~300 ms generation cost doesn't stall the feed at each scenario boundary.
+    # Each injection gets jittered fault timing -> the lead time varies per fault.
     current = pick(None)
-    frames = await asyncio.to_thread(_prepare_scenario, current, out_hz, win)
+    frames = await asyncio.to_thread(
+        _prepare_scenario, current, out_hz, win, _jittered_stage_fracs(rng))
     while True:
         nxt = pick(current)
         next_task = asyncio.create_task(
-            asyncio.to_thread(_prepare_scenario, nxt, out_hz, win))
+            asyncio.to_thread(_prepare_scenario, nxt, out_hz, win,
+                              _jittered_stage_fracs(rng)))
         for k, fr in enumerate(frames):
             fr["global_t"] = round(global_t, 2)
             fr["new_scenario"] = k == 0

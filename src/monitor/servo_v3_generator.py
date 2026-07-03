@@ -60,16 +60,20 @@ def safe_name(name: str) -> str:
     return name.lower().replace(" ", "_").replace("/", "_")
 
 
-def make_stages(t: np.ndarray, scenario_id: int, duration_sec: float):
+def make_stages(t: np.ndarray, scenario_id: int, duration_sec: float,
+                stage_fracs: tuple[float, float, float] = (0.53, 0.73, 0.88)):
     if scenario_id == 1:
         normal = np.array(["normal"] * len(t), dtype=object)
         zero = np.zeros(len(t), dtype=np.int8)
         return normal, zero, zero, zero, np.zeros(len(t), dtype=np.float32)
 
+    # warning / alarm / trip onsets (as fractions of duration). Configurable so
+    # the live stream can jitter fault timing; defaults reproduce the original.
+    warn_f, alarm_f, trip_f = stage_fracs
     fault_start = duration_sec * 0.30
-    warning_t = duration_sec * 0.53
-    alarm_t = duration_sec * 0.73
-    trip_t = duration_sec * 0.88
+    warning_t = duration_sec * warn_f
+    alarm_t = duration_sec * alarm_f
+    trip_t = duration_sec * trip_f
 
     severity = np.clip((t - fault_start) / max(duration_sec - fault_start, 1e-6), 0, 1).astype(np.float32)
     stage = np.where(
@@ -90,6 +94,7 @@ def generate_servo_data(
     sampling_hz: int = 1000,
     seed: int = 42,
     global_start_s: float = 0.0,
+    stage_fracs: tuple[float, float, float] = (0.53, 0.73, 0.88),
 ) -> pd.DataFrame:
     """
     產生單一 Scenario 的 Servo PLC/Drive Log.
@@ -115,7 +120,7 @@ def generate_servo_data(
     t = np.arange(rows, dtype=np.float32) * dt
     global_time = global_start_s + t
 
-    stage, warning, alarm, trip, sev = make_stages(t, scenario_id, duration_sec)
+    stage, warning, alarm, trip, sev = make_stages(t, scenario_id, duration_sec, stage_fracs)
     sev2 = sev ** 1.8
 
     cycle = 1.5
@@ -275,7 +280,7 @@ def generate_servo_data(
         np.clip(rng.normal(0.018, 0.008, rows), 0, 0.07)
     )
     health = np.clip(100 - anomaly * 96 - trip * 4, 0, 100)
-    trip_time = duration_sec * 0.88
+    trip_time = duration_sec * stage_fracs[2]
     rul_sec = np.where(scenario_id == 1, 9999, np.maximum(trip_time - t, 0))
     failure_prob = np.clip(anomaly ** 1.25, 0, 1)
 
