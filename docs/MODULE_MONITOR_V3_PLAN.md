@@ -127,6 +127,7 @@ src/monitor/servo_v3_generator.py（vendored，唯一資料源，進 git）
 | 後端 | `app/backend/main.py`（`/monitor/scenarios`、`/monitor/scenario/{id}`、`/monitor/stream`）、`services.py`（`monitor_*`）|
 | 前端 | `web/src/app/monitor/page.tsx`（回放）、`components/monitor/{LiveView,shared}.tsx`、`lib/nav.ts`、`lib/api.ts` |
 | 產物（committed） | `data/processed/servo_v3/*.json`、`outputs/metrics/monitor_v3_eval.json`、`outputs/models/monitor_v3_clf.joblib` |
+| 資料分析 | `src/monitor/analyze_v4.py` → [`outputs/reports/MONITOR_V4_DATA_ANALYSIS.md`](../outputs/reports/MONITOR_V4_DATA_ANALYSIS.md)（EDA/故障簽章/模型診斷 6 圖 + `outputs/metrics/monitor_v4_analysis.json`）|
 | 測試 | `tests/test_backend_api.py::test_monitor_*` |
 
 ---

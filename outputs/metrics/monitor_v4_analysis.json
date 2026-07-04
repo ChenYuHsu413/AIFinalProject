@@ -1,0 +1,235 @@
+{
+  "dataset": "Servo AI Dataset v4.1 Enterprise (synthetic, AI-generated via vendored generator)",
+  "n_scenarios": 30,
+  "rows_per_scenario": 15000,
+  "n_columns": 142,
+  "n_model_features": 120,
+  "missing_values": {
+    "scenarios_with_na": {
+      "6": 1704
+    },
+    "note": "only scenario 06 (encoder signal loss) injects NaN encoder_count by design"
+  },
+  "mean_abs_pairwise_corr": 0.142,
+  "pca_pc1_pc2_variance": 0.289,
+  "top_univariate_auc": [
+    {
+      "feature": "vibration_kurtosis_mean",
+      "auc": 1.0
+    },
+    {
+      "feature": "vibration_kurtosis_max",
+      "auc": 0.9998
+    },
+    {
+      "feature": "vibration_kurtosis_std",
+      "auc": 0.9777
+    },
+    {
+      "feature": "ambient_temp_c_mean",
+      "auc": 0.9451
+    },
+    {
+      "feature": "ambient_temp_c_max",
+      "auc": 0.9438
+    },
+    {
+      "feature": "igbt_temp_c_mean",
+      "auc": 0.8321
+    },
+    {
+      "feature": "drive_temp_c_mean",
+      "auc": 0.832
+    },
+    {
+      "feature": "heatsink_temp_c_mean",
+      "auc": 0.8316
+    }
+  ],
+  "n_features_auc_ge_0999": 2,
+  "subsystem_argmax_per_fault": [
+    {
+      "scenario_id": 2,
+      "name": "Motor Over Temperature",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 3,
+      "name": "Drive Over Temperature",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 4,
+      "name": "Encoder Drift",
+      "top_subsystem": "encoder",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 5,
+      "name": "Encoder Noise",
+      "top_subsystem": "encoder",
+      "severity": 0.932
+    },
+    {
+      "scenario_id": 6,
+      "name": "Encoder Signal Loss",
+      "top_subsystem": "encoder",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 7,
+      "name": "Position Following Error",
+      "top_subsystem": "encoder",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 8,
+      "name": "Overspeed",
+      "top_subsystem": "motion",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 9,
+      "name": "Acceleration Overshoot",
+      "top_subsystem": "motion",
+      "severity": 0.93
+    },
+    {
+      "scenario_id": 10,
+      "name": "Deceleration Failure",
+      "top_subsystem": "motion",
+      "severity": 0.51
+    },
+    {
+      "scenario_id": 11,
+      "name": "Over Current",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 12,
+      "name": "Torque Saturation",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 13,
+      "name": "Mechanical Jam",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 14,
+      "name": "Bearing Wear",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 15,
+      "name": "Bearing Lubrication Failure",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 16,
+      "name": "Rotor Imbalance",
+      "top_subsystem": "vibration",
+      "severity": 0.996
+    },
+    {
+      "scenario_id": 17,
+      "name": "Coupling Misalignment",
+      "top_subsystem": "vibration",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 18,
+      "name": "Ball Screw Wear",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 19,
+      "name": "Backlash",
+      "top_subsystem": "encoder",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 20,
+      "name": "High Vibration",
+      "top_subsystem": "vibration",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 21,
+      "name": "Power Supply Fluctuation",
+      "top_subsystem": "current",
+      "severity": 0.608
+    },
+    {
+      "scenario_id": 22,
+      "name": "Voltage Drop",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 23,
+      "name": "Communication Timeout",
+      "top_subsystem": "communication",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 24,
+      "name": "EtherCAT Packet Loss",
+      "top_subsystem": "communication",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 25,
+      "name": "Servo Gain Instability",
+      "top_subsystem": "motion",
+      "severity": 0.942
+    },
+    {
+      "scenario_id": 26,
+      "name": "Resonance",
+      "top_subsystem": "vibration",
+      "severity": 0.923
+    },
+    {
+      "scenario_id": 27,
+      "name": "Brake Failure",
+      "top_subsystem": "current",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 28,
+      "name": "Emergency Stop",
+      "top_subsystem": "motion",
+      "severity": 0.991
+    },
+    {
+      "scenario_id": 29,
+      "name": "Combined Fault",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    },
+    {
+      "scenario_id": 30,
+      "name": "Progressive Failure + Shutdown",
+      "top_subsystem": "temperature",
+      "severity": 1.0
+    }
+  ],
+  "figures": {
+    "stage_timeline": "outputs/figures/monitor_v4/stage_timeline.png",
+    "correlation": "outputs/figures/monitor_v4/correlation_heatmap.png",
+    "subsystem_signature": "outputs/figures/monitor_v4/subsystem_signature_heatmap.png",
+    "pca": "outputs/figures/monitor_v4/feature_separability_pca.png",
+    "univariate_auc": "outputs/figures/monitor_v4/univariate_auc_importance.png",
+    "why_f1": "outputs/figures/monitor_v4/why_f1_high.png"
+  },
+  "honesty": "Labels and sensor channels derive from one per-scenario severity ramp; single features reach AUC≈1.0 for the warning target, so held-out F1≈1.0 reflects synthetic separability, not benchmark difficulty. More data does not make it harder (generator structure). Demo track, not the real PHM line."
+}

@@ -88,6 +88,9 @@ def radar_severity(df: pd.DataFrame, base: pd.DataFrame) -> pd.DataFrame:
                 z = np.abs(col - mean) / (np.abs(mean) + 1.0)
             else:
                 z = np.abs(col - mean) / std / Z_CAP
-            sev = np.maximum(sev, z)
+            # fmax (not maximum) so a by-design NaN tag (e.g. encoder_error_count
+            # during scenario-06 signal loss) falls back to the other axis tags
+            # instead of poisoning the whole subsystem severity with NaN.
+            sev = np.fmax(sev, z)
         out[name] = np.clip(sev, 0.0, 1.0)
     return pd.DataFrame(out, index=df.index)

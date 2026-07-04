@@ -91,6 +91,7 @@ data/raw/servo_v3/
 # live SSE stream runs inference on it at runtime).
 !data/processed/servo_v3/
 !outputs/metrics/monitor_v3_eval.json
+!outputs/metrics/monitor_v4_analysis.json
 !outputs/models/monitor_v3_clf.joblib
 
 # Module A + comparison-study artefacts — committed so the dashboard's
