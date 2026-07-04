@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Brain, ChevronRight, Loader2, Rocket } from "lucide-react";
+import { Brain, ChevronRight, FlaskConical, Loader2, Rocket } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Bar, Card, Note, PageTitle, Stat } from "@/components/ui-kit";
 import {
   apiGet,
   apiPost,
+  type ServoAugmentResults,
   type ServoFeatureSets,
   type ServoModelInfo,
   type ServoReferenceMetrics,
@@ -23,6 +24,7 @@ export default function SimulatorPage() {
   const [opts, setOpts] = useState<ServoSimulateOptions | null>(null);
   const [featureSets, setFeatureSets] = useState<ServoFeatureSets>({});
   const [ref, setRef] = useState<ServoReferenceMetrics | null>(null);
+  const [augment, setAugment] = useState<ServoAugmentResults | null>(null);
   const [placeholder, setPlaceholder] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
 
@@ -38,15 +40,17 @@ export default function SimulatorPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [o, f, r, m] = await Promise.all([
+        const [o, f, r, m, a] = await Promise.all([
           apiGet<ServoSimulateOptions>("/servo/simulate/options"),
           apiGet<ServoFeatureSets>("/servo/feature_sets"),
           apiGet<ServoReferenceMetrics>("/servo/reference_metrics"),
           apiGet<ServoModelInfo>("/servo/model_info"),
+          apiGet<ServoAugmentResults>("/servo/augment_results").catch(() => null),
         ]);
         setOpts(o);
         setFeatureSets(f);
         setRef(r);
+        setAugment(a);
         setPlaceholder(!!m.placeholder);
       } catch {
         setLoadErr(true);
@@ -152,6 +156,7 @@ export default function SimulatorPage() {
       </div>
 
       <DlPanel dl={ref?.dl} />
+      <AugmentPanel aug={augment} />
 
       {res ? (
         <div className="mt-6">
@@ -391,6 +396,89 @@ function DlPanel({ dl }: { dl?: ServoReferenceMetrics["dl"] }) {
                 ))}
               </div>
             </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AugmentPanel({ aug }: { aug: ServoAugmentResults | null }) {
+  const [open, setOpen] = useState(false);
+  const r = aug?.results;
+  if (!r || !r.baseline) return null;
+
+  const CONDS = [
+    { key: "baseline", label: "無增強 (baseline)", color: "bg-slate-400" },
+    { key: "aug_aggressive", label: "激進增強", color: "bg-red-500" },
+    { key: "aug_gentle_balanced", label: "溫和+類別平衡", color: "bg-emerald-500" },
+  ];
+  const gentle = r.aug_gentle_balanced;
+  const anyRobust = Object.entries(r).some(([k, v]) => k !== "baseline" && v.robust_gain);
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/70 shadow-sm backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 px-5 py-3 text-sm font-medium"
+      >
+        <FlaskConical className="h-4 w-4 text-emerald-400" />
+        資料增強實驗（真實 PHM · 1D-CNN）
+        <ChevronRight className={cn("ml-auto h-4 w-4 transition-transform", open && "rotate-90")} />
+      </button>
+      {open && (
+        <div className="border-t border-border/70 px-5 py-4">
+          <Note tone="warn">
+            {anyRobust
+              ? "至少一個增強配置穩健提升 macro-F1（見下）。"
+              : "⚖️ 資料增強對 macro-F1 無穩健提升（各配置差異落在 seed 變異內）。"}
+            {gentle && (
+              <>
+                {" "}但溫和+類別平衡把 seed 變異從 {r.baseline.std.toFixed(3)} 降到{" "}
+                {gentle.std.toFixed(3)}，模型更穩定。
+              </>
+            )}
+            {" "}所有配置並列、未挑選——誠實的方法論展示，非模型技巧。
+          </Note>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {CONDS.map(({ key, label }) => {
+              const v = r[key];
+              if (!v) return null;
+              const d = v.delta_vs_baseline;
+              return (
+                <Stat
+                  key={key}
+                  label={label}
+                  value={v.mean.toFixed(3)}
+                  sub={
+                    key === "baseline"
+                      ? `±${v.std.toFixed(3)} · 留出 macro-F1`
+                      : `±${v.std.toFixed(3)} · Δ ${d != null && d >= 0 ? "+" : ""}${d?.toFixed(3)}`
+                  }
+                />
+              );
+            })}
+          </div>
+          <div className="mt-4 space-y-2">
+            {CONDS.map(({ key, label, color }) => {
+              const v = r[key];
+              if (!v) return null;
+              return (
+                <Bar
+                  key={key}
+                  label={label}
+                  right={`${v.mean.toFixed(3)} ±${v.std.toFixed(3)}`}
+                  value={v.mean}
+                  colorClass={color}
+                />
+              );
+            })}
+          </div>
+          {aug?.eval && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              {aug.eval} · seeds {aug.seeds?.join("/")}
+            </p>
           )}
         </div>
       )}

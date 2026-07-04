@@ -423,6 +423,12 @@ def servo_cnn_results():
     return services.servo_cnn_results()
 
 
+@app.get("/servo/augment_results")
+def servo_augment_results():
+    """真實 PHM 1D-CNN 資料增強實驗（train-only）：baseline vs 各增強配置、多 seed；未跑回 {}。"""
+    return services.servo_augment_results()
+
+
 @app.get("/servo/simulate/options")
 def servo_simulate_options():
     """訓練模擬器可選的演算法（分類 / 回歸名稱 + 中文標籤）。"""

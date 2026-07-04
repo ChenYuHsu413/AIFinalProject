@@ -1,0 +1,59 @@
+{
+  "experiment": "1D-CNN time-series augmentation (real PHM, train-only)",
+  "eval": "holdout_test_by_file (n_test=320), macro-F1",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "conditions": {
+    "baseline": "no augmentation",
+    "aug_aggressive": "jitter σ0.06 + scaling σ0.10 + magnitude_warp σ0.15",
+    "aug_gentle_balanced": "jitter σ0.03 + scaling σ0.05 + class-balanced oversample (LO 65→80)"
+  },
+  "results": {
+    "baseline": {
+      "per_seed": [
+        0.6924,
+        0.6683,
+        0.6949,
+        0.5619,
+        0.6554
+      ],
+      "mean": 0.6546,
+      "std": 0.0486,
+      "delta_vs_baseline": 0.0,
+      "robust_gain": null
+    },
+    "aug_aggressive": {
+      "per_seed": [
+        0.6577,
+        0.6621,
+        0.5427,
+        0.6247,
+        0.6238
+      ],
+      "mean": 0.6222,
+      "std": 0.0429,
+      "delta_vs_baseline": -0.0324,
+      "robust_gain": false
+    },
+    "aug_gentle_balanced": {
+      "per_seed": [
+        0.6757,
+        0.5709,
+        0.6289,
+        0.629,
+        0.6625
+      ],
+      "mean": 0.6334,
+      "std": 0.0363,
+      "delta_vs_baseline": -0.0212,
+      "robust_gain": false
+    }
+  },
+  "verdict": "No augmentation config robustly beat baseline (all gains within the seed spread ±0.049). Reported ALL tried configs — no cherry-picking. Energy-envelope features + small real dataset (train=305) → aug gives no reliable gain here. Honest negative/neutral result.",
+  "note": "Legitimate augmentation transforms REAL training windows (not synthetic generation). TEST never augmented; standardisation train-only; split by file. FMCRD is high-fidelity simulation."
+}

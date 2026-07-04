@@ -727,6 +727,11 @@ def servo_cnn_results() -> Dict[str, Any]:
     return _read_json_or_empty(load_config()["servo"]["cnn_metrics"])
 
 
+def servo_augment_results() -> Dict[str, Any]:
+    """1D-CNN train-only augmentation experiment (baseline vs configs); {} if not run."""
+    return _read_json_or_empty(load_config()["servo"]["augment_metrics"])
+
+
 def servo_simulate_options() -> Dict[str, Any]:
     """Algorithm choices for the training simulator (clf / reg names + labels)."""
     from src.models import servo_simulator as sim

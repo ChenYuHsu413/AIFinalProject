@@ -133,6 +133,26 @@ export interface ServoCnnResults {
   autoencoder?: { reconstruction_error_by_class: Record<string, number> };
 }
 
+/** GET /servo/augment_results (train-only augmentation experiment; {} when not run). */
+export interface ServoAugmentResults {
+  experiment?: string;
+  eval?: string;
+  seeds?: number[];
+  conditions?: Record<string, string>;
+  results?: Record<
+    string,
+    {
+      mean: number;
+      std: number;
+      delta_vs_baseline?: number;
+      robust_gain?: boolean | null;
+      per_seed?: number[];
+    }
+  >;
+  verdict?: string;
+  note?: string;
+}
+
 /** One row of GET /servo/glossary. */
 export interface GlossaryEntry {
   name: string;
