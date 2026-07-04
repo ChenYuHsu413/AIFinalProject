@@ -15,6 +15,7 @@ import {
   type ServoSimResult,
   type ServoSimulateOptions,
 } from "@/lib/api";
+import { CnnFeatureSlider } from "@/components/servo/CnnFeatureSlider";
 import { HEALTH_ZH } from "@/lib/servo";
 import { cn } from "@/lib/utils";
 
@@ -157,6 +158,7 @@ export default function SimulatorPage() {
 
       <DlPanel dl={ref?.dl} />
       <AugmentPanel aug={augment} />
+      <CnnFeatureSlider />
 
       {res ? (
         <div className="mt-6">
