@@ -37,6 +37,7 @@ interface LiveFrame {
   scenario_name: string;
   fault_category: string;
   root_cause: string;
+  equipment_profile: string;
   stage_int: number;
   health: number;
   rul: number;
@@ -223,7 +224,14 @@ export function LiveView() {
             {!running ? "已暫停" : connected ? "● LIVE 感測器串流中" : "連線中…"}
           </span>
           <span className="text-sm text-muted-foreground">
-            {frame ? `目前設備事件：${frame.scenario_name}` : "尚未開始"}
+            {frame ? (
+              <>
+                設備 <span className="font-medium text-foreground">{frame.equipment_profile}</span>
+                <span className="mx-1.5">·</span>事件 {frame.scenario_name}
+              </>
+            ) : (
+              "尚未開始"
+            )}
           </span>
           <div className="ml-auto flex items-center gap-1 text-sm">
             <span className="text-muted-foreground">速度</span>

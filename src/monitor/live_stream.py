@@ -86,12 +86,14 @@ def _prepare_scenario(scenario_id: int, out_hz: int, win: int,
     name = str(df["scenario_name"].iloc[0])
     cat = str(df["fault_category"].iloc[0])
     root = str(df["root_cause"].iloc[-1])
+    equip = str(df["equipment_profile"].iloc[0])  # v4.1 per-scenario equipment
 
     frames: List[Dict[str, Any]] = []
     for i in range(len(idx)):
         fr: Dict[str, Any] = {
             "sid": scenario_id, "seq": i, "t": round(float(t[i]), 3),
             "scenario_name": name, "fault_category": cat, "root_cause": root,
+            "equipment_profile": equip,
             "stage_int": int(stage[i]), "health": round(float(health[i]), 1),
             "rul": round(float(rul[i]), 2),
             "warning": int(warn[i]), "alarm": int(alarm[i]), "trip": int(trip[i]),
