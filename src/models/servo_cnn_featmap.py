@@ -1,9 +1,11 @@
-"""Extract REAL first-layer 1D-CNN activations on one real PHM window.
+"""Extract REAL first-layer 1D-CNN activations across degradation levels.
 
-Generates ``web/src/lib/cnnFeatmap.ts`` — a small fixed teaching asset for the
-CnnFeatureSlider animation in the training simulator. The activations are REAL
-(a trained CNN run on a real HI-degradation window), so the animation shows how
-the network actually extracts features, not an illustration.
+Generates ``web/src/lib/cnnFeatmap.ts`` for the CnnFeatureSlider teaching
+animation. For four health levels (LN/LO/MED/HI) it runs the SAME trained CNN on
+a representative real window, using the SAME 3 input channels and SAME 6 filters
+so the levels are directly comparable (healthy = detectors stay quiet, degraded =
+they light up). Also records, per detector, where it fires strongest and a plain
+heuristic descriptor of the local waveform shape.
 
 Run: python -m src.models.servo_cnn_featmap
 """
@@ -18,17 +20,31 @@ import torch.nn as nn
 from src.models.servo_cnn import _CNN, _set_seed
 from src.utils.paths import load_config, resolve
 
-# plain-language Chinese descriptions per raw channel (for the UI legend)
 CHANNEL_ZH = {
-    "torque_std": "扭矩波動",
-    "rotor_speed_std": "轉速波動",
-    "i_3p_a_std": "三相電流 A",
-    "i_3p_b_std": "三相電流 B",
-    "i_3p_c_std": "三相電流 C",
-    "direct_std": "D 軸電流",
-    "quadrature_std": "Q 軸電流（扭矩相關）",
+    "torque_std": "扭矩波動", "rotor_speed_std": "轉速波動",
+    "i_3p_a_std": "三相電流 A", "i_3p_b_std": "三相電流 B", "i_3p_c_std": "三相電流 C",
+    "direct_std": "D 軸電流", "quadrature_std": "Q 軸電流（扭矩相關）",
     "position_error_std": "位置誤差",
 }
+LEVELS = [("LN", "健康"), ("LO", "輕度退化"), ("MED", "中度退化"), ("HI", "高度退化")]
+
+
+def _descriptor(inp, pos):
+    """Plain heuristic label for the waveform shape at a detector's peak."""
+    a, b = max(0, pos - 3), min(inp.shape[1], pos + 4)
+    rf = inp[:, a:b]
+    dom = rf[np.argmax(np.abs(rf).max(axis=1))]  # dominant channel snippet
+    mx, sd = float(np.abs(dom).max()), float(dom.std())
+    slope = float(dom[len(dom) // 2:].mean() - dom[: len(dom) // 2].mean())
+    if mx > 2.5 and sd > 1.0:
+        return "尖峰爆發"
+    if slope > 0.8:
+        return "上升沿"
+    if slope < -0.8:
+        return "下降沿"
+    if mx < 0.5:
+        return "平靜段"
+    return "中等起伏"
 
 
 def main() -> None:
@@ -53,55 +69,79 @@ def main() -> None:
         perm = rng.permutation(len(Xtr))
         for s in range(0, len(Xtr), 16):
             idx = perm[s:s + 16]
-            opt.zero_grad()
-            ce(model(Xtr[idx]), ytr[idx]).backward()
-            opt.step()
+            opt.zero_grad(); ce(model(Xtr[idx]), ytr[idx]).backward(); opt.step()
     model.eval()
 
-    hi = labels.index("HI")
     te_idx = np.where(te)[0]
     with torch.no_grad():
         pred = model(torch.from_numpy(Xs[te])).argmax(1).numpy()
-    sel = te_idx[[i for i, gi in enumerate(te_idx) if y[gi] == hi and pred[i] == hi][0]]
-    x1 = Xs[sel]
-    with torch.no_grad():
-        act = model.features[:3](torch.from_numpy(x1[None])).numpy()[0]  # (16,128) real conv1
 
-    ch_order = np.argsort(x1.std(1))[::-1][:3]
-    f_order = np.argsort(act.std(1))[::-1][:6]
+    def pick(code):
+        ci = labels.index(code)
+        ok = [te_idx[i] for i, gi in enumerate(te_idx) if y[gi] == ci and pred[i] == ci]
+        pool = ok or [te_idx[i] for i, gi in enumerate(te_idx) if y[gi] == ci]
+        return pool[0]
+
+    def act_of(gi):
+        with torch.no_grad():
+            return model.features[:3](torch.from_numpy(Xs[gi][None])).numpy()[0]  # (16,128)
+
+    # fix 3 channels + 6 filters using the HI window (degradation clearest)
+    hi_gi = pick("HI")
+    ch_order = np.argsort(Xs[hi_gi].std(1))[::-1][:3]
+    f_order = np.argsort(act_of(hi_gi).std(1))[::-1][:6]
+
     r2 = lambda a: [[round(float(v), 2) for v in row] for row in a]
+    lv, fmax = [], 0.0
+    per_level_act = {}
+    for code, zh in LEVELS:
+        gi = pick(code)
+        inp = Xs[gi][ch_order]
+        act = act_of(gi)[f_order]
+        per_level_act[code] = (inp, act, gi)
+        fmax = max(fmax, float(act.max()))
+        peaks = [int(np.argmax(act[f])) for f in range(len(f_order))]
+        lv.append({"code": code, "zh": zh, "label": code,
+                   "input": r2(inp), "filters": r2(act), "peaks": peaks})
+
+    # detector descriptors from the HI window (each filter's intrinsic specialty)
+    hi_inp, hi_act, _ = per_level_act["HI"]
+    detectors = []
+    N = hi_inp.shape[1]
+    for f in range(len(f_order)):
+        pk = int(np.argmax(hi_act[f]))
+        pos = int(np.clip(2 * pk, 3, N - 4))
+        seg = "前段" if pos < N / 3 else ("中段" if pos < 2 * N / 3 else "後段")
+        detectors.append({"id": f + 1, "desc": seg + _descriptor(hi_inp, pos)})
+
     obj = {
-        "label": labels[hi],
+        "kernel": 7, "stride": 2, "n_in": int(Xs.shape[2]), "n_feat": int(hi_act.shape[1]),
+        "fmax": round(fmax, 3),
         "in_channels": [channels[c] for c in ch_order],
         "in_channels_zh": [CHANNEL_ZH.get(channels[c], channels[c]) for c in ch_order],
-        "input": r2(x1[ch_order]),
-        "filters": r2(act[f_order]),
-        "kernel": 7,
-        "stride": 2,
-        "n_in": int(x1.shape[1]),
-        "n_feat": int(act.shape[1]),
+        "detectors": detectors,
+        "levels": lv,
     }
 
     ts = (
         "// Auto-generated by `python -m src.models.servo_cnn_featmap` — do not edit by hand.\n"
-        "// REAL first-layer 1D-CNN activations on one real PHM window (health state HI),\n"
-        "// used by the CnnFeatureSlider teaching animation in the training simulator.\n"
+        "// REAL first-layer 1D-CNN activations across 4 health levels (LN/LO/MED/HI) on real\n"
+        "// PHM windows, for the CnnFeatureSlider teaching animation in the training simulator.\n"
+        "export interface CnnLevel { code: string; zh: string; label: string; "
+        "input: number[][]; filters: number[][]; peaks: number[]; }\n"
         "export interface CnnFeatmap {\n"
-        "  label: string;\n"
-        "  in_channels: string[];\n"
-        "  in_channels_zh: string[];\n"
-        "  input: number[][];\n"
-        "  filters: number[][];\n"
-        "  kernel: number;\n"
-        "  stride: number;\n"
-        "  n_in: number;\n"
-        "  n_feat: number;\n"
+        "  kernel: number; stride: number; n_in: number; n_feat: number; fmax: number;\n"
+        "  in_channels: string[]; in_channels_zh: string[];\n"
+        "  detectors: { id: number; desc: string }[];\n"
+        "  levels: CnnLevel[];\n"
         "}\n"
         "export const CNN_FEATMAP: CnnFeatmap = " + json.dumps(obj, ensure_ascii=False) + ";\n"
     )
     out = resolve("web/src/lib/cnnFeatmap.ts")
     out.write_text(ts, encoding="utf-8")
-    print(f"[featmap] label={obj['label']} channels={obj['in_channels_zh']} -> {out}")
+    print(f"[featmap] channels={obj['in_channels_zh']} fmax={obj['fmax']}")
+    print(f"[featmap] detectors={[d['desc'] for d in detectors]}")
+    print(f"[featmap] levels={[(l['code'], sum(1 for f in l['filters'] for v in f if v>0)) for l in lv]} -> {out}")
 
 
 if __name__ == "__main__":
