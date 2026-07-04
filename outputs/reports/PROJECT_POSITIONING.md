@@ -1,8 +1,10 @@
 # 專案定位說明：真實建模 × 可上線系統（合成 vs 真實）
 
-> **狀態（2026-07-04）**：確立全案定位——由兩個**互補**貢獻構成：(1) 以**真實 PHM 資料**驗證的
-> 診斷模型（模組 Servo），(2) 一套**可上線的即時監控/告警系統**（Live Monitor，以合成資料作為
-> 感測器替身）。本文件供報告「定位/資料誠實性」章節直接引用。
+> **狀態（2026-07-04）**：全案定位 + 合成資料軌**整合報告**。全案由兩個**互補**貢獻構成：
+> (1) 以**真實 PHM 資料**驗證的診斷模型（模組 Servo）；(2) 一套**可上線的即時監控/告警系統**
+> （Live Monitor，以合成資料作為感測器替身）。本文件含定位、合成 vs 真實對照、**兩個合成來源
+> 總覽（本軌 + 組員 repo）**、誠實性紅線、與**本軌交付物索引**（§6），供報告「定位/資料誠實性」
+> 章節直接引用。
 >
 > 相關：[`../../docs/MODULE_SERVO_PLAN.md`](../../docs/MODULE_SERVO_PLAN.md)（真實主線）、
 > [`../../docs/MODULE_MONITOR_V3_PLAN.md`](../../docs/MODULE_MONITOR_V3_PLAN.md)（即時監控軌）、
@@ -36,6 +38,17 @@
 | **指標為何如此** | **標籤洩漏**：標籤與感測同源於一條 severity 斜坡 → 單一特徵即 AUC=1.0 | **真實難度**：類別邊界（如 LN↔LO）真實混淆、資料不均 |
 | **正確用途** | 系統展示 / 測試夾具 / 故障注入 / 教學 | 建模成果 / 可解釋性 / 錯誤分析 / 告警門檻設計 |
 | **未來延伸** | 換上 **ESP32／PLC** 真實感測器即可上線（介面不變） | 深化 DL（頻譜/逐點 CNN）、部署進即時系統 |
+
+## 2.5 合成資料來源總覽（本軌 + 組員）
+
+本專案有**兩個合成資料來源**，都屬「demo / 教學 / 視覺化」類、**非建模成果**，且**踩同一個誠實性坑（標籤洩漏）**：
+
+| 合成來源 | 產生方式 | 用途 | 誠實性 |
+| --- | --- | --- | --- |
+| **Live Monitor v4.1**（本軌） | vendored 產生器、30 情境 × 142 欄；標籤與感測**同源於一條 severity 斜坡** | 即時監控/告警系統 demo、視覺化、測試夾具 | 單一特徵 `vibration_kurtosis` AUC=1.0 → F1≈1.0 為**合成可分性**（見 [`MONITOR_V4_DATA_ANALYSIS.md`](MONITOR_V4_DATA_ANALYSIS.md)）|
+| **Fin-servo_motor_simulator**（組員） | 物理風格**模板**、7 類故障；故障靠 `if status==...` 加偏移（如 `noise*=6`、stuck 鎖角度、overheating +27°C）| 教學 / Streamlit 儀表板 demo | 特徵由**決定標籤的變數**推出 → 類別乾淨可分、分類器準確率天生高 |
+
+**兩者共同結論**：當即時系統/教學展示很好，當**模型 benchmark 不行**——準確率高是資料太乾淨（標籤洩漏），非模型能力。真正建模成果仍是**真實 PHM**（模組 Servo，留出 F1 0.757）。
 
 ## 3. 定位說明（報告用敘述）
 
@@ -71,3 +84,16 @@
 
 > 「我們清楚合成與真實的差別：**合成資料證明系統可即時運作，真實資料證明模型有判斷力。**
 > 前者未來換上真實感測器即可上線，後者可插入該系統形成完整的預測性維護方案。」
+
+## 6. 本軌交付物索引（Live Monitor / 合成資料軌）
+
+| 交付物 | 位置 | 說明 |
+| --- | --- | --- |
+| **系統架構圖** | `../figures/monitor_v4/system_architecture.{png,svg}` | 可插拔資料源 → 串流 → 告警；PHM 模型插入點 |
+| **v4.1 資料分析報告** | [`MONITOR_V4_DATA_ANALYSIS.md`](MONITOR_V4_DATA_ANALYSIS.md) + `../figures/monitor_v4/*.png` | EDA / 故障簽章 / 模型診斷（為何 F1≈1.0）|
+| **1D-CNN 資料增強實驗** | `src/models/servo_cnn_augment.py` → `../metrics/servo_cnn_augment.json`、`cnn_augment_compare.png` | 真實 PHM、train-only、誠實負面/穩定性結果；前端 `/servo/augment_results` 面板 |
+| **1D-CNN 特徵萃取動畫** | `src/models/servo_cnn_featmap.py` → `web/src/lib/cnnFeatmap.ts`、`CnnFeatureSlider.tsx` | 訓練模擬器教學動畫：卷積核滑動 + 健康度切換 + 偵測器標記 |
+| **即時監控前端** | `web/src/app/monitor/`、`components/monitor/` | 即時串流（分格 6 圖 / 疊圖）+ 回放（六角雷達）|
+| **工作紀錄** | [`WORK_REPORT_2026-07-04.md`](WORK_REPORT_2026-07-04.md) | 本 session 全部工作 |
+
+> 線上：前端 Vercel `…/monitor`、後端 HF Space `icefeather/aifinalproject`（`/monitor/*`、`/servo/*`）。
