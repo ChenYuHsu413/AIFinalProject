@@ -495,12 +495,15 @@ cp .env.example .env   # 然後編輯 .env 填入任一金鑰
   headline 為「健康+人工故障訓練、真實損傷測試」的人工→真實泛化對照（baseline vs 真實 macro-F1 + 兩張混淆矩陣）。
 
 **🛰 即時監控雷達（合成 demo · 獨立軌）**
-> **狀態（2026-07-03）**：新增獨立合成 demo 軌（Next.js `/monitor`），含**即時感測器串流**與**情境回放**兩模式；**後端已部署於 HF、`/monitor/*`（含 SSE）線上可用**。
-> **即時模式**：後端 SSE（`/monitor/stream`）以 **vendored 產生器即時生成 + 即時推論**，隨機注入 30 種故障；
-> 前端 **canvas 捲動趨勢圖**（6 子系統 + 預警線 + **示警→告警 gap 標線**）+ **AI 提前告警 KPI**（本次/平均，提前量抖動 ~3.5–7s）
-> + 事件串流 + 開始/暫停 + **告警全頁紅閃** + 換頁自動停。**回放模式**：30 情境逐幀播放 + 六角雷達 + 演進時間軸 + 播放/調速/scrub。
-> 早期預警（留出情境）F1 1.00、中位提前量 5.0s。**一切由 committed 產生器重現、不需原始大檔；合成資料、
-> 模擬感測器（非真實硬體）、與真實 PHM 主線分開、不取代**。細節見 [`docs/MODULE_MONITOR_V3_PLAN.md`](docs/MODULE_MONITOR_V3_PLAN.md)。
+> **狀態（2026-07-04）**：獨立合成 demo 軌（Next.js `/monitor`），含**即時感測器串流**與**情境回放**兩模式；**後端已部署於 HF、`/monitor/*`（含 SSE）線上可用**。
+> **資料升級 v4.1 Enterprise**（142 欄、每情境獨立 `equipment_profile`）。
+> **即時模式**：SSE（`/monitor/stream`）**即時生成 + 即時推論**，隨機注入 30 種故障；前端「**分格 6 圖 / 全部疊圖 / 單一子系統**」切換、
+> canvas 捲動趨勢（**示警→告警 gap 標線**）+ **AI 提前告警 KPI** + 狀態列顯示 `equipment_profile` + 告警全頁紅閃。
+> **回放模式**：30 情境逐幀 + 六角雷達（外圈固定嚴重度 1）+ 演進時間軸 + 播放/調速/scrub。
+> 早期預警（留出情境）F1 1.00、中位提前量 5.0s。**雷達以各情境自身 normal 為基準**（2026-07-04 修正高負載軸釘死 1.0 問題）。
+> 另有 **v4.1 資料分析報告**（為何 F1≈1.0 的誠實量化）與訓練模擬器的 **1D-CNN 資料增強實驗**、**特徵萃取動畫教學**。
+> **一切由 committed 產生器重現、不需原始大檔；合成資料、模擬感測器、與真實 PHM 主線分開、不取代**。
+> 細節見 [`docs/MODULE_MONITOR_V3_PLAN.md`](docs/MODULE_MONITOR_V3_PLAN.md)、[`outputs/reports/MONITOR_V4_DATA_ANALYSIS.md`](outputs/reports/MONITOR_V4_DATA_ANALYSIS.md)、[`outputs/reports/PROJECT_POSITIONING.md`](outputs/reports/PROJECT_POSITIONING.md)。
 - **即時監控雷達** — 即時 ⇄ 回放切換；即時＝canvas 趨勢 + AI 提前告警 KPI + 告警紅閃，回放＝六角雷達 + 演進時間軸。
 
 **ℹ️ 其他**

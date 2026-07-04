@@ -64,6 +64,19 @@ def healthy_baseline(healthy_df: pd.DataFrame) -> pd.DataFrame:
     return stats
 
 
+def scenario_baseline(df: pd.DataFrame) -> pd.DataFrame:
+    """Radar baseline from a scenario's OWN normal-stage rows.
+
+    v4.1 gives each scenario a distinct equipment profile (load 15-80), so a shared
+    scenario-01 baseline pegs high-load axes (current/temperature) at severity 1.0
+    even during a scenario's normal stage. Normalising against each scenario's own
+    normal stage makes severity mean "deviation from THIS machine's normal" — 0 while
+    healthy, rising only as it degrades.
+    """
+    normal = df[df["fault_stage"] == "normal"]
+    return healthy_baseline(normal if len(normal) >= 50 else df)
+
+
 def window_features(df: pd.DataFrame, win: int) -> pd.DataFrame:
     """Rolling mean/std/max over the physical telemetry tags."""
     roll = df[FEATURE_TAGS].rolling(win, min_periods=1)

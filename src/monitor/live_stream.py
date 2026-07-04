@@ -24,28 +24,25 @@ from src.monitor.schema import (
     SEED,
     STAGE_TO_INT,
     SUBSYSTEMS,
-    healthy_baseline,
     radar_severity,
+    scenario_baseline,
     window_features,
 )
 from src.monitor.servo_v3_generator import SCENARIOS, generate_servo_data
 from src.utils.paths import load_config, resolve
 
-_STATE: Dict[str, Any] = {"model": None, "base": None}
+_STATE: Dict[str, Any] = {"model": None}
 
 
 def _load():
-    """Lazily load the classifier bundle + healthy baseline (once per process)."""
+    """Lazily load the classifier bundle (once per process)."""
     if _STATE["model"] is None:
         model_path = resolve(load_config()["monitor"]["model"])
         if not model_path.exists():
             raise FileNotFoundError(
                 f"監控模型未建立（{model_path.name}）。先跑 python -m src.monitor.build_servo_v3。")
         _STATE["model"] = joblib.load(model_path)
-        healthy = generate_servo_data(rows=SCENARIO_ROWS, scenario_id=1,
-                                      sampling_hz=RAW_HZ, seed=SEED)
-        _STATE["base"] = healthy_baseline(healthy)
-    return _STATE["model"], _STATE["base"]
+    return _STATE["model"]
 
 
 DEFAULT_STAGE_FRACS = (0.53, 0.73, 0.88)
@@ -64,7 +61,7 @@ def _prepare_scenario(scenario_id: int, out_hz: int, win: int,
                       stage_fracs: tuple[float, float, float] = DEFAULT_STAGE_FRACS
                       ) -> List[Dict[str, Any]]:
     """Generate one scenario and pre-compute every streamed frame (fast, off-loop)."""
-    model, base = _load()
+    model = _load()
     df = generate_servo_data(rows=SCENARIO_ROWS, scenario_id=scenario_id,
                              sampling_hz=RAW_HZ, seed=SEED, stage_fracs=stage_fracs)
     step = RAW_HZ // out_hz
@@ -73,7 +70,7 @@ def _prepare_scenario(scenario_id: int, out_hz: int, win: int,
     feats = window_features(df, win).iloc[idx][model["feat_cols"]].to_numpy()
     pred_prob = model["warn_clf"].predict_proba(feats)[:, 1]
     pred_cat = model["cat_clf"].predict(feats)
-    radar = radar_severity(df, base).iloc[idx].reset_index(drop=True)
+    radar = radar_severity(df, scenario_baseline(df)).iloc[idx].reset_index(drop=True)
 
     subs = list(SUBSYSTEMS.keys())
     stage = df["fault_stage"].map(STAGE_TO_INT).to_numpy()[idx]

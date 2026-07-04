@@ -38,8 +38,8 @@ from src.monitor.schema import (
     STAGE_TO_INT,
     SUBSYSTEMS,
     WARNING_LEVEL,
-    healthy_baseline,
     radar_severity,
+    scenario_baseline,
     window_features,
 )
 from src.monitor.servo_v3_generator import SCENARIOS, generate_servo_data
@@ -50,7 +50,7 @@ OUT_MODEL = "outputs/models/monitor_v3_clf.joblib"
 OUT_EVAL = "outputs/metrics/monitor_v3_eval.json"
 
 
-def _process_scenario(scenario_id: int, base: pd.DataFrame, win: int, step: int, ahead: int):
+def _process_scenario(scenario_id: int, win: int, step: int, ahead: int):
     """Generate one scenario and return (frame_df, feature_df, meta).
 
     ``ahead`` = number of output frames to look forward for the early-warning
@@ -59,7 +59,7 @@ def _process_scenario(scenario_id: int, base: pd.DataFrame, win: int, step: int,
     df = generate_servo_data(rows=SCENARIO_ROWS, scenario_id=scenario_id,
                              sampling_hz=RAW_HZ, seed=SEED)
     feats_full = window_features(df, win)
-    radar_full = radar_severity(df, base)
+    radar_full = radar_severity(df, scenario_baseline(df))  # per-scenario own-normal baseline
 
     idx = np.arange(0, len(df), step)  # down-sample to output cadence
     frames = pd.DataFrame({
@@ -122,13 +122,10 @@ def main() -> None:
 
     print(f"[build] generating {n_scenarios} scenarios via vendored generator "
           f"| out={args.out_hz}Hz step={step} win={win} horizon={args.horizon_s}s")
-    healthy = generate_servo_data(rows=SCENARIO_ROWS, scenario_id=1,
-                                  sampling_hz=RAW_HZ, seed=SEED)
-    base = healthy_baseline(healthy)
 
     all_frames, all_feats = {}, []
     for sid in range(1, n_scenarios + 1):
-        frames, feats, meta = _process_scenario(sid, base, win, step, ahead)
+        frames, feats, meta = _process_scenario(sid, win, step, ahead)
         all_frames[meta["scenario_id"]] = (frames, meta)
         all_feats.append(feats)
         print(f"  scenario {meta['scenario_id']:02d} {meta['scenario_name']:<30} "

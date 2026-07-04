@@ -7,8 +7,10 @@
 > 相關：真實主線見 [`MODULE_SERVO_PLAN.md`](MODULE_SERVO_PLAN.md)、資料溯源見
 > [`DATA_PROVENANCE.md`](DATA_PROVENANCE.md)。
 >
-> **狀態（2026-07-03）**：**建置腳本 → 後端 → 前端全部完成並跑通**；並已升級為
+> **狀態（2026-07-04）**：**建置腳本 → 後端 → 前端全部完成並跑通**；並已升級為
 > **產生器單一源 + 即時感測器串流**，**產生器物理升級至 v4.1 Enterprise**。
+> **2026-07-04 修 bug**：雷達改用**各情境自身 normal 階段**為基準（見 §2.1），修正高負載情境
+> 電流/溫度軸在 normal 階段被釘在 1.0 的問題（即時串流「電流固定為 1」）。
 > - **Vendored 產生器**（`src/monitor/servo_v3_generator.py`，檔名保留 v3、**物理為 v4.1**）為
 >   **唯一資料源**，一切從程式重現，**不再需要 476MB 原始檔**。schema 由 100 欄 → **142 欄**
 >   （v4.1 補回 `encoder_error_count`/`igbt_temp_c`/`following_error_abs_pulse`/`bearing_bsf,ftf_amp`/
@@ -86,8 +88,10 @@ src/monitor/servo_v3_generator.py（vendored，唯一資料源，進 git）
   即時串流後端 20 Hz、`?speed=` 調倍率、SSE 用 `asyncio.sleep` 控節奏、情境生成 off-loop（`asyncio.to_thread`）。
 
 ### 2.1 六角雷達（透明、非模型）
-六軸 = **溫度 / 電流 / 振動 / 編碼器 / 運動追隨 / 通訊**，各軸嚴重度 = 相對 healthy baseline
-（scenario_01）的**穩健偏離度**（`|x−μ|/σ/Z_CAP`，flag 類欄位改用絕對偏離），clip 到 0–1。
+六軸 = **溫度 / 電流 / 振動 / 編碼器 / 運動追隨 / 通訊**，各軸嚴重度 = 相對**各情境自身 normal
+階段**（`scenario_baseline`）的**穩健偏離度**（`|x−μ|/σ/Z_CAP`，flag 類欄位改用絕對偏離），clip 到 0–1。
+（**2026-07-04 修正**：v4.1 每情境設備負載不同（load 15–80），原本共用 scenario_01 baseline 會讓高負載
+情境的電流/溫度軸在 normal 階段就被釘在 1.0；改用各情境自身 normal 為基準後，健康時 ~0、退化才升高。）
 純資料計算、可解釋，哪角爆紅一眼看出。（`vibration_kurtosis` 因合成資料普遍抬升會汙染雷達，
 **排除於雷達軸、僅留作模型特徵**。POWER/CONTROL 無專屬軸，經由下游 current/encoder 反映。）
 
