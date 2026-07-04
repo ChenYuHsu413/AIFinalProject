@@ -170,9 +170,12 @@ sudo journalctl -u servo-frontend -f
 
 ### 9.1 後端 → Hugging Face Spaces（Docker）
 
-> **狀態（2026-07-03）**：Space `icefeather/aifinalproject` 已重新部署，**Live Monitor v3
-> `/monitor/*` 全端點線上可用**（`/monitor/scenarios` `available:true`；`/monitor/stream`
-> **SSE 即時串流在 HF 實測可跑**，未被反向代理緩衝）。實務筆記：
+> **狀態（2026-07-04）**：Space `icefeather/aifinalproject` 已重新部署至 **v4.1 資料**（回放包
+> alarm code `V4_*`、eval `n_features=120`；SSE frame 帶 `equipment_profile`），**Live Monitor v3
+> `/monitor/*` 全端點線上實測可用**（`/monitor/scenarios` `available:true`；`/monitor/scenario/14`
+> `V4_MEC_002`；`/monitor/stream` SSE 即時串流未被反向代理緩衝）。用 `hf upload` 只推變動子資料夾
+> （`src/monitor`、`data/processed/servo_v3`、`outputs/models`、`outputs/metrics`），保留 Space 根
+> `Dockerfile`/`README`。實務筆記：
 > - **推送方式改用 `hf upload`**（非 `git push`）：headless / 非互動環境下 Git Credential
 >   Manager 會彈互動視窗而卡住；`hf auth login` 後用
 >   `hf upload icefeather/aifinalproject <folder> . --repo-type space` 走 HF API，
