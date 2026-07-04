@@ -140,8 +140,8 @@ python -m src.monitor.build_servo_v3            # 可調 --out-hz / --win-ms / -
 # 2) 後端 + 前端
 uvicorn app.backend.main:app --port 8000
 cd web && NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev   # → /monitor（預設即時模式）
-# 3)（可選）用 streaming 產生器擴充大資料
-python src/monitor/servo_v3_streaming_generator.py --rows 10000000 --scenario mixed \
+# 3)（可選）用 streaming 產生器擴充大資料（v4.1 物理，chunk 分片、可重現）
+python -m src.monitor.servo_v3_streaming_generator --rows 10000000 --scenario mixed \
     --format parquet --output_dir servo_10M_parquet --chunk_rows 100000 --split_files
 ```
 

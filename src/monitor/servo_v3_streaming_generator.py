@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Servo AI Dataset v3.1 Enterprise Streaming Generator
+Servo AI Dataset v4.1 Enterprise Streaming Generator
 
 重點：
 - 支援自行擴增生成 1000 萬筆（10,000,000 rows）或更多
 - 使用 chunk 分批產生與寫入，避免記憶體爆掉
 - 支援 CSV 單一大檔、CSV 分片、Parquet 分片
-- 保留 v3.0 的 30 種 Scenario 與 Servo PLC/Drive Log 欄位
+- 沿用 vendored `servo_v3_generator`（v4.1 物理）的 30 種 Scenario 與 142 欄
+  Servo PLC/Drive Log；seed + chunk_index 可重現。
 
 建議：
 - 1000 萬筆以上建議使用 Parquet 分片，速度與檔案大小都比 CSV 好
 - 若一定要 CSV，可使用 --split_files，避免產生超巨大單檔
 
-範例：
+範例（從 repo 根目錄，以模組方式執行）：
 
 1) 生成 1000 萬筆 mixed CSV 單檔：
-python servo_ai_dataset_v3_streaming_generator.py --rows 10000000 --scenario mixed --format csv --output servo_10M.csv --chunk_rows 100000
+python -m src.monitor.servo_v3_streaming_generator --rows 10000000 --scenario mixed --format csv --output servo_10M.csv --chunk_rows 100000
 
 2) 生成 1000 萬筆 Parquet 分片，推薦：
-python servo_ai_dataset_v3_streaming_generator.py --rows 10000000 --scenario mixed --format parquet --output_dir servo_10M_parquet --chunk_rows 100000 --split_files
+python -m src.monitor.servo_v3_streaming_generator --rows 10000000 --scenario mixed --format parquet --output_dir servo_10M_parquet --chunk_rows 100000 --split_files
 
 3) 生成 1000 萬筆 CSV 分片：
-python servo_ai_dataset_v3_streaming_generator.py --rows 10000000 --scenario mixed --format csv --output_dir servo_10M_csv_parts --chunk_rows 100000 --split_files
+python -m src.monitor.servo_v3_streaming_generator --rows 10000000 --scenario mixed --format csv --output_dir servo_10M_csv_parts --chunk_rows 100000 --split_files
 
 4) 生成 Scenario 14 軸承磨耗 1000 萬筆：
-python servo_ai_dataset_v3_streaming_generator.py --rows 10000000 --scenario 14 --format parquet --output_dir bearing_wear_10M --split_files
+python -m src.monitor.servo_v3_streaming_generator --rows 10000000 --scenario 14 --format parquet --output_dir bearing_wear_10M --split_files
 """
 
 import argparse
@@ -33,8 +34,8 @@ from pathlib import Path
 import json
 import pandas as pd
 
-# 匯入同資料夾內 v3.0 generator 的核心函式
-from servo_ai_dataset_v3_generator import generate_servo_data, SCENARIOS, safe_name
+# 匯入 vendored 生成器（v4.1 物理）的核心函式
+from src.monitor.servo_v3_generator import generate_servo_data, SCENARIOS, safe_name
 
 
 def scenario_for_chunk(mode: str, chunk_index: int) -> int:
