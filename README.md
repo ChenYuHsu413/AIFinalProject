@@ -190,98 +190,96 @@ flowchart TB
 
 ## 4. 專案架構
 
-> **狀態（2026-06-26）**：新增 **Next.js 前端 `web/`**（AI Servo Motor Health Command Center，
-> 主要展示 UI）與 **`deploy/`**（nginx + systemd 部署範本）。後端 `app/backend/` 已擴充 Servo 主線、
-> 機群（`/servo/fleet`）、告警/工單（`/servo/alerts`、`/servo/work_orders`）、知識庫與 LLM 助理端點。
+> **狀態（2026-07-05）**：架構樹同步至實況。`src/` 已補上主線 **`servo/`**、即時監控軌 **`monitor/`**
+> （v4.1 產生器 + SSE 串流 + 資料分析）、**`llm/`**（維護助理）、**`knowledge/`**（RAG 知識庫）；
+> 後端 `app/backend/` 涵蓋 A/B/B+/C + Servo 主線 + 機群/告警 + monitor（含 SSE）+ 知識庫/LLM。
+> 前端 `web/`（Next.js Command Center，主要展示 UI）新增 `monitor/` 即時監控雷達。省略號僅代表同類檔案。
 
 ```
 project-root/
 ├── README.md
-├── requirements.txt
-├── .gitignore
-├── .dockerignore
-├── Dockerfile
-├── docker-compose.yml
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+├── requirements.txt / requirements-dl.txt / requirements-dev.txt
+├── Dockerfile / docker-compose.yml / .dockerignore / .gitignore
+├── .github/workflows/ci.yml
 ├── config.yaml
 ├── data/
 │   ├── README.md
-│   ├── raw/                 <-- ai4i2020.csv；模組 B/B+ 為 raw/ims、raw/xjtu（不進 git）
+│   ├── raw/                 <-- ai4i2020.csv；B/B+/C/Servo 為 raw/{ims,xjtu,paderborn,servo}（不進 git）
 │   └── processed/
-├── docs/                    # 模組規劃 / 結果 / 資料評估 / 網頁改版 / 部署
-│   ├── MODULE_SERVO_PLAN.md         # Servo 主線
-│   ├── MODULE_B_IMS_PLAN.md
-│   ├── MODULE_B_DL_PLAN.md
-│   ├── MODULE_B_RESULTS.md
-│   ├── MODULE_B_PLUS_XJTU_PLAN.md
-│   ├── MODULE_C_PADERBORN_PLAN.md
+├── docs/                    # 模組規劃 / 結果 / 資料溯源 / 部署 / 書面報告 / demo 腳本 / prompt log
+│   ├── MODULE_SERVO_PLAN.md            # Servo 主線（真實 PHM FMCRD）
+│   ├── MODULE_MONITOR_V3_PLAN.md       # 即時監控軌（合成 v4.1 · SSE 串流 + 回放雷達）
+│   ├── DATA_PROVENANCE.md              # Servo 資料溯源（CRC32 指紋 + /servo/provenance）
+│   ├── MODULE_B_IMS_PLAN.md / MODULE_B_DL_PLAN.md / MODULE_B_RESULTS.md
+│   ├── MODULE_B_PLUS_XJTU_PLAN.md / MODULE_B_PLUS_EXTENSIONS_PLAN.md   # B+ 泛化 + E1/E2/E3
+│   ├── MODULE_C_PADERBORN_PLAN.md / MODULE_C_PADERBORN_EXTENSIONS_PLAN.md
 │   ├── DATASET_EVALUATION.md
-│   ├── WEB_REVAMP_PLAN.md           # 前端改版（Streamlit → Next.js）
-│   └── DEPLOYMENT.md                # GCP VM + nginx 部署 runbook
-├── notebooks/
-│   └── 01_eda.ipynb
-├── scripts/
-│   └── run_eda.py
+│   ├── WEB_REVAMP_PLAN.md              # 前端改版（Streamlit → Next.js）
+│   ├── DEPLOYMENT.md                   # GCP VM + nginx / Vercel + HF Space 部署 runbook
+│   ├── FINAL_REPORT.md / DEMO_SCRIPT.md
+│   └── PROMPT_LOG_2026-06-*.md
+├── notebooks/01_eda.ipynb
+├── scripts/run_eda.py
 ├── src/
 │   ├── data/
-│   │   ├── load_data.py
-│   │   ├── preprocess.py
-│   │   ├── load_ims.py            # 模組 B：IMS 載入
-│   │   ├── build_ims_dataset.py
-│   │   ├── load_xjtu.py           # 模組 B+：XJTU 載入
-│   │   └── build_xjtu_dataset.py
+│   │   ├── load_data.py / preprocess.py
+│   │   ├── load_ims.py / build_ims_dataset.py           # 模組 B：IMS
+│   │   ├── load_xjtu.py / build_xjtu_dataset.py         # 模組 B+：XJTU
+│   │   ├── load_paderborn.py / build_paderborn_dataset.py   # 模組 C：Paderborn
+│   │   ├── load_servo.py / build_servo_dataset.py / build_servo_windows.py  # Servo 主線
+│   │   ├── build_servo_from_zip.py
+│   │   └── servo_data_provenance.py                     # 資料溯源 CRC32 指紋
 │   ├── features/
-│   │   ├── feature_engineering.py
-│   │   ├── feature_selection.py
-│   │   └── vibration_features.py  # 模組 B/B+：振動時頻特徵
+│   │   ├── feature_engineering.py / feature_selection.py
+│   │   ├── vibration_features.py     # 模組 B/B+：振動時頻特徵
+│   │   └── servo_features.py         # Servo 主線：段特徵萃取
 │   ├── models/
-│   │   ├── model_registry.py
-│   │   ├── train.py
-│   │   ├── train_failure_types.py
-│   │   ├── tune.py
-│   │   ├── evaluate.py
-│   │   ├── explain.py
-│   │   ├── model_card.py
-│   │   ├── predict.py
-│   │   ├── rul_extrapolation.py        # 模組 B：趨勢外推 RUL
-│   │   ├── train_rul.py                # 模組 B：監督式對照（已知失敗）
-│   │   ├── eval_xjtu_generalization.py # 模組 B+：跨軸承 / 工況泛化
-│   │   ├── train_rul_lobo.py           # 模組 B+：LOBO 監督式
-│   │   └── train_rul_loco.py           # 模組 B+：LOCO 監督式
-│   ├── visualization/
-│   │   └── plots.py
-│   ├── ui/
-│   │   ├── charts.py              # 含模組 B / B+ 圖表
-│   │   └── style.py
-│   └── utils/
-│       └── paths.py
+│   │   ├── model_registry.py / train.py / train_failure_types.py / tune.py
+│   │   ├── evaluate.py / explain.py / model_card.py / predict.py
+│   │   ├── rul_extrapolation.py / train_rul.py          # 模組 B：外推 RUL + 監督對照
+│   │   ├── eval_xjtu_generalization.py / eval_xjtu_domain_adapt.py  # 模組 B+：泛化 + E1 自適應
+│   │   ├── train_rul_lobo.py / train_rul_loco.py        # 模組 B+：LOBO / LOCO
+│   │   ├── maintenance_advice.py                        # 模組 B+ E2：維護建議決策層
+│   │   ├── train_paderborn.py / predict_paderborn.py / adapt_paderborn.py  # 模組 C + CE1
+│   │   ├── train_servo.py / servo_predict.py / servo_simulator.py   # Servo：訓練 / 推論 / 模擬器
+│   │   └── servo_cnn.py / servo_dl.py / servo_cnn_augment.py / servo_cnn_featmap.py  # Servo 1D-CNN
+│   ├── monitor/                      # 即時監控軌（合成 v4.1）
+│   │   ├── servo_v3_generator.py / servo_v3_streaming_generator.py  # v4.1 產生器（檔名保留 v3）
+│   │   ├── build_servo_v3.py / live_stream.py / schema.py           # 回放包 / SSE 串流 / 欄位
+│   │   ├── analyze_v4.py                                # 合成資料分析（為何 F1≈1.0）
+│   │   └── make_architecture_fig.py
+│   ├── servo/field_glossary.py       # 馬達欄位中文解釋
+│   ├── llm/maintenance_assistant.py  # LLM 維護助理（多供應商 + 離線範本）
+│   ├── knowledge/                    # 維修知識庫（RAG）
+│   │   ├── maintenance_rag.py / retriever.py / cleaner.py / crawler.py
+│   ├── visualization/plots.py
+│   ├── ui/                           # Streamlit：charts.py / servo_views.py / style.py
+│   └── utils/paths.py / env.py
 ├── outputs/
-│   ├── figures/             # EDA 與評估圖表
-│   ├── metrics/             # model_comparison.csv、特徵重要性、test_predictions、tuning_history
-│   ├── models/              # best_model.joblib、failure_type_model.joblib、MODEL_CARD.md
-│   └── reports/REPORT_OUTLINE.md
+│   ├── figures/             # EDA / 評估圖表 + monitor_v4/*（系統架構、故障簽章、模型診斷）
+│   ├── metrics/             # model_comparison、servo_*、xjtu_*、paderborn、cnn_augment…
+│   ├── models/              # best_model.joblib、servo 參考模型、MODEL_CARD.md
+│   └── reports/             # REPORT_OUTLINE、PROJECT_POSITIONING、MONITOR_V4_DATA_ANALYSIS、WORK_REPORT_*
 ├── app/
 │   ├── streamlit_app.py     # Streamlit UI（fallback / 對照）
-│   └── backend/             # FastAPI：模組 A/B/B+/C + Servo 主線 + 機群/告警 + 知識庫/LLM
-│       ├── main.py
-│       ├── schemas.py
-│       └── services.py
+│   └── backend/             # FastAPI：A/B/B+/C + Servo 主線 + 機群/告警 + monitor(SSE) + 知識庫/LLM
+│       ├── main.py / schemas.py / services.py
 ├── web/                     # Next.js 前端（AI Servo Motor Health Command Center，主要 UI）
-│   ├── src/app/             # Overview / servo/* / equipment/[id] / alerts / reports / module-*
-│   ├── src/components/      # dashboard/* + ui/* (shadcn) + sidebar / header
-│   ├── src/lib/             # api.ts（型別化 client）/ fleet.ts / ops.ts / mock.ts / servo.ts
+│   ├── src/app/             # page(Command Center) / servo/* / monitor / module-a~c / equipment / alerts / reports / about
+│   ├── src/components/      # dashboard/* + monitor/* + servo/* + ui/* (shadcn) + sidebar / header
+│   ├── src/lib/             # api.ts（型別化 client）/ fleet.ts / ops.ts / servo.ts / cnnFeatmap.ts / mock.ts
 │   └── README.md
 ├── deploy/                  # 部署範本（見 docs/DEPLOYMENT.md）
 │   ├── nginx/servo-command-center.conf
-│   └── systemd/servo-{backend,frontend}.service
-└── tests/
-    ├── test_preprocess.py
-    ├── test_features.py
-    ├── test_predict.py
-    ├── test_backend_api.py        # API 端點測試（含 servo fleet/alerts/work_orders）
-    └── test_servo_*.py
+│   ├── systemd/servo-{backend,frontend}.service
+│   └── huggingface/         # HF Space Dockerfile（免費路線後端）
+└── tests/                   # pytest（CI 135 通過 / 1 跳過，不需原始大檔）
+    ├── test_preprocess.py / test_features.py / test_predict.py
+    ├── test_backend_api.py / test_backend_integration.py    # API 端點 + 整合
+    ├── test_ims_features.py / test_domain_adapt.py          # 模組 B / B+
+    ├── test_paderborn_features.py / test_predict_paderborn.py / test_adapt_paderborn.py  # 模組 C
+    ├── test_maintenance_advice.py
+    └── test_servo_*.py / test_build_servo_from_zip.py / test_train_servo_holdout.py  # Servo 主線
 ```
 
 ---
@@ -830,7 +828,7 @@ docker compose up -d
 `.github/workflows/ci.yml` 在每次 push / PR 到 `main` 或 `master` 時自動：
 
 1. **語法檢查** — `python -m compileall src app tests scripts`
-2. **單元測試** — `pytest -v`（**119 通過 / 1 依環境跳過**；多用合成 fixture 或已提交產物，**不需要**原始大型資料集）
+2. **單元測試** — `pytest -v`（**135 通過 / 1 依環境跳過**；多用合成 fixture 或已提交產物，**不需要**原始大型資料集）
 3. **Docker build smoke test** — 用 buildx 建出映像並執行 `python -c "import ..."` 驗證模組可載入
 
 矩陣同時跑 **Python 3.11** 與 **3.12**。pip cache 由 `actions/setup-python` 提供，
