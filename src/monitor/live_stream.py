@@ -129,16 +129,26 @@ async def stream_frames(speed: float = 1.0, out_hz: int = 20) -> AsyncIterator[s
     current = pick(None)
     frames = await asyncio.to_thread(
         _prepare_scenario, current, out_hz, win, _jittered_stage_fracs(rng))
-    while True:
-        nxt = pick(current)
-        next_task = asyncio.create_task(
-            asyncio.to_thread(_prepare_scenario, nxt, out_hz, win,
-                              _jittered_stage_fracs(rng)))
-        for k, fr in enumerate(frames):
-            fr["global_t"] = round(global_t, 2)
-            fr["new_scenario"] = k == 0
-            global_t += 1.0 / out_hz
-            yield f"data: {json.dumps(fr, separators=(',', ':'))}\n\n"
-            await asyncio.sleep(delay)
-        frames = await next_task
-        current = nxt
+    next_task: asyncio.Task | None = None
+    try:
+        while True:
+            nxt = pick(current)
+            next_task = asyncio.create_task(
+                asyncio.to_thread(_prepare_scenario, nxt, out_hz, win,
+                                  _jittered_stage_fracs(rng)))
+            for k, fr in enumerate(frames):
+                fr["global_t"] = round(global_t, 2)
+                fr["new_scenario"] = k == 0
+                global_t += 1.0 / out_hz
+                yield f"data: {json.dumps(fr, separators=(',', ':'))}\n\n"
+                await asyncio.sleep(delay)
+            frames = await next_task
+            next_task = None
+            current = nxt
+    finally:
+        # Client disconnect raises GeneratorExit at the yield above; cancel the
+        # in-flight prefetch so it isn't orphaned ("Task was destroyed but it is
+        # pending"). The underlying thread still finishes (~300 ms) but the task
+        # reference is released instead of leaking across connect/disconnect churn.
+        if next_task is not None:
+            next_task.cancel()

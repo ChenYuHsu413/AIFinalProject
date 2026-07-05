@@ -93,11 +93,14 @@ def _subsample(df: pd.DataFrame, n: int, label_col: str, seed: int) -> pd.DataFr
         return df
     # stratified sample for classification; plain random for the regression target
     if label_col == "ylabel":
-        return (
-            df.groupby("ylabel", group_keys=False)
-            .sample(frac=n / len(df), random_state=seed)
-            .reset_index(drop=True)
-        )
+        # Keep >=2 rows per class so no health state is rounded down to zero and
+        # silently vanishes from the subsample (frac sampling drops small classes).
+        frac = n / len(df)
+        parts = [
+            g.sample(n=min(len(g), max(2, round(frac * len(g)))), random_state=seed)
+            for _, g in df.groupby("ylabel", sort=False)
+        ]
+        return pd.concat(parts).reset_index(drop=True)
     return df.sample(n, random_state=seed).reset_index(drop=True)
 
 

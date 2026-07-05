@@ -20,6 +20,7 @@ and the LLM maintenance assistant::
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -29,6 +30,8 @@ import pandas as pd
 
 from src.servo.field_glossary import HEALTH_LABEL_ZH, HEALTH_RISK_LEVEL, feature_hint
 from src.utils.paths import load_config, resolve
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass
@@ -59,6 +62,13 @@ def load_servo_models(force: bool = False) -> ServoBundle:
     clf_b = joblib.load(clf_p)
     reg_b = joblib.load(reg_p)
     config = json.loads(fc_p.read_text(encoding="utf-8"))
+    if not config.get("healthy_baseline"):
+        # Without a baseline, _top_features falls back to mean=0/std=1, so the
+        # reported z-scores become raw feature values — surface it rather than
+        # letting the dashboard show misleading "anomalous" features silently.
+        _LOG.warning(
+            "Servo feature_config 缺少 healthy_baseline；top_features 的 z 分數"
+            "將以 mean=0/std=1 計算，可能失真。請重跑 train_servo 產生基準。")
     _BUNDLE = ServoBundle(
         clf=clf_b["pipeline"], reg=reg_b["pipeline"],
         feature_columns=list(config["feature_columns"]), config=config)
