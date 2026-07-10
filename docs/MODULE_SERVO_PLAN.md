@@ -10,9 +10,10 @@
 > **已導入真實 PHM 資料並重訓（2026-06-27，`placeholder=false`）**：原始 FMCRD 8 檔 106 GB 以
 > 串流聚合（`build_servo_from_zip.py`，不解壓不爆記憶體、線上統計與 `aggregate_run` 比對誤差 8.8e-13）
 > 產出 **1,465 段特徵**（train 665 / 留出 test 800）；DV 由物理單位（max≈5012）正規化 0..1、依真實分布
-> 重校 `dv_risk`（0.20 / 0.48）。**留出測試結果**：分類 logistic_regression macro-F1 **0.757**、
-> DV 回歸 RandomForest **R²=0.937 / MAE=0.047**；**PyTorch** DL：Phase A（MLP macro-F1 0.714 +
-> 神經 autoencoder 留出 LN 0.36→HI 2.20）＋ **Phase B 真 1D-CNN**（原始波形能量包絡，80 runs/檔、
+> 重校 `dv_risk`（0.20 / 0.48）。**留出測試結果**：分類 logistic_regression macro-F1 **0.757**
+> （engineered；**2026-07-10 特徵組轉 full → 0.819**，DV R²=0.937→**0.944**，見 §11）、
+> DV 回歸 RandomForest **R²=0.937 / MAE=0.047**；**PyTorch** DL：Phase A（MLP macro-F1 0.714
+> →**0.782**（full，見 §7）+ 神經 autoencoder 留出 LN 0.36→HI 2.20）＋ **Phase B 真 1D-CNN**（原始波形能量包絡，80 runs/檔、
 > 留出 macro-F1 **0.692**（n=320，seed 敏感 ±0.03）、conv-AE 留出 LN 0.26→HI 0.36，見 §7）。**資料特性如實揭露**：`train_noisy_LO` 原始檔僅含 65 段
 > （非 200，下載偏少），故 train LO 類別偏少；測試集各類 200 段完整。
 > **已補真實資料載入路徑防護**：欄位 schema 驗證、`ylabel` 數值碼對應
@@ -114,6 +115,14 @@ DV 風險帶（`config.yaml::servo.dv_risk`，placeholder 校準，需以真實�
 Dashboard 唯讀顯示（訓練模擬器頁的「深度學習離線結果」展開區）。torch 只在 `requirements-dl.txt`、
 **離線訓練**；雲端 / Docker 映像裝 `requirements-dev.txt`（**不含 torch**），runtime 只讀 JSON、不跑 DL。
 
+> **狀態（2026-07-10）— DL 特徵組與參考模型解耦**：參考模型轉 full（§11）後，DL 不再直接跟隨
+> `reference_feature_set`，改用兩個獨立 config 欄位——`dl_classifier_feature_set: full`（MLP 分類
+> macro-F1 **0.714→0.782**、DV 回歸 R²=0.981，收下 full 的增益）與 `dl_ae_feature_set: engineered`
+> （autoencoder 維持 engineered）。**理由**：AE 重建誤差健康→退化的**單調性**（LN 0.36 ≤ LO 0.38 ≤
+> MED 0.65 ≤ HI 2.20）是它作為健康指標的核心承諾；在 full 空間 AE 於 **LN/LO 反轉**（LN 0.897 >
+> LO 0.868），與 FLAML 留出崩盤（§11）同為 train/test **LO domain shift** 的旁證，故 AE 不為跟隨
+> full 而放寬單調測試。1D-CNN（Phase B）吃原始波形、不讀特徵組，不受影響。
+
 **Phase B（已完成）— 真 1D-CNN on 原始波形**：`src/data/build_servo_windows.py` 從原始 FMCRD zip
 **串流**每段 run、降為原始波形**能量包絡**（逐塊 std，8 通道 × 256 時間塊；MVP 子集、split 依檔分離無洩漏）→
 `src/models/servo_cnn.py`（PyTorch）訓練 **1D-CNN 分類 + 1D conv-autoencoder**，寫
@@ -153,3 +162,129 @@ streamlit run app/streamlit_app.py       # 首頁主線 = 模組 Servo
 4. ⬜（後續）視資料調整聚合粒度（`run_index` / `transitions`）、或對 train LO 段數偏少補資料。
 5. ✅（Phase A）PyTorch DL 離線 baseline：MLP 分類/回歸 + 神經 autoencoder（取代 PCA 替身）；torch 僅 `requirements-dl.txt`、離線訓練（雲端映像裝 dev、不含 torch）。
 6. ✅（Phase B 完成）原始波形 1D-CNN：`build_servo_windows.py`（串流→能量包絡）+ `servo_cnn.py`（1D-CNN 分類 + conv-AE）；80 runs/檔留出 macro-F1 0.692（n=320，seed 敏感）、後端 `/servo/cnn_results`、報表頁顯示。原始 FMCRD 用 `Downloads/FMCRD_Data.zip`（CRC 對齊溯源指紋）。
+
+## 11. 類別不平衡實驗（Phase 0 → E1 → E2/E3 → E4 → E5 → 轉正）
+
+> **狀態（2026-07-10）**：完成「診斷 → 加權 → 過採樣 → 天花板確認 → 特徵/AutoML 突破 → 生成式擴充
+> → Reference Model 轉正」一整段實驗。E1–E5 為**唯讀腳本**（`scripts/`），沿用 `train_servo.run()`
+> 的載入與 split（train 665 / 留出 test 800），**不重新切分、不動測試集**。核心結論：engineered 7 維
+> 空間內的 ~0.757 天花板**不是樣本量問題**（加權、SMOTE 家族、CTGAN 都補不動 LN↔LO 互相誤判）；
+> **瓶頸是特徵可分性**——換 full(21 維) 後留出 macro-F1 0.757→**0.819**。full 空間裡 SMOTE 略降、
+> CTGAN 有害、FLAML 即使加權仍只 0.69，**贏家是最樸素的 LR + balanced + full**。已據此**轉正**：
+> `reference_feature_set` engineered→full，重訓後留出 macro-F1 **0.819**、DV R²=0.944，下游全綠
+> （engineered 0.757 留為歷史對照）。DL baseline 特徵組隨之解耦（MLP→full、AE→engineered，見 §7）。
+
+**問題**：train 的 LO（輕度退化）僅 **65 段**，其餘三類各 ~200（不平衡比 3.08）；test 四類均衡各
+200。留出混淆矩陣顯示 LN（健康）與 LO 大量互相誤判。
+
+| 階段 | 腳本 | 產物 |
+| --- | --- | --- |
+| Phase 0 診斷 | [`scripts/diagnose_class_imbalance.py`](../scripts/diagnose_class_imbalance.py) | `outputs/figures/servo_train_class_dist.png`、`servo_confusion_heatmap.png` |
+| E1 加權 | [`scripts/run_e1_class_weight.py`](../scripts/run_e1_class_weight.py) | [`outputs/metrics/e1_class_weight.json`](../outputs/metrics/e1_class_weight.json) |
+| E2/E3 過採樣 | [`scripts/run_e2_e3_resampling.py`](../scripts/run_e2_e3_resampling.py) | [`outputs/metrics/e2_e3_resampling.json`](../outputs/metrics/e2_e3_resampling.json)、`outputs/figures/e2_e3_test_macro_f1.png` |
+| E4 特徵/AutoML | [`scripts/run_e4_automl_and_features.py`](../scripts/run_e4_automl_and_features.py) | [`outputs/metrics/e4_automl_features.json`](../outputs/metrics/e4_automl_features.json) |
+
+**Phase 0（診斷）**：現況 Reference Model（LR + `class_weight='balanced'`）留出 per-class F1 =
+LN 0.632 / LO 0.531 / MED 0.905 / HI 0.959；LO recall 僅 0.500（200 段 LO 有 86 段被誤判成 LN），
+LN precision 0.606。退化明顯的 MED/HI 幾乎全對，問題集中在 LN↔LO 邊界。
+
+**E1（class_weight 加權）**：只切換 `class_weight`，其餘超參沿用工廠（LR `max_iter=2000`；
+RF `n_estimators=200`），`random_state=42`。
+
+| 模型 | 版本 | 留出 macro-F1 | LO 的 F1 |
+| --- | --- | --- | --- |
+| LogReg | default | 0.636 | **0.029** |
+| LogReg | **balanced** | **0.757** | 0.531 |
+| RandForest | default | 0.667 | 0.195 |
+| RandForest | balanced | 0.687 | 0.312 |
+
+→ 加權對 LR 帶來 **+0.121** macro-F1，增益幾乎全來自把 LO 從「形同放棄」（F1 0.029）救回
+（+0.501）；LR 明顯優於 RF，後續實驗只用 LR。
+
+**E2/E3（過採樣）**：`imbalanced-learn` 的 SMOTE / BorderlineSMOTE / ADASYN / SMOTETomek，各配
+`class_weight` ∈ {None, 'balanced'}，共 10 組。**防洩漏**：整條 `imblearn.Pipeline`
+（StandardScaler → 重採樣 → LR）交給 5-fold `StratifiedKFold`，重採樣只發生在每個 fold 的訓練分割。
+
+- 兩個對照組精確重現（E0_default 0.636、E0_balanced 0.757），驗證管線正確。
+- 四種過採樣全部落在留出 macro-F1 **0.755–0.759**，與單純加權**等效**、無顯著超越；LO recall 天花板
+  約 0.535。重採樣「疊加」加權（+balanced）無額外好處，多屬持平或略降（符合過度矯正預期）。
+
+**⚠ 自我修正註記（誠實揭露）——SMOTE 絕對數量在 CV fold 內的失真**：E2/E3 用
+`sampling_strategy={'LO': 200}`（**絕對數量**）。在最終「完整 train」擬合時 LO 是 65→200
+（合成含量 ≈3.1×）；但在 5-fold CV 內，每個 fold 的訓練分割只有約 52 段真實 LO，卻仍被補到**同一個
+絕對值 200**（≈3.85×）——**CV fold 內的過採樣強度其實比最終部署的模型更激進**。因此
+`e2_e3_resampling.json` 裡的 **CV macro-F1 並非與留出、或跨組完全等價的比較基準**（改用比例式
+`sampling_strategy`（float / 'auto'）才會讓強度隨 fold 真實少數類數量等比縮放）。這不影響本實驗結論
+——**留出 test 800 段才是判準**，且十組全部收斂在 ~0.757——但此失真必須如實記錄。
+
+**E2/E3 天花板結論**：加權已逼近 **engineered 7 維空間**的可分上限，過採樣（在同一空間內插補）補不出
+新的判別資訊。訓練集 LO 全部來自 `train_noisy_LO` 單一原始檔（下載偏少、僅 65 段），與 test LO 可能
+存在**分布差異（domain shift）**；重採樣只在特徵空間內插值，無法跨越分布差異，僅緩解樣本量不足。
+
+**E4（特徵組對照 + FLAML AutoML）—— 假設證實：瓶頸在特徵可分性，不在樣本量**
+
+Part A（LR + `class_weight='balanced'`，其餘不變，只換特徵組）：
+
+| 特徵組 | 維度 | 留出 macro-F1 | LO recall | LN precision | LO 的 F1 |
+| --- | --- | --- | --- | --- | --- |
+| engineered | 7 | 0.757 | 0.500 | 0.606 | 0.531 |
+| **full** | 21 | **0.819** | 0.595 | 0.675 | 0.643 |
+
+→ 僅把特徵組換成 full，留出 macro-F1 **+0.062（0.757→0.819）**，LN↔LO 誤判同步下降（混淆矩陣：
+LN→LO 68→44、LO→LN 86→75）。**證實 E2/E3 的天花板是 engineered 特徵空間的可分性上限、而非樣本量**
+——補進 `basic_motion` / `position_tracking` / 原始電流等真實維度，給了線性模型原本缺乏的 LN/LO 判別資訊。
+
+Part B（FLAML AutoML，`task=classification, metric=macro_f1, time_budget=600, seed=42`，只餵 train、
+內部 CV 自驗）：
+
+| 組別 | 特徵組 | best | 內部驗證 macro-F1 | 留出 macro-F1 | LO recall |
+| --- | --- | --- | --- | --- | --- |
+| FLAML_engineered | 7 | rf | 0.728 | 0.666 | 0.125 |
+| FLAML_full | 21 | rf | 0.727 | 0.662 | 0.100 |
+
+→ FLAML 兩次都選 rf，**內部 CV 看似 0.727，留出卻僅 ~0.66**，比單純 LR+balanced 還差、更遠低於
+LR_full 0.819；LO recall 崩到 0.10（未加權樹集成在 domain-shift 的 test LO 上幾乎全放棄）。**教訓**：
+AutoML 以內部 CV 最佳化又未套 class_weight，挑到的模型在 in-distribution 好看、在偏移的少數類上失守；
+**內部 CV 0.727 對留出 0.66 的落差，本身即 domain shift 的證據**。簡單、可解釋的 LR + balanced +
+full 特徵完勝。
+
+**修正「天花板」定性**：E2/E3 的 ~0.757 是**在 engineered 7 維空間內**的上限，非固定值；E4 證明換特徵
+空間即突破至 0.819。domain shift 依然存在（LO recall 仍不及 MED/HI、FLAML 的 CV−留出落差為證），但
+天花板由**特徵可分性 × 模型歸納偏誤**共同決定，而非樣本量。
+
+**E5（full 空間擴充方法對決 + 特徵組選擇驗證）** — 腳本
+[`scripts/run_e5_and_validation.py`](../scripts/run_e5_and_validation.py)、產物
+[`outputs/metrics/e5_validation.json`](../outputs/metrics/e5_validation.json)、
+[`outputs/figures/e5_ctgan_kde_full.png`](../outputs/figures/e5_ctgan_kde_full.png)。
+
+*Task 1 — 特徵組選擇只依訓練集*：train 665 段 5-fold CV（LR+balanced），full **0.740 ± 0.028** >
+engineered **0.730 ± 0.036**（+0.010）。**選 full 可只依訓練集 CV 決定，留出 0.819 僅為事後驗證**，
+排除 test-set selection 疑慮。
+
+*Task 2 — full 空間三組對決*（留出 test 800 段）：
+
+| 組別 | 特徵組 | 留出 macro-F1 | LO recall | LN precision |
+| --- | --- | --- | --- | --- |
+| engineered（LR+bal，歷史） | engineered | 0.757 | 0.500 | 0.606 |
+| **E0_full**（無擴充） | full | **0.819** | 0.595 | 0.675 |
+| SMOTE_full（LO→200） | full | 0.811 | 0.585 | 0.678 |
+| CTGAN_full（+135 合成 LO） | full | 0.686 | 0.100 | 0.554 |
+| FLAML_weighted_full（sample_weight=balanced） | full | 0.690 | 0.335 | 0.544 |
+
+→ **贏家是最樸素的 LR + balanced + full = 0.819**：full 空間裡 SMOTE **無助反略降**（0.811），
+CTGAN **明顯有害**（0.686）。**CTGAN TSTR：純合成 LO 訓練、測真實 LO 的 F1 = 0.010**——合成樣本
+幾乎無法辨識真實 LO；KDE 品質圖顯示 65 筆小樣本在 21 維下多個特徵（torque_rms / direct_rms /
+quadrature_rms 等）分布錯位。**E4c（給 FLAML 公平一戰）**：即使傳入 `sample_weight='balanced'`，
+FLAML 仍選 lgbm、留出僅 0.690——**推翻「FLAML 輸在沒加權」的質疑**：問題不在加權，而是樹集成在
+domain-shift 的 test LO 上過擬合，樸素正則化線性模型泛化更好。
+
+*誠實揭露*：所有擴充僅作用訓練資料，test 800 段全為真實樣本；CTGAN 僅以 65 筆 LO 訓練屬小樣本、
+21 維生成品質有限（見 KDE 與 TSTR），仍侷限既有特徵分布、無法跨越 train/test 的 LO domain shift。
+
+**Reference Model 轉正（2026-07-10，engineered → full）**：Task 1 CV 確認 full 較優後，
+`config.yaml::servo.reference_feature_set` 改為 `full`，`python -m src.models.train_servo` 正式重訓——
+CV 從 `enabled_models` 選出 **logistic_regression**（CV 0.740，勝 mlp 0.732 / rf 0.697），留出
+**macro-F1 0.819**、DV 回歸 RandomForest **R²=0.944 / MAE=0.044**（皆優於 engineered 的 0.757 /
+0.937）。**engineered 0.757 保留為歷史對照**。下游全數驗證：`servo_feature_config.json`（21 欄 +
+健康基線）、`servo_predict` 的 `top_features`、訓練模擬器、demo CSV、`/servo/predict` 與
+`/servo/model_info` 均隨新特徵組正常運作；servo 測試 38 passed。DL baseline 的特徵組解耦見 §7。
