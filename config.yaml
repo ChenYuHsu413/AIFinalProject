@@ -288,6 +288,34 @@ servo:
   placeholder: false                 # trained on the REAL PHM FMCRD dataset
 
 # ---------------------------------------------------------------------------
+# Module Servo — FMCRD replay streaming demo (S1). The publisher streams raw
+# RAW_COLUMNS rows over SSE (reuses the Live Monitor SSE skeleton); the receiver
+# windows them into the SAME aggregate_run/build_feature_table features and calls
+# the reference model. The demo ALWAYS uses `replay` (real FMCRD). The publisher's
+# `fake` mode is for pipeline connectivity testing ONLY — its data is OUTSIDE the
+# model's training distribution, so its predictions are INVALID. Replay material
+# is produced by scripts/extract_replay_segments.py. See docs/MODULE_SERVO_PLAN.md §12.
+# ---------------------------------------------------------------------------
+servo_replay:
+  replay_dir: data/demo/replay
+  manifest: data/demo/replay/manifest.json
+  order: [LN, LO, HI]          # multi-segment degradation journey (healthy -> degraded)
+  emit_hz: 1000                # publish cadence (messages/sec, wall clock); faster than real-time = accelerated
+  loop: false                  # play the journey once (true = loop forever)
+  window:
+    # LOCKED (S1b, 2026-07-11) to run-cycle alignment. W = one FMCRD run cycle (6 s)
+    # so a window reproduces the per-run aggregation the reference model was trained
+    # on. Do NOT shrink W below one run cycle — a sub-run window covers only part of
+    # the 5-step position staircase and drifts out of distribution (S1 OOD lesson).
+    # S1b validated the decimated replay windows (outputs/metrics/replay_window_validation.json):
+    #   • extreme-feature (*_max) bias on model columns <0.01% -> no peak-preserving needed;
+    #   • decimated-vs-full prediction consistency 100% on the replay material
+    #     (broader 24-run sample 91.7% — every miss at the model's KNOWN LN/LO boundary,
+    #     zero pipeline bias).
+    length_s: 6.0              # W: sliding-window length in DATA seconds = one run cycle (locked)
+    step_s:   3.0              # S: slide step in DATA seconds = W/2, 50% overlap (locked)
+
+# ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
 # Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
 # NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.
