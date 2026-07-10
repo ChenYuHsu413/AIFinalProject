@@ -1,0 +1,76 @@
+{
+  "dataset": "FMCRD (real PHM servomotor-driven ballscrew) — test split",
+  "purpose": "S1 live streaming demo replay material (degradation journey).",
+  "columns": [
+    "time",
+    "DV",
+    "rod_demand_pos",
+    "rod_actual_pos",
+    "torque",
+    "rotor_speed",
+    "i_3p_a",
+    "i_3p_b",
+    "i_3p_c",
+    "direct",
+    "quadrature",
+    "run_index",
+    "transitions",
+    "del_pos",
+    "ylabel"
+  ],
+  "order": [
+    "LN",
+    "LO",
+    "HI"
+  ],
+  "note": "FMCRD test files are single-class; the LN->LO->HI journey is assembled across files (a few complete runs each). Each run is a full 6 s / 5-step positioning cycle, uniformly DECIMATED to keep segments small — a window of ~one run cycle then matches the per-run training aggregation. Columns & temporal order preserved; only the sampling interval is widened by decimation.",
+  "run_cycle_s": 6.0,
+  "source_zip": "C:\\Users\\alung\\Downloads\\FMCRD_Data.zip",
+  "segments": [
+    {
+      "segment": "LN",
+      "file": "seg_LN.csv",
+      "source_zip_member": "test_load0_1e_m15_200x5.csv",
+      "run_indexes": [
+        1,
+        2,
+        3
+      ],
+      "ylabel": "LN",
+      "rows": 15000,
+      "runs": 3,
+      "decimated_sampling_dt_s": 0.00118,
+      "size_mb": 3.283
+    },
+    {
+      "segment": "LO",
+      "file": "seg_LO.csv",
+      "source_zip_member": "test_noisy_1e_m15_200x5LO.csv",
+      "run_indexes": [
+        201,
+        202,
+        203
+      ],
+      "ylabel": "LO",
+      "rows": 15000,
+      "runs": 3,
+      "decimated_sampling_dt_s": 0.00118,
+      "size_mb": 3.335
+    },
+    {
+      "segment": "HI",
+      "file": "seg_HI.csv",
+      "source_zip_member": "test_noisy_1e_m15_200x5HI.csv",
+      "run_indexes": [
+        601,
+        602,
+        603
+      ],
+      "ylabel": "HI",
+      "rows": 15000,
+      "runs": 3,
+      "decimated_sampling_dt_s": 0.00118,
+      "size_mb": 3.335
+    }
+  ]
+}

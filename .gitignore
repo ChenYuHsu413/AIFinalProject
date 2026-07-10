@@ -85,6 +85,14 @@ data/raw/servo_v3/
 !outputs/metrics/servo_cnn_results.json
 !outputs/metrics/servo_data_provenance.json
 
+# Module Servo FMCRD replay demo segments (Task A / S1 live stream). Small
+# (~3 MB each), committed so the streaming demo runs without the raw FMCRD zip.
+# Produced by scripts/extract_replay_segments.py from the real test split.
+!data/demo/
+!data/demo/replay/
+!data/demo/replay/*.csv
+!data/demo/replay/manifest.json
+
 # Live Monitor v3 (synthetic demo) artefacts. Everything rebuilds from the
 # committed vendored generator (src/monitor/servo_v3_generator.py) — no raw
 # download needed. Commit the replay packs, the eval, AND the classifier (the
