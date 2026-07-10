@@ -288,6 +288,29 @@ servo:
   placeholder: false                 # trained on the REAL PHM FMCRD dataset
 
 # ---------------------------------------------------------------------------
+# Module Servo — FMCRD replay streaming demo (S1). The publisher streams raw
+# RAW_COLUMNS rows over SSE (reuses the Live Monitor SSE skeleton); the receiver
+# windows them into the SAME aggregate_run/build_feature_table features and calls
+# the reference model. The demo ALWAYS uses `replay` (real FMCRD). The publisher's
+# `fake` mode is for pipeline connectivity testing ONLY — its data is OUTSIDE the
+# model's training distribution, so its predictions are INVALID. Replay material
+# is produced by scripts/extract_replay_segments.py. See docs/MODULE_SERVO_PLAN.md §12.
+# ---------------------------------------------------------------------------
+servo_replay:
+  replay_dir: data/demo/replay
+  manifest: data/demo/replay/manifest.json
+  order: [LN, LO, HI]          # multi-segment degradation journey (healthy -> degraded)
+  emit_hz: 1000                # publish cadence (messages/sec, wall clock); faster than real-time = accelerated
+  loop: false                  # play the journey once (true = loop forever)
+  window:
+    # W defaults to one FMCRD run cycle (6 s) so a window reproduces the per-run
+    # aggregation the reference model was trained on. A shorter window covers only
+    # part of the position staircase and drifts out of distribution — S1b will
+    # recalibrate W/S (and, if needed, retrain on windowed features).
+    length_s: 6.0              # W: sliding-window length in DATA seconds — one run cycle (PLACEHOLDER, calibrate in S1b)
+    step_s:   3.0              # S: slide step in DATA seconds — PLACEHOLDER, calibrate in S1b
+
+# ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
 # Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
 # NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.
