@@ -7,6 +7,7 @@ strip are drawn by the main file before dispatch).
 from __future__ import annotations
 
 import json
+import textwrap
 from typing import Any, Dict, List
 
 import numpy as np
@@ -407,6 +408,155 @@ def render_assistant() -> None:
 # ---------------------------------------------------------------------------
 # Page: maintenance knowledge base
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Page: Servo live monitor (S2) — consumes the SAME SSE replay stream, applies
+# the alert engine, and shows a SMOOTHED status light WITHOUT hiding the raw
+# per-window prediction (the smoothing is a display decision, not a rewrite of
+# the model output — see docs/MODULE_SERVO_PLAN.md §13).
+# ---------------------------------------------------------------------------
+_HEALTH_COLOR = {"LN": "#22c55e", "LO": "#84cc16", "MED": "#f59e0b", "HI": "#ef4444"}
+_EVENT_STYLE = {
+    "alert_triggered": ("#ef4444", "🔴 主告警觸發"),
+    "alert_cleared": ("#22c55e", "🟢 告警解除"),
+    "consistency_warning": ("#f59e0b", "⚠ 矛盾提示"),
+}
+
+
+def _status_light_html(smoothed: str, raw: str, k: int) -> str:
+    color = _HEALTH_COLOR.get(smoothed, "#94a3b8")
+    zh = HEALTH_LABEL_ZH.get(smoothed, smoothed)
+    raw_note = ("（與平滑一致）" if raw == smoothed
+                else f"（本窗原始預測：<b>{HEALTH_LABEL_ZH.get(raw, raw)}（{raw}）</b>）")
+    return textwrap.dedent(f"""\
+        <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;
+             border:1px solid rgba(148,163,184,.25);border-radius:14px;">
+          <div style="width:54px;height:54px;border-radius:50%;background:{color};
+               box-shadow:0 0 18px {color}88;flex:none;"></div>
+          <div>
+            <div style="font-size:1.4rem;font-weight:700;">{zh}（{smoothed}）</div>
+            <div style="font-size:.8rem;opacity:.7;">狀態燈＝近 {k} 窗多數決平滑 {raw_note}</div>
+          </div>
+        </div>""")
+
+
+def _dv_conf_chart(ts, dvs, confs) -> go.Figure:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=ts, y=dvs, name="degradation_score",
+                             mode="lines+markers", line=dict(color="#ef4444")))
+    fig.add_trace(go.Scatter(x=ts, y=confs, name="model_confidence",
+                             mode="lines+markers", line=dict(color="#6366f1", dash="dot")))
+    fig.update_layout(height=260, margin=dict(l=10, r=10, t=10, b=10),
+                      yaxis=dict(range=[0, 1]), xaxis_title="stream_t (s)",
+                      legend=dict(orientation="h", y=1.15),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def _read_events(alerts_dir) -> List[Dict[str, Any]]:
+    """All events written so far (today's JSONL); newest first for the feed."""
+    rows: List[Dict[str, Any]] = []
+    for f in sorted(alerts_dir.glob("*.jsonl")):
+        for line in f.read_text(encoding="utf-8").splitlines():
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    return rows
+
+
+def _render_feed(container, events: List[Dict[str, Any]]) -> None:
+    work_orders = {e["alert_id"]: e for e in events if e["type"] == "work_order_draft"}
+    feed = [e for e in events if e["type"] in _EVENT_STYLE]
+    with container.container():
+        if not feed:
+            st.caption("尚無事件。")
+            return
+        for e in reversed(feed):  # newest first
+            color, label = _EVENT_STYLE[e["type"]]
+            t = e.get("stream_t")
+            head = f"{label} · t={t}s" if t is not None else label
+            st.markdown(textwrap.dedent(f"""\
+                <div style="border-left:4px solid {color};padding:6px 12px;margin:6px 0;
+                     background:rgba(148,163,184,.06);border-radius:6px;">
+                  <b>{head}</b><br>
+                  <span style="font-size:.82rem;opacity:.8;">
+                  {e.get('message') or e.get('trigger_rule') or e.get('clear_rule') or ''}</span>
+                </div>"""), unsafe_allow_html=True)
+            wo = work_orders.get(e.get("id"))
+            if e["type"] == "alert_triggered":
+                with st.expander(f"📝 工單草稿" + (f"（{wo['llm_source']}）" if wo else "（生成中…）")):
+                    st.write(wo["text"] if wo else "工單草稿生成中（LLM 非同步，不阻塞告警）…")
+
+
+def render_live_monitor() -> None:
+    import urllib.error
+    from collections import Counter, deque
+
+    from src.monitor.alert_engine import AlertEngine
+    from src.monitor.servo_replay_client import iter_window_predictions
+
+    cfg = load_config()
+    rep, al = cfg["servo_replay"], cfg.get("servo_alert", {})
+    w_s, s_s = float(rep["window"]["length_s"]), float(rep["window"]["step_s"])
+    k = int(al.get("status_smoothing_windows", 3))
+
+    style.section("Servo 即時監控（FMCRD replay）")
+    man_path = resolve(rep["manifest"])
+    segs = "—"
+    if man_path.exists():
+        man = json.loads(man_path.read_text(encoding="utf-8"))
+        segs = " → ".join(s["segment"] for s in man["segments"])
+    style.note(
+        f"數據源：<b>真實 FMCRD 測試資料</b>（replay 段落 {segs}），"
+        "為高擬真模擬資料集、非真實產線 log。此頁消費與 CLI 相同的一條 SSE "
+        "（<code>/servo/stream</code>），請先於終端啟動發布端："
+        "<code>python scripts/servo_replay_publisher.py</code>。", kind="warn")
+
+    c1, c2 = st.columns([3, 1])
+    url = c1.text_input("SSE 來源", "http://127.0.0.1:8008/servo/stream")
+    max_w = int(c2.number_input("最多視窗", 10, 500, 60, step=10))
+    st.caption(f"視窗 W={w_s}s / S={s_s}s（鎖定 run 循環）· 告警遲滯 N={al.get('high_consecutive', 3)}"
+               f" / M={al.get('clear_consecutive', 3)} · 狀態燈平滑 K={k}")
+    if not st.button("▶ 開始監控", type="primary"):
+        st.caption("按「開始監控」後，此頁會即時消費串流；監控進行中會佔用本頁直到播放結束或達視窗上限。")
+        return
+
+    light_ph, raw_ph = st.empty(), st.empty()
+    st.markdown("**退化分數 / 模型信心（滾動）**")
+    chart_ph = st.empty()
+    st.markdown("**事件流（最新在上，點開見工單草稿）**")
+    feed_ph = st.empty()
+
+    engine = AlertEngine(config=al)
+    recent: "deque[str]" = deque(maxlen=k)
+    ts, dvs, confs = [], [], []
+    try:
+        for i, pred in enumerate(iter_window_predictions(url, w_s, s_s), 1):
+            state = pred["predicted_health_state"]
+            recent.append(state)
+            smoothed = Counter(recent).most_common(1)[0][0]
+            ts.append(pred["_stream_t"]); dvs.append(pred["degradation_score"])
+            confs.append(pred["model_confidence"])
+            engine.update(pred)
+
+            light_ph.markdown(_status_light_html(smoothed, state, k), unsafe_allow_html=True)
+            raw_ph.caption(
+                f"視窗 {i} · true={pred['_true']} · 原始逐窗預測："
+                + " ".join(recent) + f" · DV={pred['degradation_score']:.3f} · 風險 {pred['risk_level']}")
+            chart_ph.plotly_chart(_dv_conf_chart(ts, dvs, confs), use_container_width=True,
+                                  key=f"dvchart_{i}")
+            _render_feed(feed_ph, _read_events(engine.alerts_dir))
+            if i >= max_w:
+                break
+    except urllib.error.URLError:
+        style.note("連不上發布端。請先啟動："
+                   "<code>python scripts/servo_replay_publisher.py</code>", kind="danger")
+        return
+    engine.join_pending(timeout=30)
+    _render_feed(feed_ph, _read_events(engine.alerts_dir))  # pick up async work orders
+    st.success(f"監控結束——共 {len(ts)} 個視窗。健康狀態依 replay 段落 {segs} 演進。")
+
+
 def render_knowledge() -> None:
     style.section("維修知識庫")
     docs = list_documents()
