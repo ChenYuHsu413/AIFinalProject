@@ -270,7 +270,10 @@ servo:
   # (null = labels already use LN/LO/MED/HI). Example: {0: LN, 1: LO, 2: MED, 3: HI}
   ylabel_map: null
   enabled_models: [logistic_regression, decision_tree, random_forest, gradient_boosting, mlp]
-  reference_feature_set: engineered
+  reference_feature_set: full   # 2026-07-10: engineered(7維,0.757)→full(21維,0.819)；依訓練集 CV 選擇（見 docs §11 / e5_validation.json）
+  # DL baseline 特徵組（2026-07-10 與 reference_feature_set 解耦，見 docs §11）：
+  dl_classifier_feature_set: full        # MLP 分類/回歸用 full（收 engineered→full 的 0.714→0.782 增益）
+  dl_ae_feature_set: engineered          # autoencoder 維持 engineered：重建誤差健康→退化的單調性是核心承諾，不隨 full 放寬
   cv_folds: 5
   random_state: 42
   placeholder_runs_per_class: 1500   # synthetic runs per health class when no real data

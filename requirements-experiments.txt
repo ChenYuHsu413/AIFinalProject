@@ -1,0 +1,6 @@
+# 實驗專用依賴（類別不平衡研究 E1–E5）——不進主 requirements.txt。
+# 這些只在 scripts/run_e*_*.py 唯讀實驗中使用，不進生產推論路徑。
+# 安裝：./.venv/Scripts/python.exe -m pip install -r requirements-experiments.txt
+imbalanced-learn>=0.14   # E2/E3 過採樣（SMOTE 家族）
+flaml[automl]>=2.6       # E4/E4c AutoML（注意：flaml 相依 xgboost<2.2，會把 xgboost 降到 2.1.x）
+sdv>=1.37                # E5 CTGAN 生成式擴充（相依 torch、ctgan；體積大）

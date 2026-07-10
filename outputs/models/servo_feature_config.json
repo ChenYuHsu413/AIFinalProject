@@ -1,13 +1,27 @@
 {
-  "feature_set": "engineered",
+  "feature_set": "full",
   "feature_columns": [
-    "current_rms",
-    "torque_std",
+    "rotor_speed_mean",
     "rotor_speed_std",
+    "rotor_speed_rms",
+    "torque_mean",
+    "torque_std",
+    "torque_rms",
+    "del_pos_mean",
+    "del_pos_std",
+    "del_pos_rms",
+    "i_3p_a_rms",
+    "i_3p_b_rms",
+    "i_3p_c_rms",
+    "direct_rms",
+    "direct_std",
+    "quadrature_rms",
+    "quadrature_std",
+    "rod_demand_pos_mean",
+    "rod_actual_pos_mean",
     "position_error_mean",
     "position_error_max",
-    "quadrature_rms",
-    "direct_rms"
+    "position_error_std"
   ],
   "labels": [
     "LN",
@@ -26,17 +40,77 @@
     "medium_max": 0.48
   },
   "healthy_baseline": {
-    "current_rms": {
-      "mean": 3.521384366721686,
-      "std": 0.22171798418878116
+    "rotor_speed_mean": {
+      "mean": 0.5451156498995772,
+      "std": 14.71342336936412
+    },
+    "rotor_speed_std": {
+      "mean": 63.32439257160575,
+      "std": 7.547090774440281
+    },
+    "rotor_speed_rms": {
+      "mean": 65.0002097768041,
+      "std": 7.5903114638616245
+    },
+    "torque_mean": {
+      "mean": 0.0014224033613756525,
+      "std": 0.0103858911880148
     },
     "torque_std": {
       "mean": 5.222177652293874,
       "std": 0.32927731258714554
     },
-    "rotor_speed_std": {
-      "mean": 63.32439257160575,
-      "std": 7.547090774440281
+    "torque_rms": {
+      "mean": 5.222188490692297,
+      "std": 0.32927143768012734
+    },
+    "del_pos_mean": {
+      "mean": 0.956471076364843,
+      "std": 19.54838441351054
+    },
+    "del_pos_std": {
+      "mean": 10.943511556596082,
+      "std": 3.712429059809791
+    },
+    "del_pos_rms": {
+      "mean": 20.516367311737405,
+      "std": 9.703949868138936
+    },
+    "i_3p_a_rms": {
+      "mean": 3.563355105566442,
+      "std": 0.23296225217243824
+    },
+    "i_3p_b_rms": {
+      "mean": 3.494794869239555,
+      "std": 0.248809359495415
+    },
+    "i_3p_c_rms": {
+      "mean": 3.5016339332471182,
+      "std": 0.24362252596287132
+    },
+    "direct_rms": {
+      "mean": 0.2537105551370277,
+      "std": 0.008659540658896838
+    },
+    "direct_std": {
+      "mean": 0.2537095625188115,
+      "std": 0.008659097296586595
+    },
+    "quadrature_rms": {
+      "mean": 4.973512848278378,
+      "std": 0.3135918454096451
+    },
+    "quadrature_std": {
+      "mean": 4.973502525994166,
+      "std": 0.3135974405591862
+    },
+    "rod_demand_pos_mean": {
+      "mean": 584.3514710763649,
+      "std": 227.83970258476296
+    },
+    "rod_actual_pos_mean": {
+      "mean": 584.3322926410709,
+      "std": 227.7228018040019
     },
     "position_error_mean": {
       "mean": -0.0191784352938755,
@@ -46,19 +120,15 @@
       "mean": 15.074590355708843,
       "std": 4.552472994687173
     },
-    "quadrature_rms": {
-      "mean": 4.973512848278378,
-      "std": 0.3135918454096451
-    },
-    "direct_rms": {
-      "mean": 0.2537105551370277,
-      "std": 0.008659540658896838
+    "position_error_std": {
+      "mean": 4.654216733990105,
+      "std": 0.8325796359994295
     }
   },
   "clf_model": "logistic_regression",
   "reg_model": "random_forest",
-  "clf_macro_f1": 0.7566458195358798,
-  "reg_r2": 0.9372396218644935,
+  "clf_macro_f1": 0.8186615654141182,
+  "reg_r2": 0.9444281506026837,
   "eval_mode": "holdout_test",
   "placeholder": false
 }

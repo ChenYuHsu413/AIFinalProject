@@ -1,10 +1,10 @@
 {
   "model": "random_forest",
-  "feature_set": "engineered",
+  "feature_set": "full",
   "eval": "holdout_test",
-  "mae": 0.04656328205454237,
-  "rmse": 0.06446773727901088,
-  "r2": 0.9372396218644935,
+  "mae": 0.04427318538449678,
+  "rmse": 0.06066344596921752,
+  "r2": 0.9444281506026837,
   "n": 800,
   "placeholder": false
 }
