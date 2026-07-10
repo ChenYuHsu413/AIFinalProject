@@ -114,9 +114,10 @@ curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" \
 
 ### 5.1 伺服馬達即時串流 demo（S1，FMCRD replay）
 
-> **狀態（2026-07-10）**：S1 完成——真實 FMCRD replay 素材抽取 + SSE 發布端 + 視窗聚合接收端，
+> **狀態（2026-07-11）**：S1 + S1b 完成——真實 FMCRD replay 素材抽取 + SSE 發布端 + 視窗聚合接收端，
 > 健康狀態隨 replay 段落 **LN → LO → HI** 演進（DV degradation_score 0.05→0.26→0.75、風險 Low→High）。
-> 完整儀表板留待 S2；視窗 W/S 目前為占位預設，待 S1b 校準。
+> S1b 驗證抽稀對模型無害（極值特徵偏差 <0.01%、串流 vs 離線預測一致率 100%），**W/S 已鎖定 run 循環對齊**
+> （見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md) §12.1）。完整儀表板留待 S2。
 
 沿用即時監控的 SSE 骨架（`data: {json}` 串流），資料源換成**真實 FMCRD 測試資料**、模型接**參考模型 `predict_servo`**：
 

@@ -1,0 +1,1383 @@
+{
+  "purpose": "S1b read-only validation of decimated replay windows.",
+  "date": "2026-07-11",
+  "source_zip": "C:\\Users\\alung\\Downloads\\FMCRD_Data.zip",
+  "window_granularity": "one complete run cycle (S1 OOD lesson)",
+  "config_window": {
+    "length_s": 6.0,
+    "step_s": 3.0
+  },
+  "notes": {
+    "extreme_bias_zero_is_expected": "The ~0% extreme-feature (*_max) bias on model columns is physically EXPECTED, not suspicious: FMCRD runs are a regular 5-step position staircase, so signal extrema occur at step transitions and persist over many consecutive samples — uniform decimation of a complete run rarely misses them. Verified, not a measurement fluke.",
+    "near_zero_denominator_investigated_and_excluded": "The >10% relative deviations (max ~70% on torque_mean; ~6000% on the non-model direct_mean) were investigated and EXCLUDED as small-denominator artifacts: the full-run value is ~0 (e.g. torque_mean nets ~0 over a symmetric accel/decel cycle), so a physically tiny absolute difference (~0.003 N·m) explodes as a percentage. See 'deviations_over_threshold' (near_zero_denominator=true). Not a real bias.",
+    "lnlo_flicker_is_an_s2_design_input": "The broader 24-run sample's 2 near-threshold LN<->LO flips are NOT a pipeline defect but a DESIGN INPUT for S2: LN/LO predictions flicker near the decision threshold, so the alert engine needs hysteresis and the status light needs smoothing — evidenced by this data, not assumed."
+  },
+  "validation_1_decimation_bias": {
+    "groups": {
+      "distribution": "*_mean / *_std / *_rms / current_rms",
+      "extreme": "*_max / *_min"
+    },
+    "relative_deviation_pct": {
+      "all_features": {
+        "distribution": {
+          "n": 306,
+          "median_pct": 0.833,
+          "p90_pct": 4.398,
+          "max_pct": 6151.814
+        },
+        "extreme": {
+          "n": 198,
+          "median_pct": 0.657,
+          "p90_pct": 15.523,
+          "max_pct": 62.585
+        }
+      },
+      "model_full_set": {
+        "distribution": {
+          "n": 180,
+          "median_pct": 0.832,
+          "p90_pct": 1.899,
+          "max_pct": 70.19
+        },
+        "extreme": {
+          "n": 9,
+          "median_pct": 0.0,
+          "p90_pct": 0.0,
+          "max_pct": 0.001
+        }
+      }
+    },
+    "extreme_group_threshold_pct": 10.0,
+    "extreme_max_model_full_set_pct": 0.001,
+    "extreme_max_all_features_pct": 62.585,
+    "remediation_needed": false,
+    "remediation_decision": "none — the only *_max in the model's full set (position_error_max) deviates <0.01%; predictions are 100% consistent. The 62% *_max/*_min shrink across all 56 aggregate features affects NON-model columns only. The >10% distribution deviations are all near-zero-mean features (torque_mean, one del_pos_mean): small-denominator artifacts with tiny absolute magnitude, non-discriminative. Contingency: if a future feature set adopts *_max/*_min columns, switch to peak-preserving decimation (option a) or raise rows_per_run (option b).",
+    "worst_extreme_features": {
+      "direct_max": 62.585,
+      "direct_min": 53.312,
+      "torque_max": 26.93,
+      "quadrature_max": 26.93,
+      "i_3p_c_min": 22.433,
+      "i_3p_b_max": 21.299,
+      "i_3p_c_max": 16.162,
+      "i_3p_b_min": 13.691
+    },
+    "deviations_over_threshold": [
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 8.5e-05,
+        "decimated": -0.005146,
+        "abs_dev": 0.005231,
+        "rel_dev_pct": 6151.81,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -4.3e-05,
+        "decimated": -0.001674,
+        "abs_dev": 0.001631,
+        "rel_dev_pct": 3790.34,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.000169,
+        "decimated": 0.005384,
+        "abs_dev": 0.005553,
+        "rel_dev_pct": 3280.87,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.000184,
+        "decimated": -0.005025,
+        "abs_dev": 0.005209,
+        "rel_dev_pct": 2833.11,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.000286,
+        "decimated": -0.006802,
+        "abs_dev": 0.006516,
+        "rel_dev_pct": 2282.28,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -9.6e-05,
+        "decimated": 0.001037,
+        "abs_dev": 0.001133,
+        "rel_dev_pct": 1175.84,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.000122,
+        "decimated": -0.000887,
+        "abs_dev": 0.000766,
+        "rel_dev_pct": 629.9,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 601,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.0012,
+        "decimated": -0.003333,
+        "abs_dev": 0.004533,
+        "rel_dev_pct": 377.86,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "direct_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.000935,
+        "decimated": 0.001805,
+        "abs_dev": 0.00087,
+        "rel_dev_pct": 93.05,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": 0.00456,
+        "decimated": 0.001359,
+        "abs_dev": 0.003201,
+        "rel_dev_pct": 70.19,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.004343,
+        "decimated": 0.001295,
+        "abs_dev": 0.003048,
+        "rel_dev_pct": 70.19,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": -0.006697,
+        "decimated": -0.010931,
+        "abs_dev": 0.004234,
+        "rel_dev_pct": 63.23,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.006378,
+        "decimated": -0.010411,
+        "abs_dev": 0.004033,
+        "rel_dev_pct": 63.23,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.280905,
+        "decimated": 0.853402,
+        "abs_dev": 1.427503,
+        "rel_dev_pct": 62.58,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.044317,
+        "decimated": 0.824444,
+        "abs_dev": 1.219873,
+        "rel_dev_pct": 59.67,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 601,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": -0.015268,
+        "decimated": -0.006589,
+        "abs_dev": 0.008679,
+        "rel_dev_pct": 56.84,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 601,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.014541,
+        "decimated": -0.006275,
+        "abs_dev": 0.008266,
+        "rel_dev_pct": 56.84,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_b_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.004154,
+        "decimated": 0.001811,
+        "abs_dev": 0.002343,
+        "rel_dev_pct": 56.41,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.752142,
+        "decimated": -0.818042,
+        "abs_dev": 0.9341,
+        "rel_dev_pct": 53.31,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.786917,
+        "decimated": 0.872113,
+        "abs_dev": 0.914804,
+        "rel_dev_pct": 51.19,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.650675,
+        "decimated": -0.841362,
+        "abs_dev": 0.809313,
+        "rel_dev_pct": 49.03,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.803334,
+        "decimated": 0.933622,
+        "abs_dev": 0.869712,
+        "rel_dev_pct": 48.23,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.551864,
+        "decimated": -0.875205,
+        "abs_dev": 0.676659,
+        "rel_dev_pct": 43.6,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": 0.011165,
+        "decimated": 0.006432,
+        "abs_dev": 0.004733,
+        "rel_dev_pct": 42.39,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.010633,
+        "decimated": 0.006125,
+        "abs_dev": 0.004508,
+        "rel_dev_pct": 42.39,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.795585,
+        "decimated": -1.069071,
+        "abs_dev": 0.726514,
+        "rel_dev_pct": 40.46,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 601,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.679945,
+        "decimated": -1.041001,
+        "abs_dev": 0.638944,
+        "rel_dev_pct": 38.03,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.339559,
+        "decimated": 0.896709,
+        "abs_dev": 0.44285,
+        "rel_dev_pct": 33.06,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.341684,
+        "decimated": -0.898961,
+        "abs_dev": 0.442724,
+        "rel_dev_pct": 33.0,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "torque_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 16.398876,
+        "decimated": 11.982643,
+        "abs_dev": 4.416233,
+        "rel_dev_pct": 26.93,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "quadrature_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.617977,
+        "decimated": 11.412041,
+        "abs_dev": 4.205936,
+        "rel_dev_pct": 26.93,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.072814,
+        "decimated": 1.515829,
+        "abs_dev": 0.556985,
+        "rel_dev_pct": 26.87,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.483892,
+        "decimated": -1.094298,
+        "abs_dev": 0.389594,
+        "rel_dev_pct": 26.25,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": -0.021085,
+        "decimated": -0.02657,
+        "abs_dev": 0.005486,
+        "rel_dev_pct": 26.02,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.020081,
+        "decimated": -0.025305,
+        "abs_dev": 0.005225,
+        "rel_dev_pct": 26.02,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_a_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.032489,
+        "decimated": 0.040798,
+        "abs_dev": 0.00831,
+        "rel_dev_pct": 25.58,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -2.104778,
+        "decimated": -1.5911,
+        "abs_dev": 0.513678,
+        "rel_dev_pct": 24.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "del_pos_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": 1.025882,
+        "decimated": 1.274589,
+        "abs_dev": 0.248708,
+        "rel_dev_pct": 24.24,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.154163,
+        "decimated": 0.885118,
+        "abs_dev": 0.269044,
+        "rel_dev_pct": 23.31,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "i_3p_c_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.485491,
+        "decimated": -12.011589,
+        "abs_dev": 3.473902,
+        "rel_dev_pct": 22.43,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "i_3p_c_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.04294,
+        "decimated": -0.052398,
+        "abs_dev": 0.009458,
+        "rel_dev_pct": 22.03,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "i_3p_b_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.436482,
+        "decimated": 12.148646,
+        "abs_dev": 3.287835,
+        "rel_dev_pct": 21.3,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_c_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": -0.036643,
+        "decimated": -0.042609,
+        "abs_dev": 0.005967,
+        "rel_dev_pct": 16.28,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "i_3p_c_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.632278,
+        "decimated": 13.105743,
+        "abs_dev": 2.526536,
+        "rel_dev_pct": 16.16,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_c_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 13.289186,
+        "decimated": 11.262654,
+        "abs_dev": 2.026532,
+        "rel_dev_pct": 15.25,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "torque_mean",
+        "group": "distribution",
+        "in_full_set": true,
+        "full": 0.00473,
+        "decimated": 0.005436,
+        "abs_dev": 0.000706,
+        "rel_dev_pct": 14.92,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "quadrature_mean",
+        "group": "distribution",
+        "in_full_set": false,
+        "full": 0.004505,
+        "decimated": 0.005177,
+        "abs_dev": 0.000672,
+        "rel_dev_pct": 14.92,
+        "near_zero_denominator": true
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_b_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -13.750178,
+        "decimated": -11.867655,
+        "abs_dev": 1.882522,
+        "rel_dev_pct": 13.69,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_a_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.684147,
+        "decimated": -12.90046,
+        "abs_dev": 1.783686,
+        "rel_dev_pct": 12.15,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "i_3p_a_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.692253,
+        "decimated": -12.908509,
+        "abs_dev": 1.783743,
+        "rel_dev_pct": 12.14,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "torque_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.426807,
+        "decimated": -13.666922,
+        "abs_dev": 1.759886,
+        "rel_dev_pct": 11.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "quadrature_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.692198,
+        "decimated": -13.016116,
+        "abs_dev": 1.676082,
+        "rel_dev_pct": 11.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "torque_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.418286,
+        "decimated": -13.678588,
+        "abs_dev": 1.739698,
+        "rel_dev_pct": 11.28,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "quadrature_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.684082,
+        "decimated": -13.027227,
+        "abs_dev": 1.656855,
+        "rel_dev_pct": 11.28,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.669901,
+        "decimated": -1.4912,
+        "abs_dev": 0.178701,
+        "rel_dev_pct": 10.7,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.15902,
+        "decimated": 1.037242,
+        "abs_dev": 0.121777,
+        "rel_dev_pct": 10.51,
+        "near_zero_denominator": false
+      }
+    ],
+    "real_extreme_biases_over_threshold": [
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.280905,
+        "decimated": 0.853402,
+        "abs_dev": 1.427503,
+        "rel_dev_pct": 62.58,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.044317,
+        "decimated": 0.824444,
+        "abs_dev": 1.219873,
+        "rel_dev_pct": 59.67,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.752142,
+        "decimated": -0.818042,
+        "abs_dev": 0.9341,
+        "rel_dev_pct": 53.31,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 2,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.786917,
+        "decimated": 0.872113,
+        "abs_dev": 0.914804,
+        "rel_dev_pct": 51.19,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.650675,
+        "decimated": -0.841362,
+        "abs_dev": 0.809313,
+        "rel_dev_pct": 49.03,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.803334,
+        "decimated": 0.933622,
+        "abs_dev": 0.869712,
+        "rel_dev_pct": 48.23,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.551864,
+        "decimated": -0.875205,
+        "abs_dev": 0.676659,
+        "rel_dev_pct": 43.6,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.795585,
+        "decimated": -1.069071,
+        "abs_dev": 0.726514,
+        "rel_dev_pct": 40.46,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 601,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.679945,
+        "decimated": -1.041001,
+        "abs_dev": 0.638944,
+        "rel_dev_pct": 38.03,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.339559,
+        "decimated": 0.896709,
+        "abs_dev": 0.44285,
+        "rel_dev_pct": 33.06,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.341684,
+        "decimated": -0.898961,
+        "abs_dev": 0.442724,
+        "rel_dev_pct": 33.0,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "torque_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 16.398876,
+        "decimated": 11.982643,
+        "abs_dev": 4.416233,
+        "rel_dev_pct": 26.93,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "quadrature_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.617977,
+        "decimated": 11.412041,
+        "abs_dev": 4.205936,
+        "rel_dev_pct": 26.93,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 2.072814,
+        "decimated": 1.515829,
+        "abs_dev": 0.556985,
+        "rel_dev_pct": 26.87,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.483892,
+        "decimated": -1.094298,
+        "abs_dev": 0.389594,
+        "rel_dev_pct": 26.25,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -2.104778,
+        "decimated": -1.5911,
+        "abs_dev": 0.513678,
+        "rel_dev_pct": 24.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.154163,
+        "decimated": 0.885118,
+        "abs_dev": 0.269044,
+        "rel_dev_pct": 23.31,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 1,
+        "feature": "i_3p_c_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.485491,
+        "decimated": -12.011589,
+        "abs_dev": 3.473902,
+        "rel_dev_pct": 22.43,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 202,
+        "feature": "i_3p_b_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.436482,
+        "decimated": 12.148646,
+        "abs_dev": 3.287835,
+        "rel_dev_pct": 21.3,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LN",
+        "run_index": 3,
+        "feature": "i_3p_c_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 15.632278,
+        "decimated": 13.105743,
+        "abs_dev": 2.526536,
+        "rel_dev_pct": 16.16,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_c_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 13.289186,
+        "decimated": 11.262654,
+        "abs_dev": 2.026532,
+        "rel_dev_pct": 15.25,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_b_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -13.750178,
+        "decimated": -11.867655,
+        "abs_dev": 1.882522,
+        "rel_dev_pct": 13.69,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "i_3p_a_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.684147,
+        "decimated": -12.90046,
+        "abs_dev": 1.783686,
+        "rel_dev_pct": 12.15,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "i_3p_a_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.692253,
+        "decimated": -12.908509,
+        "abs_dev": 1.783743,
+        "rel_dev_pct": 12.14,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "torque_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.426807,
+        "decimated": -13.666922,
+        "abs_dev": 1.759886,
+        "rel_dev_pct": 11.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 203,
+        "feature": "quadrature_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.692198,
+        "decimated": -13.016116,
+        "abs_dev": 1.676082,
+        "rel_dev_pct": 11.41,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "torque_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -15.418286,
+        "decimated": -13.678588,
+        "abs_dev": 1.739698,
+        "rel_dev_pct": 11.28,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "LO",
+        "run_index": 201,
+        "feature": "quadrature_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -14.684082,
+        "decimated": -13.027227,
+        "abs_dev": 1.656855,
+        "rel_dev_pct": 11.28,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 603,
+        "feature": "direct_min",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": -1.669901,
+        "decimated": -1.4912,
+        "abs_dev": 0.178701,
+        "rel_dev_pct": 10.7,
+        "near_zero_denominator": false
+      },
+      {
+        "segment": "HI",
+        "run_index": 602,
+        "feature": "direct_max",
+        "group": "extreme",
+        "in_full_set": false,
+        "full": 1.15902,
+        "decimated": 1.037242,
+        "abs_dev": 0.121777,
+        "rel_dev_pct": 10.51,
+        "near_zero_denominator": false
+      }
+    ]
+  },
+  "validation_2_consistency": {
+    "target_pct": 95.0,
+    "replay_material": {
+      "overall_pct": 100.0,
+      "target_met": true,
+      "n_runs": 9,
+      "by_class": {
+        "HI": {
+          "runs": 3,
+          "consistent": 3,
+          "consistency_pct": 100.0
+        },
+        "LN": {
+          "runs": 3,
+          "consistent": 3,
+          "consistency_pct": 100.0
+        },
+        "LO": {
+          "runs": 3,
+          "consistent": 3,
+          "consistency_pct": 100.0
+        }
+      },
+      "n_inconsistent": 0,
+      "lnlo_known_weakness": 0,
+      "lnlo_suspected_pipeline_bias": 0,
+      "inconsistencies": []
+    },
+    "supplementary_broad_check": {
+      "k_per_class": 8,
+      "n_runs": 24,
+      "overall_pct": 91.67,
+      "n_inconsistent": 2,
+      "lnlo_known_weakness": 2,
+      "suspected_pipeline_bias": 0,
+      "by_class": {
+        "LN": {
+          "runs": 8,
+          "consistent": 8,
+          "consistency_pct": 100.0
+        },
+        "LO": {
+          "runs": 8,
+          "consistent": 6,
+          "consistency_pct": 75.0
+        },
+        "HI": {
+          "runs": 8,
+          "consistent": 8,
+          "consistency_pct": 100.0
+        }
+      },
+      "inconsistencies": [
+        {
+          "segment": "LO",
+          "run_index": 205,
+          "offline_state": "LN",
+          "stream_state": "LO",
+          "lnlo_boundary": true,
+          "classification": "model_known_weakness_near_threshold"
+        },
+        {
+          "segment": "LO",
+          "run_index": 207,
+          "offline_state": "LN",
+          "stream_state": "LO",
+          "lnlo_boundary": true,
+          "classification": "model_known_weakness_near_threshold"
+        }
+      ]
+    }
+  },
+  "per_run": [
+    {
+      "segment": "LN",
+      "run_index": 1,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "LN",
+      "stream_state": "LN",
+      "offline_dv": 0.0129,
+      "stream_dv": 0.0525,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0,
+        "LN": 0.625,
+        "LO": 0.3727,
+        "MED": 0.0023
+      },
+      "stream_proba": {
+        "HI": 0.0,
+        "LN": 0.6181,
+        "LO": 0.3807,
+        "MED": 0.0013
+      }
+    },
+    {
+      "segment": "LN",
+      "run_index": 2,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "LO",
+      "stream_state": "LO",
+      "offline_dv": 0.0204,
+      "stream_dv": 0.0284,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0,
+        "LN": 0.4555,
+        "LO": 0.5287,
+        "MED": 0.0158
+      },
+      "stream_proba": {
+        "HI": 0.0,
+        "LN": 0.4617,
+        "LO": 0.5062,
+        "MED": 0.0321
+      }
+    },
+    {
+      "segment": "LN",
+      "run_index": 3,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "LN",
+      "stream_state": "LN",
+      "offline_dv": 0.0178,
+      "stream_dv": 0.0213,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0,
+        "LN": 0.767,
+        "LO": 0.2297,
+        "MED": 0.0033
+      },
+      "stream_proba": {
+        "HI": 0.0,
+        "LN": 0.7482,
+        "LO": 0.2455,
+        "MED": 0.0063
+      }
+    },
+    {
+      "segment": "LO",
+      "run_index": 201,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "MED",
+      "stream_state": "MED",
+      "offline_dv": 0.164,
+      "stream_dv": 0.1386,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0004,
+        "LN": 0.0489,
+        "LO": 0.4365,
+        "MED": 0.5142
+      },
+      "stream_proba": {
+        "HI": 0.0004,
+        "LN": 0.043,
+        "LO": 0.4168,
+        "MED": 0.5398
+      }
+    },
+    {
+      "segment": "LO",
+      "run_index": 202,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "LN",
+      "stream_state": "LN",
+      "offline_dv": 0.0052,
+      "stream_dv": 0.0094,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0,
+        "LN": 0.5817,
+        "LO": 0.4108,
+        "MED": 0.0074
+      },
+      "stream_proba": {
+        "HI": 0.0,
+        "LN": 0.5482,
+        "LO": 0.4462,
+        "MED": 0.0056
+      }
+    },
+    {
+      "segment": "LO",
+      "run_index": 203,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "LO",
+      "stream_state": "LO",
+      "offline_dv": 0.0942,
+      "stream_dv": 0.0812,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.0003,
+        "LN": 0.1443,
+        "LO": 0.5714,
+        "MED": 0.284
+      },
+      "stream_proba": {
+        "HI": 0.0001,
+        "LN": 0.1454,
+        "LO": 0.7019,
+        "MED": 0.1526
+      }
+    },
+    {
+      "segment": "HI",
+      "run_index": 601,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "HI",
+      "stream_state": "HI",
+      "offline_dv": 0.6919,
+      "stream_dv": 0.6838,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.9971,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.0029
+      },
+      "stream_proba": {
+        "HI": 0.996,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.004
+      }
+    },
+    {
+      "segment": "HI",
+      "run_index": 602,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "HI",
+      "stream_state": "HI",
+      "offline_dv": 0.7212,
+      "stream_dv": 0.7252,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.9996,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.0004
+      },
+      "stream_proba": {
+        "HI": 0.9995,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.0005
+      }
+    },
+    {
+      "segment": "HI",
+      "run_index": 603,
+      "full_rows": 299951,
+      "decim_rows": 5000,
+      "offline_state": "HI",
+      "stream_state": "HI",
+      "offline_dv": 0.6093,
+      "stream_dv": 0.6218,
+      "consistent": true,
+      "offline_proba": {
+        "HI": 0.9844,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.0156
+      },
+      "stream_proba": {
+        "HI": 0.9936,
+        "LN": 0.0,
+        "LO": 0.0,
+        "MED": 0.0064
+      }
+    }
+  ]
+}

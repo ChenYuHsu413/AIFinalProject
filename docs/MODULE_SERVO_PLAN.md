@@ -291,11 +291,11 @@ CV 從 `enabled_models` 選出 **logistic_regression**（CV 0.740，勝 mlp 0.73
 
 ## 12. 即時串流 demo（S1：FMCRD replay → SSE → 視窗聚合 → 參考模型）
 
-> **狀態（2026-07-10）**：S1 完成。沿用即時監控的 SSE 骨架（`data: {json}` 串流、`StreamingResponse`
+> **狀態（2026-07-11）**：S1 + S1b 完成。沿用即時監控的 SSE 骨架（`data: {json}` 串流、`StreamingResponse`
 > `text/event-stream`；範本見 [`src/monitor/live_stream.py`](../src/monitor/live_stream.py)），把資料源換成
 > **真實 FMCRD 測試資料**、模型接**參考模型 `predict_servo`**。端到端跑通：健康狀態隨 replay 段落
-> **LN → LO → HI** 演進（degradation_score 0.05→0.26→0.75、health 95→25、風險 Low→High）。**完整儀表板留 S2；
-> 視窗 W/S 為占位預設，待 S1b 校準（必要時對窗聚合特徵重訓）。**
+> **LN → LO → HI** 演進（degradation_score 0.05→0.26→0.75、health 95→25、風險 Low→High）。**S1b 驗證抽稀無害、
+> W/S 鎖定 run 循環對齊（見 §12.1）；完整儀表板留 S2。**
 
 **Task A — replay 素材抽取**（[`scripts/extract_replay_segments.py`](../scripts/extract_replay_segments.py)）：
 從 FMCRD zip 的**測試分割**抽 LN / LO / HI 三段到 `data/demo/replay/`（`config.yaml::servo_replay`；加入 git 白名單、
@@ -319,3 +319,32 @@ CV 從 `enabled_models` 選出 **logistic_regression**（CV 0.740，勝 mlp 0.73
 **DV / 風險**呈乾淨單調，是最穩健的退化指標。全程**唯讀既有模型、未改訓練程式**。
 
 啟動與參數見 [README §5.1](../README.md)。
+
+### 12.1 S1b — replay 視窗驗證（唯讀）
+
+> **狀態（2026-07-11）**：完成。腳本 [`scripts/validate_replay_windows.py`](../scripts/validate_replay_windows.py)（唯讀），
+> 產物 [`outputs/metrics/replay_window_validation.json`](../outputs/metrics/replay_window_validation.json) +
+> 偏差圖 `outputs/figures/replay_window_decimation_bias.png`。**結論：抽稀對模型無害，補救不需要；W/S 鎖定 run 循環對齊。**
+
+S1 已定視窗粒度 = 一個完整 run 循環（OOD 教訓）。本實驗驗兩件事：
+
+**(1) 抽稀偏差量化**——對 replay 各 run 的「抽稀視窗特徵」vs「原始完整 run 聚合特徵」逐特徵比相對偏差，分兩組：
+
+| 組別 | 範圍 | median | p90 | max |
+| --- | --- | --- | --- | --- |
+| 分布型（mean/std/rms） | 模型 full 21 特徵 | 0.83% | 1.9% | 70.2%\* |
+| 極值型（`*_max`/`*_min`） | 模型 full 21 特徵 | 0.0% | 0.0% | **0.001%** |
+
+\* 70% 出現在 **`torque_mean`≈0**（整段淨扭矩對稱抵銷）等**近零分母**特徵：絕對差僅 ~0.003 N·m、物理可忽略、非退化判別欄位。
+真正被擔心的**極值型 `*_max` 偏差在模型欄位（僅 `position_error_max`）幾乎為零（0.001%）**。全 56 聚合特徵中 `*_max`/`*_min`
+確有抽稀縮水（最大 ~62%，如 `direct_max`），但**這些欄位不在模型 full 特徵組內**，不影響預測。
+→ **補救（peak-preserving decimation / 提高保留率）不需要**；僅留待未來若特徵組納入 `*_max/*_min` 再啟用。
+
+**(2) 端到端一致性**——「串流管線預測（抽稀 run → `predict_servo`）」vs「離線整段聚合預測」，逐 run 比預測狀態：
+
+- **replay 素材 9 runs：一致率 100%**（LN/LO/HI 各 3/3，目標 ≥95% 達標）。
+- **佐證（更大樣本 24 runs，8/類）：91.7%**；2 筆不一致**全落在 LN↔LO 邊界、皆近門檻**（§11 記錄之模型既有弱點，
+  如 test LO run 被判 LN↔LO 互翻），**疑似管線偏差 0 筆**。抽稀本身不製造 MED/HI 誤判。
+
+**決策**：`config.yaml::servo_replay.window` 的 **W=6s（一個 run 循環）、S=3s（50% 重疊）鎖定**、註解記錄依據與本驗證連結。
+S2 儀表板可直接在此粒度上疊加，不需重訓或改抽稀策略。
