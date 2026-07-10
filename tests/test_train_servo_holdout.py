@@ -11,7 +11,9 @@ from src.utils.paths import load_config as _real_load
 
 def _feature_table():
     rng = np.random.default_rng(1)
-    cols = feature_set_columns("engineered")
+    # 提供 engineered∪full 欄位聯集，讓 train_servo 依 config 選到的特徵組都取得到欄位
+    # （2026-07-10 reference_feature_set 由 engineered 轉 full 後，fixture 需涵蓋兩者）
+    cols = sorted(set(feature_set_columns("engineered")) | set(feature_set_columns("full")))
     sev = {"LN": 0.05, "LO": 0.35, "MED": 0.65, "HI": 0.92}
     rows = []
     for split, n in (("train", 8), ("test", 4)):
