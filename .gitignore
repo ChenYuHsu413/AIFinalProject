@@ -29,6 +29,8 @@ outputs/.streamlit.log
 outputs/.fastapi.log
 outputs/.batch_sample.csv
 *.log
+# Live alert events (S2) — runtime JSONL written by the alert engine, never commit
+outputs/alerts/
 
 # Raw dataset (must be downloaded by the user)
 data/raw/*.csv

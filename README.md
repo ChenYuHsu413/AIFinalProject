@@ -136,6 +136,24 @@ python scripts/servo_replay_consumer.py
 （接收端會標記 `⚠ 假數據，預測無效`）。**demo 一律使用 FMCRD replay 模式。** 視窗 W（預設 = 一個 6s run 循環，
 對齊訓練的 per-run 聚合粒度）與步長 S 均可於 `config.yaml::servo_replay.window` 調整。全程唯讀既有模型。
 
+### 5.2 告警引擎 + Streamlit 即時監控頁（S2）
+
+> **狀態（2026-07-11）**：完成。在串流管線上加**告警遲滯引擎**與 **Streamlit 即時監控頁**。告警遲滯（連續
+> N=3 窗 High 觸發、M=3 窗回落解除）與狀態燈平滑**以 S1b 實測的 LN↔LO 門檻閃爍為依據**，非教科書預設。
+> 詳見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md) §13。
+
+```bash
+python scripts/servo_replay_publisher.py            # 終端 1：SSE 發布端（同 §5.1）
+streamlit run app/streamlit_app.py                  # 終端 2：側邊欄「Servo 即時監控」頁
+#   或用 CLI 觀察告警事件：python -m src.monitor.alert_engine
+```
+
+- **狀態燈**用「近 3 窗多數決」平滑避免 LN/LO 邊界閃爍，**但同屏保留逐窗原始預測**——平滑是**顯示層決策、非竄改
+  模型輸出**（模型真實不確定性同屏可見）。
+- **主告警**遲滯觸發後，事件立即寫 `outputs/alerts/<date>.jsonl`（含 `model_version`），工單草稿由 LLM 助理**背景**
+  生成（多供應商 + 離線 fallback），**LLM 失敗不阻塞告警**。`consistency_warning` 走**獨立**矛盾提示、不觸發主告警。
+- 參數：`config.yaml::servo_alert`（N/M、狀態燈平滑窗數、`model_version`）。
+
 ## 6. 維護建議規則（模組 A）
 
 每筆預測回傳 `failure_probability` / `predicted_class` / `health_score` / `risk_level` / `maintenance_advice`，

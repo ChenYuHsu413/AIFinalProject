@@ -111,7 +111,8 @@ NAV_GROUPS = [
     {"title": None,
      "items": [("首頁總覽", "🏠")]},
     {"title": "模組 Servo · 伺服馬達健康（主線）",
-     "items": [("Servo 健康儀表板", "🛰"), ("AI 訓練模擬器", "🧪"),
+     "items": [("Servo 健康儀表板", "🛰"), ("Servo 即時監控", "📡"),
+               ("AI 訓練模擬器", "🧪"),
                ("馬達欄位解釋", "📖"), ("LLM 維護助理", "🤖"),
                ("維修知識庫", "📚")]},
     {"title": "模組 A · 靜態風險 (AI4I)", "collapsible": True,
@@ -214,6 +215,12 @@ HEROES = {
         "輸入一段運轉資料，估測健康狀態（LN/LO/MED/HI）、退化分數、風險等級、"
         "主要異常特徵與模型信心，並給出建議處置。",
     ),
+    "Servo 即時監控": (
+        "Module Servo · Live Monitor",
+        "Servo 即時監控（FMCRD replay）",
+        "消費 SSE replay 串流，健康狀態燈隨 LN→LO→HI 演進（近 3 窗多數決平滑、"
+        "同屏保留逐窗原始預測）、告警引擎遲滯觸發並自動生成工單草稿。",
+    ),
     "AI 訓練模擬器": (
         "Module Servo · Training Simulator",
         "AI 訓練模擬器",
@@ -313,8 +320,8 @@ _REPO = "https://github.com/ChenYuHsu413/AIFinalProject"
 _MODULE_B_PAGES = {"健康度總覽", "RUL 預測", "互動探索"}
 _MODULE_BPLUS_PAGES = {"多軌跡泛化", "B+ 延伸應用"}
 _MODULE_C_PAGES = {"馬達電流故障診斷"}
-_SERVO_PAGES = {"Servo 健康儀表板", "AI 訓練模擬器", "馬達欄位解釋",
-                "LLM 維護助理", "維修知識庫"}
+_SERVO_PAGES = {"Servo 健康儀表板", "Servo 即時監控", "AI 訓練模擬器",
+                "馬達欄位解釋", "LLM 維護助理", "維修知識庫"}
 _MODULE_A_PAGES = {"手動單筆預測", "What-if 敏感度分析", "批次 CSV 上傳", "模型評估結果"}
 
 
@@ -950,6 +957,8 @@ elif page in _SERVO_PAGES:
     try:
         if page == "Servo 健康儀表板":
             servo_views.render_dashboard()
+        elif page == "Servo 即時監控":
+            servo_views.render_live_monitor()
         elif page == "AI 訓練模擬器":
             servo_views.render_simulator()
         elif page == "馬達欄位解釋":

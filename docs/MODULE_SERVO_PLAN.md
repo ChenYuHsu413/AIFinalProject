@@ -348,3 +348,34 @@ S1 已定視窗粒度 = 一個完整 run 循環（OOD 教訓）。本實驗驗�
 
 **決策**：`config.yaml::servo_replay.window` 的 **W=6s（一個 run 循環）、S=3s（50% 重疊）鎖定**、註解記錄依據與本驗證連結。
 S2 儀表板可直接在此粒度上疊加，不需重訓或改抽稀策略。
+
+## 13. 告警引擎 + 即時監控頁（S2）
+
+> **狀態（2026-07-11）**：完成。在 S1/S1b 的串流管線上加**告警遲滯引擎**
+> （[`src/monitor/alert_engine.py`](../src/monitor/alert_engine.py)）與 **Streamlit 即時監控頁**
+> （[`src/ui/servo_views.py`](../src/ui/servo_views.py)::`render_live_monitor`）。收/窗/推論邏輯抽成共用模組
+> [`src/monitor/servo_replay_client.py`](../src/monitor/servo_replay_client.py)（S1 CLI consumer、告警引擎、監控頁三者共用，單一真相源）。
+> 端到端驗收（headless AppTest + CLI）：播 LN→LO→HI，狀態燈依序變色、告警於 HI 段**觸發一次不重複**、工單自動生成；
+> 強制 LLM 全供應商失敗仍完整走 fallback、且**告警不被阻塞**。
+
+**Task A — 告警引擎**：消費逐窗結構化預測，兩條獨立事件流：
+
+- **主告警（遲滯）**：`risk_level` 連續 **N=3** 窗達 High 才**觸發**、連續 **M=3** 窗回落 ≤Medium 才**解除**
+  （`config.yaml::servo_alert`，註解引用 S1b 的 LN/LO 閃爍證據）。**依據不是教科書**——S1b 實測 LN↔LO 預測會在門檻
+  附近閃爍（24 runs 2 筆近門檻互判），無遲滯會抖動誤報。
+- **矛盾提示（獨立）**：`consistency_warning` 非 null（分類器狀態與 DV 風險差 ≥2 級）時發獨立事件,**不**觸發主告警。
+- **觸發時**：事件**立即**寫 `outputs/alerts/<date>.jsonl`（時間、視窗特徵/模型輸出快照、`model_version`——先填
+  `"v1"`，S3 接手後由模型 metadata 自動帶入），**再於背景執行緒**呼叫既有多供應商 LLM 助理生成工單草稿並補寫
+  連結事件——**LLM 任何延遲/失敗都不阻塞或延後告警本身**（事件先寫、工單走 `try/except` + 非同步；全供應商失敗
+  自動走離線 fallback 範本）。
+
+**Task B — Streamlit 即時監控頁**（消費**同一條** SSE `/servo/stream`，不另起通道）：
+
+- **頂部健康狀態燈**（綠/黃/橙/紅 = LN/LO/MED/HI），以**近 3 窗多數決**平滑避免 LN/LO 邊界閃爍；
+  **但同屏保留未平滑的逐窗原始預測**（副欄小字列出近 K 窗原始狀態）。**誠實性**：平滑是**顯示層決策、非竄改模型輸出**——
+  模型真實的逐窗不確定性同屏可見，答辯時可指著螢幕說明 S1b 的閃爍發現與此顯示決策。
+- **中部**：`degradation_score` 與 `model_confidence` 滾動時序圖。
+- **底部事件流**：主告警／告警解除／矛盾提示分色（最新在上），主告警可展開見**工單草稿**（背景生成、稍後補上）。
+- 頁面標示**數據源**（讀 manifest 的 replay 段落名）與**模擬性質**，需先啟動發布端。
+
+啟動見 [README §5.2](../README.md)。W/S 沿用 §12.1 鎖定值；N/M/平滑窗數見 `config.yaml::servo_alert`。全程唯讀既有模型。

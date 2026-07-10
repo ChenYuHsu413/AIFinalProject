@@ -316,6 +316,20 @@ servo_replay:
     step_s:   3.0              # S: slide step in DATA seconds = W/2, 50% overlap (locked)
 
 # ---------------------------------------------------------------------------
+# Module Servo — live alert engine + monitor (S2). HYSTERESIS debounces the
+# LN/LO threshold flicker that S1b measured (24-run sample: 2 near-threshold
+# flips; outputs/metrics/replay_window_validation.json): require N consecutive
+# High windows to TRIGGER and M consecutive ≤Medium windows to CLEAR. The status
+# light is separately smoothed by a majority vote over the last K windows.
+# ---------------------------------------------------------------------------
+servo_alert:
+  high_consecutive: 3        # N: consecutive windows at risk High to TRIGGER the main alert
+  clear_consecutive: 3       # M: consecutive windows at risk ≤ Medium to CLEAR it
+  status_smoothing_windows: 3  # status light = majority vote over last K windows (anti-flicker)
+  alerts_dir: outputs/alerts   # event JSONL sink (runtime artefact; gitignored)
+  model_version: v1          # S3 will populate from model metadata; "v1" placeholder for now
+
+# ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
 # Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
 # NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.
