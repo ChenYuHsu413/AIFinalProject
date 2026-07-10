@@ -112,6 +112,29 @@ curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" \
 **LLM 金鑰（選用）**：助理可離線運作；要接真 LLM，複製 `.env.example` 為 `.env` 並填**任一家**金鑰（依序嘗試
 `GROQ_API_KEY` → `OPENROUTER_API_KEY` → `GEMINI_API_KEY` → `ANTHROPIC_API_KEY`）。順序可於 `config.yaml::llm` 調整；`.env` 不進 git。
 
+### 5.1 伺服馬達即時串流 demo（S1，FMCRD replay）
+
+> **狀態（2026-07-10）**：S1 完成——真實 FMCRD replay 素材抽取 + SSE 發布端 + 視窗聚合接收端，
+> 健康狀態隨 replay 段落 **LN → LO → HI** 演進（DV degradation_score 0.05→0.26→0.75、風險 Low→High）。
+> 完整儀表板留待 S2；視窗 W/S 目前為占位預設，待 S1b 校準。
+
+沿用即時監控的 SSE 骨架（`data: {json}` 串流），資料源換成**真實 FMCRD 測試資料**、模型接**參考模型 `predict_servo`**：
+
+```bash
+# 一次性：從 FMCRD zip 抽出 LN/LO/HI replay 素材到 data/demo/replay/（需原始 zip；無 zip 會清楚報錯）
+python scripts/extract_replay_segments.py
+
+# 終端 1：發布端（逐列以 RAW_COLUMNS schema 發布，預設加速重播 LN→LO→HI）
+python scripts/servo_replay_publisher.py            # SSE：/servo/stream
+
+# 終端 2：接收端（滑動視窗→複用 build_feature_table/aggregate_run 的 21 維 full 特徵→predict_servo→逐視窗打印）
+python scripts/servo_replay_consumer.py
+```
+
+發布端另有 `--mode fake` 合成模式：**僅供管線連通性測試**，其資料**不在模型訓練分布內、預測輸出無效**
+（接收端會標記 `⚠ 假數據，預測無效`）。**demo 一律使用 FMCRD replay 模式。** 視窗 W（預設 = 一個 6s run 循環，
+對齊訓練的 per-run 聚合粒度）與步長 S 均可於 `config.yaml::servo_replay.window` 調整。全程唯讀既有模型。
+
 ## 6. 維護建議規則（模組 A）
 
 每筆預測回傳 `failure_probability` / `predicted_class` / `health_score` / `risk_level` / `maintenance_advice`，

@@ -288,3 +288,34 @@ CV 從 `enabled_models` 選出 **logistic_regression**（CV 0.740，勝 mlp 0.73
 0.937）。**engineered 0.757 保留為歷史對照**。下游全數驗證：`servo_feature_config.json`（21 欄 +
 健康基線）、`servo_predict` 的 `top_features`、訓練模擬器、demo CSV、`/servo/predict` 與
 `/servo/model_info` 均隨新特徵組正常運作；servo 測試 38 passed。DL baseline 的特徵組解耦見 §7。
+
+## 12. 即時串流 demo（S1：FMCRD replay → SSE → 視窗聚合 → 參考模型）
+
+> **狀態（2026-07-10）**：S1 完成。沿用即時監控的 SSE 骨架（`data: {json}` 串流、`StreamingResponse`
+> `text/event-stream`；範本見 [`src/monitor/live_stream.py`](../src/monitor/live_stream.py)），把資料源換成
+> **真實 FMCRD 測試資料**、模型接**參考模型 `predict_servo`**。端到端跑通：健康狀態隨 replay 段落
+> **LN → LO → HI** 演進（degradation_score 0.05→0.26→0.75、health 95→25、風險 Low→High）。**完整儀表板留 S2；
+> 視窗 W/S 為占位預設，待 S1b 校準（必要時對窗聚合特徵重訓）。**
+
+**Task A — replay 素材抽取**（[`scripts/extract_replay_segments.py`](../scripts/extract_replay_segments.py)）：
+從 FMCRD zip 的**測試分割**抽 LN / LO / HI 三段到 `data/demo/replay/`（`config.yaml::servo_replay`；加入 git 白名單、
+各約 3 MB）。**關鍵粒度**：參考模型以**整段 run（`build_feature_table` 依 `run_index` 聚合）**訓練，每個 run 是一個
+**6 s / 5 階梯定位循環**；只取 run 頭段（單一階梯）會落在訓練分布外、預測失真。故每段取**數個完整 run 並均勻抽稀**
+（保留欄位與時間順序，只放寬取樣間隔），使「一個 run 循環」的視窗重現 per-run 聚合。FMCRD 測試檔為**單一類別/檔**，
+退化全程是**跨檔**拼接（各取數 run），manifest 記錄各段來源檔 / `run_indexes` / `ylabel` / 列數（溯源）。無 zip 時腳本清楚報錯。
+
+**Task B — 發布端**（[`scripts/servo_replay_publisher.py`](../scripts/servo_replay_publisher.py) +
+核心 [`src/monitor/servo_replay_stream.py`](../src/monitor/servo_replay_stream.py)）：逐列讀 replay CSV，以可設定頻率
+（`servo_replay.emit_hz`，預設加速重播）發布 `GET /servo/stream` SSE，**訊息 schema = `RAW_COLUMNS`**；支援
+**多段串播**（LN→LO→HI）。另保留 `--mode fake` 合成模式——**僅供管線連通性測試，資料不在訓練分布內、預測無效**
+（程式與 README 均標明；接收端標記 `⚠ 假數據，預測無效`）。**demo 一律用 replay。**
+
+**Task C — 視窗聚合接收端**（[`scripts/servo_replay_consumer.py`](../scripts/servo_replay_consumer.py)）：SSE 接收 →
+滑動視窗（W 秒 / S 秒，`servo_replay.window` 可調；以 row `time` 建**單調串流時鐘**、跨 run 的 time 重置也不亂）→
+**直接複用 `servo_features.aggregate_run`**（與訓練同一套統計，避免特徵定義漂移）算 21 維 full 特徵 → `predict_servo` →
+逐視窗打印 `predicted_health_state` + `degradation_score`（另附視窗真實 `ylabel` 對照）。
+
+**誠實揭露**：LN↔LO 邊界仍見互相誤判（如某 LN 窗判 LO），為 §11 記錄之模型**既有**弱點（0.819 天花板），非管線 bug；
+**DV / 風險**呈乾淨單調，是最穩健的退化指標。全程**唯讀既有模型、未改訓練程式**。
+
+啟動與參數見 [README §5.1](../README.md)。
