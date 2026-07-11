@@ -1,8 +1,15 @@
 """S3 — Module Servo model VERSION registry (Windows-friendly, no symlinks).
 
-Named ``servo_model_registry`` to avoid colliding with ``model_registry`` (the
-Module-A algorithm factory: name -> estimator constructor). This module manages
-DEPLOYED VERSIONS of the servo reference model.
+Named ``servo_model_registry`` to avoid colliding with ``model_registry`` — that
+is the Module-A ALGORITHM FACTORY (name -> estimator constructor), a different
+concept. This module manages DEPLOYED VERSIONS (v1 / v2 / …) of the servo
+reference model.
+
+Deployment source of truth: inference ALWAYS loads through this registry
+(``load_active``). ``outputs/models/servo_*.joblib`` is only ``train_servo``'s
+default working output — a stale copy there does not affect what is served, and
+the backend logs a warning if it diverges from the active version (see
+``outputs_models_consistent_with_active``).
 
 Layout::
 
@@ -122,6 +129,26 @@ def crc32_file(path: Path) -> str:
 
 def crc32_for_dir(model_dir: Path) -> Dict[str, str]:
     return {name: crc32_file(model_dir / name) for name in CRC_FILES}
+
+
+def outputs_models_consistent_with_active() -> Optional[bool]:
+    """Whether ``outputs/models/servo_*.joblib`` matches the ACTIVE version's CRC32.
+
+    Guards against a "two sources of truth" drift: ``outputs/models`` is only
+    ``train_servo``'s working output (deployment reads the registry), so a
+    mismatch means that copy is stale — worth a warning, not a hard failure.
+    Returns None if either side is missing.
+    """
+    try:
+        sv = load_config()["servo"]
+        om = {"servo_clf.joblib": resolve(sv["clf_model"]),
+              "servo_reg.joblib": resolve(sv["reg_model"])}
+        if not all(p.exists() for p in om.values()):
+            return None
+        active = version_dir(active_version())
+        return all(crc32_file(om[n]) == crc32_file(active / n) for n in CRC_FILES)
+    except Exception:
+        return None
 
 
 # --- loading (single source of truth for inference) -------------------------

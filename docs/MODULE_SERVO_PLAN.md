@@ -138,6 +138,10 @@ windowed `.npz` 為 gitignored 暫存（雲端只讀 JSON）。**深化結論（
 - 伺服器只放：Reference Model、scaler/encoder/feature_config、demo feature dataset、樣本筆、
   metrics、知識庫小型資料（皆已在 `.gitignore` 白名單，隨 repo 提交）。
 - 訓練模擬器只用 `servo_feature_demo.csv`。LLM 用 API 但有 fallback。爬蟲離線可跳過。
+- **部署單一真相源（S3，2026-07-11）**：正式推論**一律經模型版本 registry 載入**（`servo_model_registry.load_active()`，
+  見 §14）。`outputs/models/servo_*.joblib` **僅為 `train_servo` 的預設工作輸出**，不是部署來源；它與 active 版本
+  可能因單獨重訓而分岔，但**不影響服務**（載入只讀 registry）。後端啟動會比對兩者 CRC32、不一致時**記警告**
+  （非致命）。收斂 `outputs/models/`（改由 registry 全權管理）列為 future work。
 
 ## 9. 重建步驟
 
