@@ -1,9 +1,11 @@
 # AI 伺服馬達健康狀態估測與智慧維護助理系統
 
-> **狀態（2026-07-08）**：主線 **模組 Servo**（真實 PHM FMCRD 資料集，健康分類 + 退化值回歸）已完整重訓
-> （`placeholder=false`）：留出測試分類 macro-F1 **0.757**、DV 回歸 R² **0.937**，附可獨立重驗的資料溯源（CRC32 指紋 +
-> `GET /servo/provenance`）。FMCRD 為高擬真**模擬**資料集（非真實工廠遙測）。另含四條對照軌（A/B/B+/C）、AI 訓練模擬器、
-> LLM 維護助理、RAG 知識庫、即時監控 demo。主前端為 **Next.js Command Center**。
+> **狀態（2026-07-11）**：主線 **模組 Servo**（真實 PHM FMCRD 資料集，健康分類 + 退化值回歸）已完整重訓
+> （`placeholder=false`）：留出測試分類 macro-F1 **0.819**、DV 回歸 R² **0.944**，附可獨立重驗的資料溯源（CRC32 指紋 +
+> `GET /servo/provenance`）。（特徵組自 engineered→full 轉正前為 macro-F1 0.757、R² 0.937，演進記錄見
+> [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md) §11。）FMCRD 為高擬真**模擬**資料集（非真實工廠遙測）。
+> 另含四條對照軌（A/B/B+/C）、AI 訓練模擬器、LLM 維護助理、RAG 知識庫、即時監控 demo，以及 **MLOps 閉環**
+> （串流監控→告警→漂移偵測→自動重訓→驗證閘門→版本 registry，見 §5.1–5.4）。主前端為 **Next.js Command Center**。
 
 ![CI](https://github.com/ChenYuHsu413/AIFinalProject/actions/workflows/ci.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
@@ -48,7 +50,7 @@ FinalProject/
 ├── web/                         # Next.js Command Center（主前端）
 ├── outputs/                     # figures / metrics / models / reports
 ├── docs/                        # 模組規劃 / 結果 / 資料溯源 / 部署 runbook
-└── tests/                       # pytest（135 通過 / 1 依環境跳過）
+└── tests/                       # pytest（151 通過 / 1 依環境跳過）
 ```
 
 CRISP-DM：Data → `src/data/`、`scripts/run_eda.py`；Modeling → `src/models/train.py`；Deployment → `web/`、`app/`、[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)。
@@ -101,7 +103,14 @@ streamlit run app/streamlit_app.py                             # Streamlit fallb
 | `/ims/*`、`/xjtu/*`、`/paderborn/*` | GET/POST | 模組 B / B+ / C 結果 |
 | `/monitor/scenarios`、`/monitor/stream` | GET | 即時監控回放 / SSE 串流 |
 | `/servo/predict`、`/servo/fleet`、`/servo/provenance` | GET/POST | Servo 健康估測 / 機群 / 資料溯源 |
+| `/servo/model_info` | GET | 當前 active 模型版本資訊（來自 registry，含 `model_version`）|
+| `/servo/alerts`、`/servo/work_orders` | GET | 機群告警事件 / 衍生維修工單 |
 | `/servo/assistant/*`、`/knowledge/*` | GET/POST | LLM 維護助理 / 知識庫檢索 |
+
+> **串流端點另置**：FMCRD replay 的 `GET /servo/stream`（SSE）由獨立的 replay 發布端
+> `scripts/servo_replay_publisher.py` 提供（自成一個服務、不在主後端 `/docs`），見 §5.1。
+> 模型 registry 版本切換與漂移偵測為 **CLI 驅動**（`servo_model_registry` / `run_drift_demo.py`，見 §5.3–5.4），
+> 主後端不另開對應端點；告警事件由告警引擎寫入 `outputs/alerts/<date>.jsonl`。
 
 ```bash
 curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" \
@@ -111,6 +120,15 @@ curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" \
 
 **LLM 金鑰（選用）**：助理可離線運作；要接真 LLM，複製 `.env.example` 為 `.env` 並填**任一家**金鑰（依序嘗試
 `GROQ_API_KEY` → `OPENROUTER_API_KEY` → `GEMINI_API_KEY` → `ANTHROPIC_API_KEY`）。順序可於 `config.yaml::llm` 調整；`.env` 不進 git。
+
+**MLOps 閉環一鍵 demo**：整條「偵測→重訓→閘門→切換→消化」劇本可用單一指令重現（fresh-clone 即可跑、
+結束自動 reset 回 v1 可重複執行）：
+
+```bash
+python scripts/run_drift_demo.py
+# 預期：HI 退化不誤觸、注入 gain×1.3 漂移 FIRED、閘門 PASS → active = v2、v2 對同一漂移段已消化，
+#      漂移資料上分類 macro-F1 v1 0.44 → v2 0.83（細節與誠實揭露見 §5.4）。
+```
 
 ### 5.1 伺服馬達即時串流 demo（S1，FMCRD replay）
 
@@ -209,7 +227,7 @@ docker compose down
 
 `.github/workflows/ci.yml` 於 push / PR 到 `main`、`master` 執行三個 job：
 
-1. **test**（Python 3.11 / 3.12）：`compileall` 語法檢查 + `pytest`（135 通過 / 1 跳過；用合成 fixture 與已提交產物，不需原始大檔）。
+1. **test**（Python 3.11 / 3.12）：`compileall` 語法檢查 + `pytest`（151 通過 / 1 跳過；用合成 fixture 與已提交產物，不需原始大檔）。
 2. **web**（Node 24）：`eslint` + `tsc --noEmit` + `next build`。
 3. **docker**：buildx 建映像並執行 import smoke test。本機重現：`compileall` → `pytest` → `docker build -t pmm-app:ci .`。
 
@@ -218,7 +236,12 @@ docker compose down
 - AI4I 為合成資料、無時間維度，指標無法外推實廠；RUL 由 B（IMS）/ B+（XJTU）補上。監督式「絕對小時數 RUL」跨壽命
   尺度 / 工況泛化受限，B+ 延伸 **E1**（壽命正規化 / z-score / CORAL）部分改善（LOCO R² −1.22 → −0.92）但未解決。
 - 決策門檻預設 0.5、維護建議為靜態門檻，正式部署應依成本模型與機台個別校準。
-- 已完成延伸：B+ E1–E3、模組 C（Paderborn 人工→真實泛化 MVP + CE1/CE4）；推遲：其他資料集 / 更強領域自適應 / ESP32 / 成本敏感門檻 / MLOps。
+- 已完成延伸：B+ E1–E3、模組 C（Paderborn 人工→真實泛化 MVP + CE1/CE4）；推遲：其他資料集 / 更強領域自適應 / ESP32（未來實場接入 / IoT demo）/ 成本敏感門檻。
+
+**MLOps 閉環（已完成）**：Servo 主線已具端到端的預測性維護 MLOps 閉環——FMCRD replay SSE 串流監控（§5.1）→
+告警遲滯引擎（§5.2）→ 漂移偵測（重建誤差；**退化 ≠ 漂移**，退化在分布內、僅真 off-manifold 位移觸發，§5.4）→
+自動重訓 → 驗證閘門（完整性 / 煙霧 / 留出指標 / AE 單調，§5.3）→ 模型版本 registry 與一鍵回滾。整條劇本由
+`scripts/run_drift_demo.py` 一鍵重現、fresh-clone 可重跑（驗收：漂移資料上分類 macro-F1 v1 0.44 → v2 0.83）。
 
 ## 10. 授權與參考資料
 
