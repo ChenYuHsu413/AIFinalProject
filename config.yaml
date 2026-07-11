@@ -327,7 +327,19 @@ servo_alert:
   clear_consecutive: 3       # M: consecutive windows at risk ≤ Medium to CLEAR it
   status_smoothing_windows: 3  # status light = majority vote over last K windows (anti-flicker)
   alerts_dir: outputs/alerts   # event JSONL sink (runtime artefact; gitignored)
-  model_version: v1          # S3 will populate from model metadata; "v1" placeholder for now
+  # model_version is stamped from the ACTIVE model in the version registry (S3,
+  # models/registry/registry.json), not hardcoded here.
+
+# ---------------------------------------------------------------------------
+# Module Servo — validation gate (S3). A candidate model must clear these before
+# it can be promoted. The metric tolerance bands absorb training randomness
+# (seed / CV fold shuffling move macro-F1 by ~±0.01) WITHOUT letting a real
+# regression through: a candidate may dip at most `tolerance` below the active
+# version, never more. Widen only with evidence.
+# ---------------------------------------------------------------------------
+servo_gate:
+  macro_f1_tolerance: 0.005   # candidate holdout macro-F1 must be >= active - 0.005
+  dv_r2_tolerance: 0.005      # candidate holdout DV R² must be >= active - 0.005
 
 # ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI

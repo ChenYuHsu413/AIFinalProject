@@ -50,7 +50,18 @@ def _healthy_baseline(df: pd.DataFrame, cols: List[str]) -> Dict[str, Dict[str, 
     return base
 
 
-def run() -> Path:
+def run(out_dir: "Path | None" = None,
+        data_config: "Dict | None" = None) -> Path:
+    """Train the reference models.
+
+    Default (``out_dir=None``): writes to the config paths exactly as before.
+    ``out_dir`` (S3 retrain pipeline): writes servo_clf/reg.joblib +
+    servo_feature_config.json + metrics.json into that directory instead, and
+    NEVER touches the deployed/active artifacts.
+    ``data_config`` (optional): subset the TRAIN rows, e.g. ``{"train_frac":0.1}``
+    — used to synthesise a deliberately-degraded candidate (and, later, S4 drift
+    scenarios). ``None`` = full training data (unchanged behaviour).
+    """
     ensure_output_dirs()
     cfg = load_config()
     sv = cfg["servo"]
@@ -71,6 +82,15 @@ def run() -> Path:
     df_tr = df[df["split"] == "train"].reset_index(drop=True) if has_split else df
     df_te = df[df["split"] == "test"].reset_index(drop=True) if has_split else None
     eval_mode = "holdout_test" if has_split else "cv"
+
+    # Optional TRAIN subsetting (retrain-pipeline / S4 drift). Stratified by class
+    # so every health label survives; the TEST split is never touched.
+    if data_config and data_config.get("train_frac") is not None:
+        frac = float(data_config["train_frac"])
+        seed = int(data_config.get("seed", rs))
+        df_tr = (df_tr.groupby("ylabel", group_keys=False)
+                 .sample(frac=frac, random_state=seed).reset_index(drop=True))
+        print(f"[Servo] data_config: train_frac={frac} -> 訓練縮減為 {len(df_tr)} 段")
 
     labels = [c for c in HEALTH_LABELS if c in set(df_tr["ylabel"])]
     print(f"[Servo] 特徵組 {feature_set}（{len(cols)} 維）、訓練 {len(df_tr)} 段"
@@ -151,15 +171,12 @@ def run() -> Path:
     }
     print(f"    回歸 {reg_name}: MAE={reg_eval['mae']:.3f} R2={reg_eval['r2']:.3f}（{eval_mode}）")
 
-    # --- persist artifacts (compress=3: keeps the RF regressor well under
-    #     GitHub's 50 MB file recommendation; ~96 MB -> ~29 MB) ---
-    joblib.dump({"pipeline": clf_pipe, "feature_columns": cols, "labels": labels,
-                 "model_name": best_name, "metrics": clf_eval},
-                resolve(sv["clf_model"]), compress=3)
-    joblib.dump({"pipeline": reg_pipe, "feature_columns": cols,
-                 "model_name": reg_name, "metrics": reg_eval},
-                resolve(sv["reg_model"]), compress=3)
-
+    # --- artifacts (compress=3: keeps the RF regressor well under GitHub's
+    #     50 MB file recommendation; ~96 MB -> ~29 MB) ---
+    clf_bundle = {"pipeline": clf_pipe, "feature_columns": cols, "labels": labels,
+                  "model_name": best_name, "metrics": clf_eval}
+    reg_bundle = {"pipeline": reg_pipe, "feature_columns": cols,
+                  "model_name": reg_name, "metrics": reg_eval}
     feature_config = {
         "feature_set": feature_set,
         "feature_columns": cols,
@@ -174,6 +191,31 @@ def run() -> Path:
         "eval_mode": eval_mode,
         "placeholder": bool(sv.get("placeholder", True)),
     }
+
+    if out_dir is not None:
+        # Retrain-pipeline path: write a self-contained version dir (never touches
+        # the deployed/active artifacts) + a registry-style metrics.json.
+        from src.models.servo_model_registry import assemble_metrics
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        joblib.dump(clf_bundle, out_dir / "servo_clf.joblib", compress=3)
+        joblib.dump(reg_bundle, out_dir / "servo_reg.joblib", compress=3)
+        (out_dir / "servo_feature_config.json").write_text(
+            json.dumps(feature_config, indent=2, ensure_ascii=False), encoding="utf-8")
+        extra = {"n_train": int(len(df_tr))}
+        if data_config:
+            extra["data_config"] = data_config
+        metrics = assemble_metrics("candidate", out_dir, feature_config,
+                                   clf_eval, reg_eval, config_snapshot=dict(sv),
+                                   extra=extra)
+        (out_dir / "metrics.json").write_text(
+            json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"[Servo] 候選模型 -> {out_dir}（macro-F1={clf_eval['macro_f1']:.3f} "
+              f"R²={reg_eval['r2']:.3f}）")
+        return out_dir
+
+    joblib.dump(clf_bundle, resolve(sv["clf_model"]), compress=3)
+    joblib.dump(reg_bundle, resolve(sv["reg_model"]), compress=3)
     resolve(sv["feature_config"]).write_text(
         json.dumps(feature_config, indent=2, ensure_ascii=False), encoding="utf-8")
     resolve(sv["clf_metrics"]).write_text(

@@ -154,6 +154,25 @@ streamlit run app/streamlit_app.py                  # 終端 2：側邊欄「Ser
   生成（多供應商 + 離線 fallback），**LLM 失敗不阻塞告警**。`consistency_warning` 走**獨立**矛盾提示、不觸發主告警。
 - 參數：`config.yaml::servo_alert`（N/M、狀態燈平滑窗數、`model_version`）。
 
+### 5.3 模型版本管理 + 驗證閘門 + 重訓管線（S3）
+
+> **狀態（2026-07-11）**：完成。模型版本 registry（`models/registry/`）、載入集中化
+> （`servo_model_registry.load_active()`）、驗證閘門（完整性 / 煙霧 / 留出指標 / AE 單調）與一鍵重訓管線。
+> `predict_servo` 對外介面與輸出不變、下游零感知。詳見 [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md) §14。
+
+```bash
+python -m src.models.servo_model_registry --list          # 列版本 + active
+python scripts/retrain_pipeline.py                        # 重訓 → 驗證 → PASS 轉正 v<n+1> / FAIL 擋下
+python scripts/retrain_pipeline.py --dry-run              # 訓練+驗證，不切換 active
+python scripts/retrain_pipeline.py --data-config '{"train_frac":0.1}'   # 爛候選演練（閘門會擋下）
+python -m src.pipeline.validation_gate models/registry/candidate_<ts>   # 單獨跑閘門
+```
+
+- 每版含 `metrics.json`（留出 macro-F1 / DV R²、特徵組、模型檔 CRC32、訓練 config 快照、FMCRD 溯源、時間戳）。
+- 閘門容忍帶（`config.yaml::servo_gate`，預設 0.005）**吸收訓練隨機性、不放行實質退化**。
+- **回滾**：改 `models/registry/registry.json` 的 `active_version`（或 `servo_model_registry.set_active('v1')`），
+  服務重載後 `predict_servo` / `/servo/model_info` / 告警 `model_version` 全鏈路切回。
+
 ## 6. 維護建議規則（模組 A）
 
 每筆預測回傳 `failure_probability` / `predicted_class` / `health_score` / `risk_level` / `maintenance_advice`，

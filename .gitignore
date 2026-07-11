@@ -124,6 +124,11 @@ data/raw/servo_v3/
 # by any web/streamlit page, so re-ignore them (overrides the broad un-ignore above)
 outputs/figures/eda_*.png
 
+# Model version registry (S3). Promoted versions (v1, v2, …) + registry.json are
+# committed so the demo runs the active model without retraining (models/ is not
+# otherwise ignored). Never commit transient retrain candidates.
+models/registry/candidate_*/
+
 # Keep folder placeholders
 !**/.gitkeep
 

@@ -41,6 +41,15 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _resolve_active_version() -> str:
+    """Active model version from the registry; 'unknown' if unavailable."""
+    try:
+        from src.models.servo_predict import active_model_version
+        return active_model_version(default="unknown")
+    except Exception:
+        return "unknown"
+
+
 def _feature_summary(pred: Dict[str, Any]) -> Dict[str, Any]:
     """Compact snapshot of the window's features + model output for the event."""
     return {
@@ -61,11 +70,16 @@ class AlertEngine:
     """Hysteresis state machine + event sink for the live health stream."""
 
     def __init__(self, on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
-                 config: Optional[Dict[str, Any]] = None):
+                 config: Optional[Dict[str, Any]] = None,
+                 model_version: Optional[str] = None):
         cfg = config or load_config().get("servo_alert", {})
         self.N = int(cfg.get("high_consecutive", 3))    # windows at High to TRIGGER
         self.M = int(cfg.get("clear_consecutive", 3))   # windows ≤Medium to CLEAR
-        self.model_version = str(cfg.get("model_version", "v1"))
+        # model_version comes from the loaded model (S3 registry), not a hardcode:
+        # explicit arg > config override (tests) > active registry version.
+        self.model_version = str(
+            model_version if model_version is not None
+            else cfg.get("model_version") or _resolve_active_version())
         self.alerts_dir = resolve(cfg.get("alerts_dir", "outputs/alerts"))
         self.on_event = on_event
 

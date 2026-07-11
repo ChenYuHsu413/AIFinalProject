@@ -1,0 +1,14 @@
+{
+  "active_version": "v1",
+  "updated": "2026-07-11T02:33:45+00:00",
+  "versions": {
+    "v1": {
+      "created": "2026-07-11T02:33:45+00:00",
+      "macro_f1": 0.8186615654141182,
+      "dv_r2": 0.9444281506026837,
+      "feature_set": "full",
+      "placeholder": false,
+      "note": "migrated from outputs/models (S3 initial deploy)"
+    }
+  }
+}

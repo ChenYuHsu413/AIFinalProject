@@ -1,9 +1,14 @@
-"""Central registry of candidate classifiers.
+"""Central registry of candidate classifiers (the ALGORITHM FACTORY).
 
 A registered model is a callable returning a fresh estimator instance.  Models
 that depend on optional packages (XGBoost, LightGBM) are registered only if
 the import succeeds, so the project still trains end-to-end on a minimal
 installation.
+
+NOTE: this maps a model NAME -> estimator constructor. For the deployed model
+VERSION registry (v1 / v2 / … under ``models/registry/``), see
+``servo_model_registry.py`` — a different concept that happens to share the word
+"registry".
 """
 from __future__ import annotations
 

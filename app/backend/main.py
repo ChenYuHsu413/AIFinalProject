@@ -58,6 +58,32 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _warm_load_servo_model() -> None:
+    """Warm-load the ACTIVE servo model via the version registry at boot (S3).
+
+    Non-fatal: a missing/unmigrated registry must not block the backend (other
+    modules still serve); the reference model then loads lazily on first request.
+    """
+    import logging
+
+    try:
+        from src.models.servo_predict import load_servo_models
+        from src.models.servo_model_registry import outputs_models_consistent_with_active
+        b = load_servo_models()
+        logging.getLogger("uvicorn").info(
+            "[servo] active model version = %s (feature_set=%s)",
+            b.version, b.config.get("feature_set"))
+        if outputs_models_consistent_with_active() is False:
+            logging.getLogger("uvicorn").warning(
+                "[servo] outputs/models 與 active 版本 %s 的 CRC32 不一致——"
+                "outputs/models 僅為 train_servo 工作輸出、部署以 registry 為準，"
+                "但該副本已過時；如需同步請以 retrain_pipeline 轉正新版本。", b.version)
+    except Exception as e:  # pragma: no cover - boot-time best-effort
+        logging.getLogger("uvicorn").warning(
+            "[servo] 參考模型未於啟動時載入（%s）；將於首次請求時再試。", e)
+
+
 @app.get("/health", response_model=HealthResponse)
 def health():
     return services.health()

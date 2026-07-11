@@ -24,7 +24,6 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-import joblib
 import numpy as np
 import pandas as pd
 
@@ -40,39 +39,55 @@ class ServoBundle:
     reg: Any
     feature_columns: List[str]
     config: Dict[str, Any]
+    version: str = "unknown"
 
 
 _BUNDLE: Optional[ServoBundle] = None
 
 
 def load_servo_models(force: bool = False) -> ServoBundle:
+    """Load the ACTIVE reference model via the version registry (S3).
+
+    Loading is centralised in ``servo_model_registry`` so inference, the FastAPI
+    backend and the alert engine all read one source of truth. The returned
+    bundle's interface (``clf`` / ``reg`` / ``feature_columns`` / ``config``) is
+    unchanged; ``version`` is added for /servo/model_info and the alert engine.
+    """
     global _BUNDLE
     if _BUNDLE is not None and not force:
         return _BUNDLE
-    cfg = load_config()["servo"]
-    clf_p, reg_p, fc_p = (resolve(cfg["clf_model"]), resolve(cfg["reg_model"]),
-                          resolve(cfg["feature_config"]))
-    if not (clf_p.exists() and reg_p.exists() and fc_p.exists()):
+    from src.models import servo_model_registry as registry
+    try:
+        lm = registry.load_active()
+    except FileNotFoundError as e:
         raise FileNotFoundError(
-            "找不到 Servo 參考模型。請先執行：\n"
-            "  python -m src.data.build_servo_dataset\n"
-            "  python -m src.models.train_servo"
-        )
-    import json
-    clf_b = joblib.load(clf_p)
-    reg_b = joblib.load(reg_p)
-    config = json.loads(fc_p.read_text(encoding="utf-8"))
-    if not config.get("healthy_baseline"):
+            "找不到 Servo 參考模型版本登記表。請先執行：\n"
+            "  python -m src.models.train_servo        # 若尚未訓練\n"
+            "  python -m src.models.servo_model_registry --migrate\n"
+            f"（原始錯誤：{e}）")
+    if not lm.feature_config.get("healthy_baseline"):
         # Without a baseline, _top_features falls back to mean=0/std=1, so the
         # reported z-scores become raw feature values — surface it rather than
         # letting the dashboard show misleading "anomalous" features silently.
         _LOG.warning(
             "Servo feature_config 缺少 healthy_baseline；top_features 的 z 分數"
             "將以 mean=0/std=1 計算，可能失真。請重跑 train_servo 產生基準。")
-    _BUNDLE = ServoBundle(
-        clf=clf_b["pipeline"], reg=reg_b["pipeline"],
-        feature_columns=list(config["feature_columns"]), config=config)
+    _BUNDLE = make_bundle(lm)
     return _BUNDLE
+
+
+def make_bundle(lm) -> ServoBundle:
+    """Build a ServoBundle from a registry LoadedModel (any version/candidate)."""
+    config = lm.feature_config
+    return ServoBundle(clf=lm.clf_pipeline, reg=lm.reg_pipeline,
+                       feature_columns=list(config["feature_columns"]),
+                       config=config, version=lm.version)
+
+
+def active_model_version(default: str = "unknown") -> str:
+    """The live model version string (for the alert engine / model_info)."""
+    from src.models import servo_model_registry as registry
+    return registry.active_version(default=default)
 
 
 def _risk_from_dv(dv: float, bands: Dict[str, float]) -> str:
@@ -139,9 +154,15 @@ def _advice(state: str, top: List[Dict[str, Any]]) -> List[str]:
     return out
 
 
-def predict_servo(record: Dict[str, Any] | pd.Series) -> Dict[str, Any]:
-    """Structured prediction for one aggregated feature row."""
-    b = load_servo_models()
+def predict_servo(record: Dict[str, Any] | pd.Series,
+                  bundle: Optional[ServoBundle] = None) -> Dict[str, Any]:
+    """Structured prediction for one aggregated feature row.
+
+    ``bundle`` overrides the active model — used by the validation gate to
+    smoke-test a CANDIDATE without touching the deployed version. Output schema
+    is identical regardless.
+    """
+    b = bundle if bundle is not None else load_servo_models()
     row = pd.Series(record) if not isinstance(record, pd.Series) else record
     X = pd.DataFrame([{c: float(row[c]) for c in b.feature_columns}])
 
