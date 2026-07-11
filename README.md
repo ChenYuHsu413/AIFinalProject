@@ -173,6 +173,22 @@ python -m src.pipeline.validation_gate models/registry/candidate_<ts>   # 單獨
 - **回滾**：改 `models/registry/registry.json` 的 `active_version`（或 `servo_model_registry.set_active('v1')`），
   服務重載後 `predict_servo` / `/servo/model_info` / 告警 `model_version` 全鏈路切回。
 
+### 5.4 漂移偵測閉環（S4）
+
+> **狀態（2026-07-11）**：完成。閉環 = 漂移偵測 → 自動重訓 → 閘門 → 版本切換。核心原則 **退化 ≠ 漂移**：
+> 漂移 AE（PCA 線性、全類別擬合）讓退化在分布內、只有真 off-manifold 位移才觸發。詳見
+> [`docs/MODULE_SERVO_PLAN.md`](docs/MODULE_SERVO_PLAN.md) §15。
+
+```bash
+python scripts/run_drift_demo.py            # 一鍵劇本：正常→注入漂移→DRIFT→重訓→閘門→v2→消化→reset
+python scripts/validate_drift_blindspot.py  # 核心發現：noisy LO 為流形內偏移，重建式偵測抓不到
+```
+
+- **驗收（實跑）**：HI 退化不誤觸、注入感測器漂移（gain×1.3）觸發、重訓後 v2 消化；漂移資料上分類 macro-F1 v1 0.44 → v2 0.83。
+- **誠實揭露**：(1) noisy LO domain shift 是**分類邊界**難度、非重建式可測漂移（與 §11 三重證據互證，存 `drift_blindspot.json`）；
+  (2) 注入漂移為**模擬**真實感測器增益故障；(3) 信心訊號在 OOD 上**不降反升**（自信地錯），故重建式偵測才必要；
+  (4) demo 標籤現成，真實工廠漂移後新資料需標註流程。
+
 ## 6. 維護建議規則（模組 A）
 
 每筆預測回傳 `failure_probability` / `predicted_class` / `health_score` / `risk_level` / `maintenance_advice`，
