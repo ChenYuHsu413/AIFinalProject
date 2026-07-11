@@ -202,6 +202,85 @@ export interface ServoModelInfo {
   placeholder: boolean | null;
 }
 
+// --- Servo real-time monitor (S5 — self-contained backend aggregation) ------
+// The backend computes windowing / inference / smoothing / alert hysteresis /
+// drift; the UI only renders these enriched per-window events (SSE).
+
+/** Alert-engine state carried on each window (backend-computed hysteresis). */
+export interface ServoMonitorAlertState {
+  active: boolean;
+  high_streak: number;
+  low_streak: number;
+  active_alert_id: string | null;
+}
+
+/** Per-window drift snapshot (reconstruction error vs training P95). */
+export interface ServoMonitorDriftStatus {
+  available: boolean;
+  instant_recon_error?: number;
+  rolling_recon_error?: number;
+  threshold_p95?: number;
+  triggered?: boolean;
+}
+
+/** One alert / consistency / drift / work-order event (feed + polling endpoint). */
+export interface ServoMonitorEvent {
+  id: string;
+  type: string;
+  ts?: string;
+  stream_t?: number | null;
+  trigger_rule?: string;
+  clear_rule?: string;
+  message?: string;
+  alert_id?: string;
+  reason?: string;
+  rolling_recon_error?: number;
+  instant_recon_error?: number;
+  baseline_p95?: number;
+  snapshot?: Record<string, unknown>;
+  model_version?: string;
+}
+
+/** GET /servo/monitor/stream → one enriched window (SSE `data:` frame). */
+export interface ServoMonitorFrame {
+  window_index: number;
+  window_ts: number;
+  predicted_health_state: string;
+  smoothed_state: string;
+  recent_states: string[];
+  true_label: string | null;
+  health_state_proba: Record<string, number> | null;
+  degradation_score: number;
+  model_confidence: number;
+  risk_level: string;
+  consistency_warning: string | null;
+  window_rows: number | null;
+  alert_state: ServoMonitorAlertState;
+  drift_status: ServoMonitorDriftStatus;
+  model_version: string;
+  replay_segment: { key: string; label: string; injected: boolean };
+  events: ServoMonitorEvent[];
+}
+
+/** A background-generated LLM work-order draft, linked to its alert. */
+export interface ServoMonitorWorkOrder {
+  id: string;
+  alert_id: string;
+  type: "work_order_draft";
+  ts?: string;
+  llm_source?: string;
+  text: string;
+}
+
+/** GET /servo/monitor/events → paginated feed + linked work orders. */
+export interface ServoMonitorEventsResponse {
+  events: ServoMonitorEvent[];
+  work_orders: ServoMonitorWorkOrder[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // --- Live Monitor v3 (synthetic demo track) ---------------------------------
 
 /** One replay frame from a monitor scenario pack (down-sampled cadence). */
