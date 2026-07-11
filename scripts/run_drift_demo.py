@@ -44,16 +44,25 @@ from src.utils.paths import load_config, resolve  # noqa: E402
 _GAIN = 1.3
 
 
-def _reset_to_v1() -> None:
+def _reset_to_v1(restore_text: str | None = None) -> None:
+    """Remove any v2/candidate dirs and restore v1 as active.
+
+    ``restore_text`` (the registry.json captured at start) is written back
+    VERBATIM so a demo run leaves ZERO git diff — the scenario must be as clean
+    on a fresh clone as it is here.
+    """
     reg = registry.read_registry()
     for v in list(reg.get("versions", {})):
         if v != "v1":
             shutil.rmtree(registry.version_dir(v), ignore_errors=True)
-            reg["versions"].pop(v, None)
     for cand in registry.registry_dir().glob("candidate_*"):
         shutil.rmtree(cand, ignore_errors=True)
-    reg["active_version"] = "v1"
-    registry.write_registry(reg)
+    if restore_text is not None:
+        registry.registry_json().write_text(restore_text, encoding="utf-8")
+    else:
+        reg["versions"] = {"v1": reg["versions"]["v1"]}
+        reg["active_version"] = "v1"
+        registry.write_registry(reg)
 
 
 def _feed(detector, rows, w_s, s_s):
@@ -83,7 +92,8 @@ def run(keep: bool = False) -> Path:
     demo_alerts = resolve("outputs/alerts")
 
     print("[demo] 0) reset -> v1")
-    _reset_to_v1()
+    original_registry = registry.registry_json().read_text(encoding="utf-8")
+    _reset_to_v1(original_registry)
     v1_dir = registry.version_dir("v1")
 
     # 1) NORMAL (LN + HI degradation): must NOT trigger drift.
@@ -161,8 +171,8 @@ def run(keep: bool = False) -> Path:
     print(f"  -> {out}")
 
     if not keep:
-        print("[demo] reset -> v1（可重複執行）")
-        _reset_to_v1()
+        print("[demo] reset -> v1（可重複執行，還原 registry 至 committed 狀態）")
+        _reset_to_v1(original_registry)
     return out
 
 
