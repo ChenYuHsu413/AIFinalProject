@@ -379,3 +379,49 @@ S2 儀表板可直接在此粒度上疊加，不需重訓或改抽稀策略。
 - 頁面標示**數據源**（讀 manifest 的 replay 段落名）與**模擬性質**，需先啟動發布端。
 
 啟動見 [README §5.2](../README.md)。W/S 沿用 §12.1 鎖定值；N/M/平滑窗數見 `config.yaml::servo_alert`。全程唯讀既有模型。
+
+## 14. 模型版本管理 + 驗證閘門 + 重訓管線（S3）
+
+> **狀態（2026-07-11）**：完成。把「重訓 → 驗證 → 部署/擋下」做成一條自動管線，改動面涵蓋模型載入路徑、
+> `/servo/model_info`、版本目錄結構——**但 `predict_servo` 對外介面與輸出 schema 不變、下游零感知，全套測試維持綠**
+> （147 passed）。三條驗收（正常轉正 / 爛候選擋下 / 回滾）皆實跑通過。
+
+**Registry 結構**（[`src/models/servo_model_registry.py`](../src/models/servo_model_registry.py)，命名避開既有
+`model_registry` 演算法工廠）：
+
+```
+models/registry/
+  registry.json          # {active_version, versions:{v1:{摘要}, ...}}（純欄位切換，無 symlink、Windows 相容）
+  v1/  servo_clf.joblib  servo_reg.joblib  servo_feature_config.json  metrics.json
+  candidate_<ts>/        # 重訓管線輸出，轉正前的暫存（gitignore，不提交）
+```
+
+每版 `metrics.json` 記錄部署決策所需證據：留出 macro-F1 / DV R²、訓練資料摘要、特徵組、**模型檔 CRC32**（完整性）、
+訓練時 config 快照、**FMCRD 溯源指紋**、時間戳。**遷移**：現行部署模型登記為 **v1**（回填 macro-F1 **0.8187** /
+DV R² **0.9444** + CRC32 + 溯源）；`registry.json` 與 `v*/` 進 git 白名單（`models/` 未被忽略，`candidate_*/` 忽略）。
+**載入集中化**：`load_active()` / `load_version(v)` 為唯一載入來源，`predict_servo` 與 FastAPI 啟動經此載入、
+`/servo/model_info` 回傳 `model_version`、告警引擎的 `model_version` 由 active 版本帶入（不再硬編）。
+
+**驗證閘門**（[`src/pipeline/validation_gate.py`](../src/pipeline/validation_gate.py)）——依序執行，任一 FAIL 即整體
+FAIL，結果寫候選目錄的 `gate_report.json`：
+
+| 檢查 | 內容 |
+| --- | --- |
+| 1 完整性 | 必要檔案齊全；`feature_config` 欄位與其 feature_set 定義、且與 `config.reference_feature_set` 一致；模型檔 CRC32 與 metrics 記錄相符 |
+| 2 煙霧測試 | 載入候選對 demo 列跑 `predict_servo`，輸出 schema 與值域合法 |
+| 3 留出指標 | **重新計算**候選在 committed test split 的 macro-F1 / DV R²（不採信自報），要求 ≥ active − 容忍帶 |
+| 4 AE 單調性 | 候選含 DL/AE 才執行（重建誤差 LN→HI 非遞減），否則 SKIP 記錄 |
+
+**容忍帶依據**（`config.yaml::servo_gate`，預設 macro-F1 / DV R² 各 **0.005**）：訓練隨機性（seed、CV fold 洗牌）會讓
+留出 macro-F1 浮動約 ±0.01；容忍帶**吸收此隨機性、但不放行實質退化**——候選最多可比 active 低 `tolerance`，不得更低。
+閘門本身有攔截測試（[`tests/test_validation_gate.py`](../tests/test_validation_gate.py)）：偽造缺檔 / CRC 竄改 / 特徵
+不符 / 退化模型（常數類別）各驗證真的被擋。
+
+**重訓管線**（[`scripts/retrain_pipeline.py`](../scripts/retrain_pipeline.py)）：訓練 → `candidate_<ts>/`（不碰 active）
+→ 閘門 → PASS 轉正 `v<n+1>` + 切 active + log 對比；FAIL 保留候選與 gate_report、active 不動、exit 1。
+`--dry-run`（驗證不切換）、`--data-config`（訓練資料子集，如 `{"train_frac":0.1}`；S4 漂移劇本用此參數口）。
+`train_servo.run(out_dir, data_config)` 為最小侵入新增、預設行為不變。
+
+**回滾程序**：編輯 `models/registry/registry.json` 的 `active_version` 改回目標版本（或 `python -c
+"from src.models import servo_model_registry as r; r.set_active('v1')"`），**服務重啟/重載**後全鏈路恢復——
+`predict_servo` / `/servo/model_info` / 告警事件 `model_version` 皆隨之切回。已實測 v2→v1 回滾全鏈路恢復。
