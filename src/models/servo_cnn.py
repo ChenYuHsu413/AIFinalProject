@@ -94,7 +94,13 @@ def _train(model, X, y, loss_fn, epochs, rs, batch=32, lr=1e-3):
     model.eval()
 
 
-def run() -> Path:
+def run(out_path: Path | None = None) -> Path:
+    """Run the 1D-CNN baseline and write the results JSON.
+
+    ``out_path`` overrides the default committed results path (config
+    ``servo.cnn_metrics``) — tests pass a tmp path so the suite never rewrites a
+    tracked artefact.
+    """
     ensure_output_dirs()
     cfg = load_config()["servo"]
     rs = int(cfg.get("random_state", 42))
@@ -167,7 +173,8 @@ def run() -> Path:
         },
         "autoencoder": {"reconstruction_error_by_class": per_class},
     }
-    p = resolve(cfg["cnn_metrics"])
+    p = Path(out_path) if out_path is not None else resolve(cfg["cnn_metrics"])
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"[Servo CNN] (torch {torch.__version__}) acc={acc:.3f} macro-F1={macro_f1:.3f}")
     print(f"    AE 重建誤差/類別：{ {k: round(v, 3) for k, v in per_class.items()} }")

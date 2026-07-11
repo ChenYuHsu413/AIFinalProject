@@ -12,10 +12,12 @@ import pytest
 pytest.importorskip("torch")
 
 
-def test_servo_dl_runs_and_writes_expected_json():
+def test_servo_dl_runs_and_writes_expected_json(tmp_path):
     from src.models import servo_dl
 
-    out = json.load(open(servo_dl.run(), encoding="utf-8"))
+    # Write to a tmp path, not the committed outputs/metrics/servo_dl_results.json,
+    # so the test suite never dirties a tracked artefact (float-noise diffs).
+    out = json.load(open(servo_dl.run(tmp_path / "servo_dl_results.json"), encoding="utf-8"))
 
     assert out["method"] == "servo_dl_torch"
     assert out["framework"].startswith("pytorch")

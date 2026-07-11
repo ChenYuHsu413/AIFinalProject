@@ -90,7 +90,13 @@ def _train(model: nn.Module, X: torch.Tensor, y: torch.Tensor,
     model.eval()
 
 
-def run() -> Path:
+def run(out_path: Path | None = None) -> Path:
+    """Run the offline DL baseline and write the results JSON.
+
+    ``out_path`` overrides the default committed results path (config
+    ``servo.dl_metrics``) — tests pass a tmp path so the suite never rewrites a
+    tracked artefact.
+    """
     ensure_output_dirs()
     cfg = load_config()["servo"]
     rs = int(cfg.get("random_state", 42))
@@ -196,7 +202,8 @@ def run() -> Path:
         "reconstruction_error_by_class": per_class,
         "labels": labels,
     }
-    p = resolve(cfg["dl_metrics"])
+    p = Path(out_path) if out_path is not None else resolve(cfg["dl_metrics"])
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"[Servo DL] (torch {torch.__version__}) MLP macro-F1={mlp_clf_f1:.3f}, "
           f"reg R2={mlp_reg['r2']:.3f}")

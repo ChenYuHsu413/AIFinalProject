@@ -23,12 +23,13 @@ def test_cnn_and_ae_forward_shapes():
     assert servo_cnn._ConvAE(8)(x).shape == x.shape  # AE reconstructs same shape
 
 
-def test_servo_cnn_run_when_data_present():
+def test_servo_cnn_run_when_data_present(tmp_path):
     npz = resolve(load_config()["servo"]["windows_path"])
     if not npz.exists():
         pytest.skip("windowed dataset absent (built offline from the raw FMCRD zip)")
 
-    out = json.load(open(servo_cnn.run(), encoding="utf-8"))
+    # tmp path, not the committed outputs/metrics/servo_cnn_results.json.
+    out = json.load(open(servo_cnn.run(tmp_path / "servo_cnn_results.json"), encoding="utf-8"))
     assert out["method"] == "servo_cnn_1d"
 
     clf = out["classifier"]
