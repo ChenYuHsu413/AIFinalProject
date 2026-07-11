@@ -322,7 +322,7 @@ CV 從 `enabled_models` 選出 **logistic_regression**（CV 0.740，勝 mlp 0.73
 **誠實揭露**：LN↔LO 邊界仍見互相誤判（如某 LN 窗判 LO），為 §11 記錄之模型**既有**弱點（0.819 天花板），非管線 bug；
 **DV / 風險**呈乾淨單調，是最穩健的退化指標。全程**唯讀既有模型、未改訓練程式**。
 
-啟動與參數見 [README §5.1](../README.md)。
+啟動與參數見 [README §5.1](../README.md)；串流監控為 [README §9 「MLOps 閉環（已完成）」](../README.md) 的起點。
 
 ### 12.1 S1b — replay 視窗驗證（唯讀）
 
@@ -382,7 +382,7 @@ S2 儀表板可直接在此粒度上疊加，不需重訓或改抽稀策略。
 - **底部事件流**：主告警／告警解除／矛盾提示分色（最新在上），主告警可展開見**工單草稿**（背景生成、稍後補上）。
 - 頁面標示**數據源**（讀 manifest 的 replay 段落名）與**模擬性質**，需先啟動發布端。
 
-啟動見 [README §5.2](../README.md)。W/S 沿用 §12.1 鎖定值；N/M/平滑窗數見 `config.yaml::servo_alert`。全程唯讀既有模型。
+啟動見 [README §5.2](../README.md)（告警為 [README §9 「MLOps 閉環（已完成）」](../README.md) 的一環）。W/S 沿用 §12.1 鎖定值；N/M/平滑窗數見 `config.yaml::servo_alert`。全程唯讀既有模型。
 
 ## 14. 模型版本管理 + 驗證閘門 + 重訓管線（S3）
 
@@ -430,6 +430,8 @@ FAIL，結果寫候選目錄的 `gate_report.json`：
 "from src.models import servo_model_registry as r; r.set_active('v1')"`），**服務重啟/重載**後全鏈路恢復——
 `predict_servo` / `/servo/model_info` / 告警事件 `model_version` 皆隨之切回。已實測 v2→v1 回滾全鏈路恢復。
 
+指令與參數見 [README §5.3](../README.md)；本節（registry + 驗證閘門 + 重訓）為 [README §9 「MLOps 閉環（已完成）」](../README.md) 的一環。
+
 ## 15. 漂移偵測閉環（S4）
 
 > **狀態（2026-07-11）**：完成。閉環 = 漂移偵測 → 自動觸發重訓 → 驗證閘門 → 版本切換。`scripts/run_drift_demo.py`
@@ -474,6 +476,9 @@ recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸�
   記錄回填等），這是模擬簡化。
 - 結構保證有單元測試（[`tests/test_drift_detector.py`](../tests/test_drift_detector.py)）：(a) HI 不誤觸、(b) 注入段對
   v1 觸發、(c) v2 消化。
+
+一鍵劇本啟動與預期輸出見 [README §5.4](../README.md)；此閉環完整鏈路（串流→告警→漂移→重訓→閘門→registry）
+總覽見 [README §9 「MLOps 閉環（已完成）」](../README.md)。
 
 ## 16. 方法論：資料洩漏的三種形態與防護
 
