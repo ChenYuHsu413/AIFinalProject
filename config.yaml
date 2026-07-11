@@ -331,6 +331,17 @@ servo_alert:
   # models/registry/registry.json), not hardcoded here.
 
 # ---------------------------------------------------------------------------
+# Module Servo — validation gate (S3). A candidate model must clear these before
+# it can be promoted. The metric tolerance bands absorb training randomness
+# (seed / CV fold shuffling move macro-F1 by ~±0.01) WITHOUT letting a real
+# regression through: a candidate may dip at most `tolerance` below the active
+# version, never more. Widen only with evidence.
+# ---------------------------------------------------------------------------
+servo_gate:
+  macro_f1_tolerance: 0.005   # candidate holdout macro-F1 must be >= active - 0.005
+  dv_r2_tolerance: 0.005      # candidate holdout DV R² must be >= active - 0.005
+
+# ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
 # Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
 # NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.

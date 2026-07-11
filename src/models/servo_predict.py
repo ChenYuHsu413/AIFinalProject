@@ -65,19 +65,23 @@ def load_servo_models(force: bool = False) -> ServoBundle:
             "  python -m src.models.train_servo        # 若尚未訓練\n"
             "  python -m src.models.servo_model_registry --migrate\n"
             f"（原始錯誤：{e}）")
-    config = lm.feature_config
-    if not config.get("healthy_baseline"):
+    if not lm.feature_config.get("healthy_baseline"):
         # Without a baseline, _top_features falls back to mean=0/std=1, so the
         # reported z-scores become raw feature values — surface it rather than
         # letting the dashboard show misleading "anomalous" features silently.
         _LOG.warning(
             "Servo feature_config 缺少 healthy_baseline；top_features 的 z 分數"
             "將以 mean=0/std=1 計算，可能失真。請重跑 train_servo 產生基準。")
-    _BUNDLE = ServoBundle(
-        clf=lm.clf_pipeline, reg=lm.reg_pipeline,
-        feature_columns=list(config["feature_columns"]), config=config,
-        version=lm.version)
+    _BUNDLE = make_bundle(lm)
     return _BUNDLE
+
+
+def make_bundle(lm) -> ServoBundle:
+    """Build a ServoBundle from a registry LoadedModel (any version/candidate)."""
+    config = lm.feature_config
+    return ServoBundle(clf=lm.clf_pipeline, reg=lm.reg_pipeline,
+                       feature_columns=list(config["feature_columns"]),
+                       config=config, version=lm.version)
 
 
 def active_model_version(default: str = "unknown") -> str:
@@ -150,9 +154,15 @@ def _advice(state: str, top: List[Dict[str, Any]]) -> List[str]:
     return out
 
 
-def predict_servo(record: Dict[str, Any] | pd.Series) -> Dict[str, Any]:
-    """Structured prediction for one aggregated feature row."""
-    b = load_servo_models()
+def predict_servo(record: Dict[str, Any] | pd.Series,
+                  bundle: Optional[ServoBundle] = None) -> Dict[str, Any]:
+    """Structured prediction for one aggregated feature row.
+
+    ``bundle`` overrides the active model — used by the validation gate to
+    smoke-test a CANDIDATE without touching the deployed version. Output schema
+    is identical regardless.
+    """
+    b = bundle if bundle is not None else load_servo_models()
     row = pd.Series(record) if not isinstance(record, pd.Series) else record
     X = pd.DataFrame([{c: float(row[c]) for c in b.feature_columns}])
 

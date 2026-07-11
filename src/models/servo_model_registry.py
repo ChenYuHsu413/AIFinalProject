@@ -134,16 +134,21 @@ class LoadedModel:
     metrics: Dict[str, Any]
 
 
-def load_version(version: str) -> LoadedModel:
-    d = version_dir(version)
-    if not d.exists():
-        raise FileNotFoundError(f"找不到版本目錄：{d}")
-    clf = joblib.load(d / "servo_clf.joblib")
-    reg = joblib.load(d / "servo_reg.joblib")
-    fc = json.loads((d / "servo_feature_config.json").read_text(encoding="utf-8"))
-    mp = d / "metrics.json"
+def load_dir(model_dir: Path) -> LoadedModel:
+    """Load a model from ANY directory (a registered version OR a candidate)."""
+    if not model_dir.exists():
+        raise FileNotFoundError(f"找不到模型目錄：{model_dir}")
+    clf = joblib.load(model_dir / "servo_clf.joblib")
+    reg = joblib.load(model_dir / "servo_reg.joblib")
+    fc = json.loads((model_dir / "servo_feature_config.json").read_text(encoding="utf-8"))
+    mp = model_dir / "metrics.json"
     metrics = json.loads(mp.read_text(encoding="utf-8")) if mp.exists() else {}
+    version = metrics.get("version") or model_dir.name
     return LoadedModel(version, clf["pipeline"], reg["pipeline"], fc, metrics)
+
+
+def load_version(version: str) -> LoadedModel:
+    return load_dir(version_dir(version))
 
 
 def load_active() -> LoadedModel:
