@@ -83,14 +83,32 @@ def run(out_dir: "Path | None" = None,
     df_te = df[df["split"] == "test"].reset_index(drop=True) if has_split else None
     eval_mode = "holdout_test" if has_split else "cv"
 
-    # Optional TRAIN subsetting (retrain-pipeline / S4 drift). Stratified by class
-    # so every health label survives; the TEST split is never touched.
+    # Optional TRAIN subsetting (retrain-pipeline / S4 drift). The TEST split is
+    # never touched. `exclude_ylabel` drops whole classes (S4 v1-lite excludes the
+    # noisy-LO class); `train_frac` stratified-subsamples what remains.
+    if data_config and data_config.get("exclude_ylabel"):
+        excl = set(data_config["exclude_ylabel"])
+        df_tr = df_tr[~df_tr["ylabel"].isin(excl)].reset_index(drop=True)
+        print(f"[Servo] data_config: exclude_ylabel={sorted(excl)} -> 訓練剩 {len(df_tr)} 段")
     if data_config and data_config.get("train_frac") is not None:
         frac = float(data_config["train_frac"])
         seed = int(data_config.get("seed", rs))
         df_tr = (df_tr.groupby("ylabel", group_keys=False)
                  .sample(frac=frac, random_state=seed).reset_index(drop=True))
         print(f"[Servo] data_config: train_frac={frac} -> 訓練縮減為 {len(df_tr)} 段")
+    if data_config and data_config.get("inject_drift"):
+        # S4 closed loop: fold the drifted operating condition into TRAIN so the new
+        # version DIGESTS it — its drift AE then treats that condition as
+        # in-distribution AND its classifier stays robust to it. Appended (keeps all
+        # the normal data); pair with fixed_clf_model below so model SELECTION isn't
+        # fooled by the near-duplicate rows (that leaks across CV folds).
+        from src.monitor.drift_detector import inject_sensor_drift_features
+        inj = data_config["inject_drift"]
+        gain, frac = float(inj.get("gain", 1.3)), float(inj.get("frac", 1.0))
+        sample = df_tr.sample(frac=frac, random_state=rs) if frac < 1.0 else df_tr
+        df_tr = pd.concat([df_tr, inject_sensor_drift_features(sample, gain)],
+                          ignore_index=True)
+        print(f"[Servo] data_config: inject_drift gain={gain} -> 併入漂移工況，訓練 {len(df_tr)} 段")
 
     labels = [c for c in HEALTH_LABELS if c in set(df_tr["ylabel"])]
     print(f"[Servo] 特徵組 {feature_set}（{len(cols)} 維）、訓練 {len(df_tr)} 段"
@@ -110,7 +128,12 @@ def run(out_dir: "Path | None" = None,
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=rs)
     per_model: Dict[str, float] = {}
     best_name, best_macro = None, -np.inf
-    for name in sv.get("enabled_models", ["random_forest"]):
+    # A retrain (e.g. drift closed loop) RE-FITS the deployed model family rather
+    # than re-searching architectures (which would need full re-validation); pin it.
+    search_models = ([data_config["fixed_clf_model"]]
+                     if data_config and data_config.get("fixed_clf_model")
+                     else sv.get("enabled_models", ["random_forest"]))
+    for name in search_models:
         try:
             scores = cross_val_score(
                 build_classifier(name, rs), X, y, cv=skf,
@@ -210,8 +233,14 @@ def run(out_dir: "Path | None" = None,
                                    extra=extra)
         (out_dir / "metrics.json").write_text(
             json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+        # S4: fit this version's drift baseline on ITS OWN training rows, so the
+        # drift AE follows the version (in-distribution == what this model trained on).
+        from src.monitor.drift_detector import build_drift_baseline, save_drift_baseline
+        ae_fs = sv.get("dl_ae_feature_set", "engineered")
+        scaler, pca, baseline = build_drift_baseline(df_tr, "candidate", ae_feature_set=ae_fs)
+        save_drift_baseline(out_dir, scaler, pca, baseline)
         print(f"[Servo] 候選模型 -> {out_dir}（macro-F1={clf_eval['macro_f1']:.3f} "
-              f"R²={reg_eval['r2']:.3f}）")
+              f"R²={reg_eval['r2']:.3f}；drift P95={baseline['recon_error_p95']:.4f}）")
         return out_dir
 
     joblib.dump(clf_bundle, resolve(sv["clf_model"]), compress=3)

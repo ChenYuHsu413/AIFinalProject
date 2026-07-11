@@ -429,3 +429,48 @@ FAIL，結果寫候選目錄的 `gate_report.json`：
 **回滾程序**：編輯 `models/registry/registry.json` 的 `active_version` 改回目標版本（或 `python -c
 "from src.models import servo_model_registry as r; r.set_active('v1')"`），**服務重啟/重載**後全鏈路恢復——
 `predict_servo` / `/servo/model_info` / 告警事件 `model_version` 皆隨之切回。已實測 v2→v1 回滾全鏈路恢復。
+
+## 15. 漂移偵測閉環（S4）
+
+> **狀態（2026-07-11）**：完成。閉環 = 漂移偵測 → 自動觸發重訓 → 驗證閘門 → 版本切換。`scripts/run_drift_demo.py`
+> 一鍵全程無人工介入、可重複（結尾 reset 回 v1）。三條結構保證實跑通過。**核心設計原則：退化 ≠ 漂移。**
+
+**兩個 autoencoder，職責相反（勿混淆）**：
+
+| AE | 擬合資料 | 誤差意義 | 用途 |
+| --- | --- | --- | --- |
+| `servo_dl` 神經 AE（§7） | **僅健康 LN** | 隨退化**上升**（LN 低→HI 高） | **健康指標**（上升是好訊號） |
+| S4 漂移 AE（PCA 線性） | 該版本**全類別**訓練資料 | 退化**在分布內**（低），只有真 off-manifold 才高 | **漂移偵測**（低是好訊號） |
+
+漂移 AE（[`src/monitor/drift_detector.py`](../src/monitor/drift_detector.py)）在 engineered 空間、n_components 由**累積解釋
+變異量 95%** 決定（記錄於每版 `drift_baseline.json`）。**版本綁定**：每版存自己的 `drift_ae.joblib` + `drift_baseline.json`
+（隨版本走）。**觸發**：滾動重建誤差 > 訓練 P95 持續 N 窗。**PSI 為診斷、非觸發**——同質退化段（如純 HI）的邊際分布
+本就異於混合訓練分布，PSI 會對正常退化誤觸，違反「HI 不誤觸」硬要求，故只回報不觸發。
+
+**核心研究發現：重建式漂移偵測的盲區**（[`scripts/validate_drift_blindspot.py`](../scripts/validate_drift_blindspot.py)、
+`outputs/metrics/drift_blindspot.json` + 圖）：資料集自身的 **noisy LO domain shift 並非可重建式偵測的漂移**——noisy LO
+在全類別 PCA 空間**內插於 LN↔MED**（兩者都在訓練內），recon error（~0.05）與分布內類別無異、遠低於 P95（0.15）。
+即**無監督重建式偵測的盲區 = 類別條件 / 流形內偏移**；這與 §11 的 domain shift 三重證據（train-LO n=65 不均、SMOTE/CTGAN
+補不動、FLAML 留出崩盤）互相印證——那是**分類邊界**難度、非分布層級位移。**這是發現，不是失敗**：它精確界定了偵測器
+的適用範圍（感測器/工況層級的分布位移），並說明實務上為何需要多訊號並用。
+
+**漂移劇本用注入式感測器漂移**（誠實標註）：對 replay 段的電流通道施以 **gain×1.3**（`config.yaml::servo_drift.injection`，
+`publisher` 端注入）。**感測器增益漂移為真實世界典型故障模式，此處為注入模擬**，給 demo 一個真正 off-manifold 的分布位移：
+recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸。
+
+**閉環**（[`src/monitor/closed_loop.py`](../src/monitor/closed_loop.py)）：DRIFT → **背景執行緒**（不阻塞監控串流）跑
+重訓管線（`--data-config inject_drift` 把漂移工況併入訓練資料）→ 閘門 → 預設 dry-run（`servo_drift.auto_retrain` 可切
+全自動轉正）。因果鏈回寫事件流（`drift_detected → retrain_started → retrain_finished(gate, version)`），儀表板分色顯示。
+**重訓再擬合既有部署模型家族**（`fixed_clf_model`），不在每次漂移重新架構搜尋（那需完整重驗證）；也避免 append 增強列的
+近重複在 CV 洩漏而選到過擬合模型。
+
+**驗收（實跑，`drift_demo.json`）**：(a) HI 退化不誤觸 ✅；(b) 注入漂移觸發 ✅；(c) 重訓後 v2 消化（recon 回落 < P95）✅。
+漂移資料上分類 macro-F1 **v1 0.440 → v2 0.834**。
+
+**誠實揭露**：
+- **互補訊號（信心）**：注入漂移段 `model_confidence` **不降反升**（0.79→1.00）——模型對 OOD 資料「自信地錯」。故信心**非**
+  可靠漂移訊號、重建式偵測才是必要；儀表板保留信心滾動圖供對照。
+- **標籤假設**：demo 重訓納入漂移段時標籤現成（replay 自帶 `ylabel`）；**真實工廠中漂移後新資料需標註流程**（人工檢修
+  記錄回填等），這是模擬簡化。
+- 結構保證有單元測試（[`tests/test_drift_detector.py`](../tests/test_drift_detector.py)）：(a) HI 不誤觸、(b) 注入段對
+  v1 觸發、(c) v2 消化。

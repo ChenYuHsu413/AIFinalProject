@@ -94,6 +94,7 @@ def window_prediction(recs: Iterable[Dict], stream_t: float) -> Dict[str, Any]:
     out["_true"] = labels.mode().iloc[0] if not labels.mode().empty else "?"
     out["_rows"] = int(len(df))
     out["_stream_t"] = round(float(stream_t), 3)
+    out["_features"] = feats                  # aggregated features (drift detector reads these)
     return out
 
 

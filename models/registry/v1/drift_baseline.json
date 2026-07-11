@@ -1,0 +1,142 @@
+{
+  "model_version": "v1",
+  "ae_feature_set": "engineered",
+  "ae_columns": [
+    "current_rms",
+    "torque_std",
+    "rotor_speed_std",
+    "position_error_mean",
+    "position_error_max",
+    "quadrature_rms",
+    "direct_rms"
+  ],
+  "pca_n_components": 3,
+  "pca_explained_variance": 0.9541,
+  "explained_variance_target": 0.95,
+  "recon_error_p95": 0.14760032002785578,
+  "recon_error_train_mean": 0.045943619249805535,
+  "psi_bins": 5,
+  "psi_reference": {
+    "current_rms": {
+      "edges": [
+        -Infinity,
+        3.5206678198094448,
+        3.752873771874732,
+        4.101975946792525,
+        4.479060089474168,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "torque_std": {
+      "edges": [
+        -Infinity,
+        5.221172853516941,
+        5.56593976913449,
+        6.085142664675823,
+        6.645353123601527,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "rotor_speed_std": {
+      "edges": [
+        -Infinity,
+        56.46918940492939,
+        61.19446928380368,
+        64.49890917868925,
+        69.97358912627742,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "position_error_mean": {
+      "edges": [
+        -Infinity,
+        -0.8661111645604902,
+        -0.2484453040948777,
+        0.31624537580763457,
+        0.8349334098703948,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "position_error_max": {
+      "edges": [
+        -Infinity,
+        11.378396307733624,
+        14.983766824892609,
+        16.958375762200784,
+        18.675028077819025,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "quadrature_rms": {
+      "edges": [
+        -Infinity,
+        4.972549740699726,
+        5.300898246849821,
+        5.795376575840842,
+        6.3289097851550356,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    },
+    "direct_rms": {
+      "edges": [
+        -Infinity,
+        0.2458080739098592,
+        0.2516151004035637,
+        0.25650926911791067,
+        0.26215228222559966,
+        Infinity
+      ],
+      "ref": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ]
+    }
+  },
+  "n_train": 665,
+  "created": "2026-07-11T07:37:06+00:00"
+}

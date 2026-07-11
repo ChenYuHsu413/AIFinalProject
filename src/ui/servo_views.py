@@ -419,7 +419,29 @@ _EVENT_STYLE = {
     "alert_triggered": ("#ef4444", "🔴 主告警觸發"),
     "alert_cleared": ("#22c55e", "🟢 告警解除"),
     "consistency_warning": ("#f59e0b", "⚠ 矛盾提示"),
+    "drift_detected": ("#a855f7", "🟣 資料漂移偵測"),
+    "drift_cleared": ("#14b8a6", "🟦 漂移解除"),
+    "retrain_started": ("#3b82f6", "🔄 觸發自動重訓"),
+    "retrain_finished": ("#6366f1", "✅ 重訓完成"),
+    "retrain_error": ("#ef4444", "❌ 重訓失敗"),
 }
+
+
+def _event_detail(e: Dict[str, Any]) -> str:
+    t = e["type"]
+    if t == "drift_detected":
+        return (f"重建誤差 {e.get('rolling_recon_error')} > 基線 P95 {e.get('baseline_p95')}"
+                f"（資料不像訓練分布；退化狀態不會觸發此事件）")
+    if t == "drift_cleared":
+        return "訊號回落基線內（漂移已被重訓消化或情境結束）"
+    if t == "retrain_started":
+        return f"模式={e.get('mode')}；納入漂移工況資料重訓（背景執行，不阻塞監控）"
+    if t == "retrain_finished":
+        v = f" → 新版本 {e['new_version']}" if e.get("new_version") else "（dry-run，未切換）"
+        return f"驗證閘門 {'PASS' if e.get('gate_passed') else 'FAIL'}{v}"
+    if t == "retrain_error":
+        return str(e.get("error", ""))
+    return e.get("message") or e.get("trigger_rule") or e.get("clear_rule") or ""
 
 
 def _status_light_html(smoothed: str, raw: str, k: int) -> str:
@@ -479,8 +501,7 @@ def _render_feed(container, events: List[Dict[str, Any]]) -> None:
                 <div style="border-left:4px solid {color};padding:6px 12px;margin:6px 0;
                      background:rgba(148,163,184,.06);border-radius:6px;">
                   <b>{head}</b><br>
-                  <span style="font-size:.82rem;opacity:.8;">
-                  {e.get('message') or e.get('trigger_rule') or e.get('clear_rule') or ''}</span>
+                  <span style="font-size:.82rem;opacity:.8;">{_event_detail(e)}</span>
                 </div>"""), unsafe_allow_html=True)
             wo = work_orders.get(e.get("id"))
             if e["type"] == "alert_triggered":
@@ -492,11 +513,14 @@ def render_live_monitor() -> None:
     import urllib.error
     from collections import Counter, deque
 
+    from src.models import servo_model_registry as registry
     from src.monitor.alert_engine import AlertEngine
+    from src.monitor.closed_loop import ClosedLoop
+    from src.monitor.drift_detector import DriftDetector
     from src.monitor.servo_replay_client import iter_window_predictions
 
     cfg = load_config()
-    rep, al = cfg["servo_replay"], cfg.get("servo_alert", {})
+    rep, al, dcfg = cfg["servo_replay"], cfg.get("servo_alert", {}), cfg.get("servo_drift", {})
     w_s, s_s = float(rep["window"]["length_s"]), float(rep["window"]["step_s"])
     k = int(al.get("status_smoothing_windows", 3))
 
@@ -528,6 +552,15 @@ def render_live_monitor() -> None:
     feed_ph = st.empty()
 
     engine = AlertEngine(config=al)
+    # S4: drift detector on the ACTIVE version's baseline + closed loop (background
+    # retrain that folds the drifted condition in). Degradation never trips drift.
+    drift = closed = None
+    try:
+        active_dir = registry.version_dir(registry.active_version())
+        drift = DriftDetector(active_dir, config=dcfg)
+        closed = ClosedLoop(retrain_data_config={"inject_drift": dcfg.get("injection", {"gain": 1.3})})
+    except Exception:
+        st.caption("（此版本無漂移基線，漂移偵測略過）")
     recent: "deque[str]" = deque(maxlen=k)
     ts, dvs, confs = [], [], []
     try:
@@ -538,6 +571,10 @@ def render_live_monitor() -> None:
             ts.append(pred["_stream_t"]); dvs.append(pred["degradation_score"])
             confs.append(pred["model_confidence"])
             engine.update(pred)
+            if drift is not None:
+                for de in drift.update(pred):
+                    if de["type"] == "drift_detected" and closed is not None:
+                        closed.on_drift(de)  # background retrain; monitoring continues
 
             light_ph.markdown(_status_light_html(smoothed, state, k), unsafe_allow_html=True)
             raw_ph.caption(

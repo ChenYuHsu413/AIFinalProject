@@ -43,16 +43,22 @@ def build_app(default_mode: str = "replay",
 
     @app.get("/servo/stream")
     def servo_stream(mode: str | None = None, speed: float = 1.0,
-                     emit_hz: float | None = None):
+                     emit_hz: float | None = None, order: str | None = None,
+                     inject_segments: str | None = None, inject_gain: float = 1.3):
         """SSE feed of raw RAW_COLUMNS rows.
 
         `mode=replay` streams the real FMCRD LN->LO->HI journey (demo default).
         `mode=fake` emits synthetic rows for pipeline testing only — those
         predictions are INVALID (data is outside the model's training distribution).
+        `order=LN,HI` overrides the segment order; `inject_segments=HI` applies a
+        SIMULATED current-sensor gain drift (`inject_gain`) to those segments (S4).
         """
+        inject = ({"segments": inject_segments.split(","), "gain": inject_gain}
+                  if inject_segments else None)
         return StreamingResponse(
             stream_replay(mode=mode or default_mode, speed=speed,
-                          emit_hz=emit_hz if emit_hz is not None else default_emit_hz),
+                          emit_hz=emit_hz if emit_hz is not None else default_emit_hz,
+                          order=order.split(",") if order else None, inject=inject),
             media_type="text/event-stream",
         )
 
