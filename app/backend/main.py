@@ -354,6 +354,73 @@ async def monitor_stream(speed: float = 1.0, hz: int = 20):
     )
 
 
+@app.get("/servo/monitor/stream")
+async def servo_monitor_stream(segment: str = "normal", max_windows: int = 200,
+                               interval: float = 0.4):
+    """伺服馬達即時監控（SSE）：後端自包含視窗聚合＋推論＋告警＋漂移，逐視窗發布 enriched 事件。
+
+    自包含設計：直接在後端進程內復用 replay 素材（`data/demo/replay/`）→ 視窗管線 →
+    參考模型推論 → 告警遲滯引擎 → 漂移偵測器，**不依賴獨立的 servo_replay_publisher**
+    （該腳本保留為本機開發工具）。`segment` 選擇 replay 劇本：`normal`（一般段落）或
+    `drift`（HI 段注入感測器增益漂移）。每筆 `data:` 為一視窗的 enriched JSON。
+
+    後端算、前端只畫：平滑狀態、告警狀態、漂移判定全在此決定。
+    """
+    import asyncio
+    import json as _json
+
+    from fastapi.responses import StreamingResponse
+
+    from src.monitor.monitor_stream import iter_enriched_windows, replay_segments
+
+    if segment not in replay_segments():
+        raise HTTPException(status_code=400,
+                            detail=f"未知 segment={segment}（可用：{list(replay_segments())}）")
+    try:
+        from src.monitor.servo_replay_stream import iter_replay_rows
+        next(iter(iter_replay_rows(order=["LN"], loop=False)))  # fail fast if material missing
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except StopIteration:
+        pass
+
+    max_windows = max(1, min(int(max_windows), 1000))
+    interval = float(min(max(interval, 0.0), 5.0))
+
+    async def _gen():
+        # Per-window inference is blocking (pandas + sklearn); pull each window off
+        # a worker thread so the event loop stays responsive for other requests.
+        loop = asyncio.get_running_loop()
+        gen = iter_enriched_windows(segment=segment, max_windows=max_windows)
+        sentinel = object()
+        yield f"event: open\ndata: {_json.dumps({'segment': segment})}\n\n"
+        while True:
+            item = await loop.run_in_executor(None, lambda: next(gen, sentinel))
+            if item is sentinel:
+                break
+            yield f"data: {_json.dumps(item, ensure_ascii=False)}\n\n"
+            if interval:
+                await asyncio.sleep(interval)
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(
+        _gen(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+                 "Connection": "keep-alive"},
+    )
+
+
+@app.get("/servo/monitor/events")
+def servo_monitor_events(limit: int = 50, offset: int = 0):
+    """輪詢式事件端點：回傳最近 N 筆告警／矛盾提示／DRIFT 事件（讀 outputs/alerts JSONL）。
+
+    最新在上，支援 `limit` / `offset` 分頁；`work_orders` 另附，供前端把工單草稿掛回告警。
+    """
+    from src.monitor.monitor_stream import read_recent_events
+
+    return read_recent_events(limit=limit, offset=offset)
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 

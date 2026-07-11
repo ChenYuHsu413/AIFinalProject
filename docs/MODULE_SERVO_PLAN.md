@@ -493,3 +493,35 @@ recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸�
 
 **共通教訓**：洩漏不是一種 bug，是一類 bug——任何讓評估集資訊在訓練 / 選擇 / 增強階段「提前現身」的路徑。防護的共同原則
 是**把邊界劃在對的地方**：重採樣的邊界在 fold 內、選擇的邊界在 train、增強的邊界在「不製造評估看得到的近重複」。
+
+## 17. Command Center 主前端接入（S5：後端聚合端點 → Next.js 監控頁）
+
+> **狀態（2026-07-11）**：Task 0（後端自包含聚合串流端點）完成。把 S1–S4 的 MLOps 閉環成果接進 Next.js
+> Command Center 主前端，架構原則**後端算、前端只畫**——視窗聚合、推論、告警判定、漂移判定全留後端，前端僅渲染。
+
+**前後端職責劃分（後端算、前端畫）**：新監控頁的一切決策（近 3 窗多數決平滑、告警遲滯狀態、漂移是否觸發）
+都在後端算好、以 enriched JSON 逐視窗發布，前端只負責顯示。這與舊「即時監控雷達」（`/monitor/stream`，合成 v3
+資料、前端做部分計算）分屬兩條軌：舊雷達定位為 **legacy / 合成 demo**，保留不動作為 fallback；新 Servo 監控頁走
+真實 FMCRD replay + 參考模型 + S2/S4 引擎。
+
+**Task 0 — 後端聚合串流端點**（[`src/monitor/monitor_stream.py`](../src/monitor/monitor_stream.py)，端點於
+[`app/backend/main.py`](../app/backend/main.py)）：
+
+- `GET /servo/monitor/stream?segment=normal|drift`（SSE）：**自包含設計**——後端進程內直接復用 replay 素材
+  （`data/demo/replay/`）→ 視窗管線（`iter_window_predictions_from_rows`）→ 參考模型推論 → 告警遲滯引擎
+  （`AlertEngine`）→ 漂移偵測器（`DriftDetector`），逐視窗發布 enriched 事件：`window_ts`、
+  `predicted_health_state`（原始）、`smoothed_state`（近 3 窗多數決）、`health_state_proba`、`degradation_score`、
+  `model_confidence`、`risk_level`、`alert_state`（引擎當前狀態）、`drift_status`（重建誤差／P95 閾值／是否觸發）、
+  `model_version`、`replay_segment`（數據源標注）。逐視窗推論為阻塞運算，端點以 `run_in_executor` 卸載到工作
+  執行緒、不卡事件迴圈。素材缺失回 503。
+- `GET /servo/monitor/events?limit&offset`（輪詢式）：回傳最近 N 筆告警／矛盾提示／DRIFT 事件（讀
+  `outputs/alerts/*.jsonl`），最新在上、支援分頁；`work_orders` 另附供前端把工單草稿掛回告警。
+- `smoothed_state` 是**顯示層決策**（近 K 窗多數決），沿用 Streamlit 版「原始 vs 平滑」的誠實設計——前端同屏顯示
+  逐窗原始預測，狀態燈用平滑值。單元測試 [`tests/test_monitor_stream.py`](../tests/test_monitor_stream.py)：enriched
+  事件 schema、`drift` 段注入、未知段落拒絕、事件端點分頁。
+
+**publisher vs 進程內聚合的定位差異**：[`scripts/servo_replay_publisher.py`](../scripts/servo_replay_publisher.py)
+（發布 `GET /servo/stream` 原始列 SSE）保留為**本機開發工具**——供 CLI 消費端（`servo_replay_consumer.py`）與
+Streamlit 監控頁（消費同一條 `/servo/stream`）使用。新的 `/servo/monitor/stream` **不依賴**該服務：它在後端進程內
+直接讀素材、完成視窗聚合與推論，對外只發布已算好的 enriched 事件。兩者共用同一套底層管線函式（單一真相來源），
+差別只在「原始列 over HTTP」vs「enriched 事件、進程內」。
