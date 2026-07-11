@@ -516,6 +516,7 @@ def servo_model_info() -> Dict[str, Any]:
 
     b = load_servo_models()
     return {
+        "model_version": b.version,
         "feature_set": b.config.get("feature_set"),
         "feature_columns": b.feature_columns,
         "labels": b.config.get("labels"),

@@ -327,7 +327,8 @@ servo_alert:
   clear_consecutive: 3       # M: consecutive windows at risk ≤ Medium to CLEAR it
   status_smoothing_windows: 3  # status light = majority vote over last K windows (anti-flicker)
   alerts_dir: outputs/alerts   # event JSONL sink (runtime artefact; gitignored)
-  model_version: v1          # S3 will populate from model metadata; "v1" placeholder for now
+  # model_version is stamped from the ACTIVE model in the version registry (S3,
+  # models/registry/registry.json), not hardcoded here.
 
 # ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
