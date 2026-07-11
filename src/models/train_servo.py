@@ -98,7 +98,10 @@ def run(out_dir: "Path | None" = None,
         print(f"[Servo] data_config: train_frac={frac} -> 訓練縮減為 {len(df_tr)} 段")
     if data_config and data_config.get("inject_drift"):
         # S4 closed loop: fold the drifted operating condition into TRAIN so the new
-        # version DIGESTS it (its drift AE then treats that condition as in-distribution).
+        # version DIGESTS it — its drift AE then treats that condition as
+        # in-distribution AND its classifier stays robust to it. Appended (keeps all
+        # the normal data); pair with fixed_clf_model below so model SELECTION isn't
+        # fooled by the near-duplicate rows (that leaks across CV folds).
         from src.monitor.drift_detector import inject_sensor_drift_features
         inj = data_config["inject_drift"]
         gain, frac = float(inj.get("gain", 1.3)), float(inj.get("frac", 1.0))
@@ -125,7 +128,12 @@ def run(out_dir: "Path | None" = None,
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=rs)
     per_model: Dict[str, float] = {}
     best_name, best_macro = None, -np.inf
-    for name in sv.get("enabled_models", ["random_forest"]):
+    # A retrain (e.g. drift closed loop) RE-FITS the deployed model family rather
+    # than re-searching architectures (which would need full re-validation); pin it.
+    search_models = ([data_config["fixed_clf_model"]]
+                     if data_config and data_config.get("fixed_clf_model")
+                     else sv.get("enabled_models", ["random_forest"]))
+    for name in search_models:
         try:
             scores = cross_val_score(
                 build_classifier(name, rs), X, y, cv=skf,

@@ -90,7 +90,16 @@ class ClosedLoop:
         try:
             old_active = registry.active_version(default=None)
             cand = registry.registry_dir() / f"candidate_{ts}"
-            train_servo.run(out_dir=cand, data_config=self.retrain_data_config)
+            # Re-fit the DEPLOYED model family on the new data (don't re-search
+            # architectures on every drift — that would need full re-validation).
+            dc = dict(self.retrain_data_config or {})
+            if old_active and "fixed_clf_model" not in dc:
+                try:
+                    dc["fixed_clf_model"] = registry.load_version(
+                        old_active).feature_config.get("clf_model")
+                except Exception:
+                    pass
+            train_servo.run(out_dir=cand, data_config=dc)
             report = run_gate(cand, active_version=old_active)
             new_version = None
             if report["passed"] and self.auto_retrain:
