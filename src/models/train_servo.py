@@ -83,8 +83,13 @@ def run(out_dir: "Path | None" = None,
     df_te = df[df["split"] == "test"].reset_index(drop=True) if has_split else None
     eval_mode = "holdout_test" if has_split else "cv"
 
-    # Optional TRAIN subsetting (retrain-pipeline / S4 drift). Stratified by class
-    # so every health label survives; the TEST split is never touched.
+    # Optional TRAIN subsetting (retrain-pipeline / S4 drift). The TEST split is
+    # never touched. `exclude_ylabel` drops whole classes (S4 v1-lite excludes the
+    # noisy-LO class); `train_frac` stratified-subsamples what remains.
+    if data_config and data_config.get("exclude_ylabel"):
+        excl = set(data_config["exclude_ylabel"])
+        df_tr = df_tr[~df_tr["ylabel"].isin(excl)].reset_index(drop=True)
+        print(f"[Servo] data_config: exclude_ylabel={sorted(excl)} -> 訓練剩 {len(df_tr)} 段")
     if data_config and data_config.get("train_frac") is not None:
         frac = float(data_config["train_frac"])
         seed = int(data_config.get("seed", rs))
@@ -210,8 +215,14 @@ def run(out_dir: "Path | None" = None,
                                    extra=extra)
         (out_dir / "metrics.json").write_text(
             json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+        # S4: fit this version's drift baseline on ITS OWN training rows, so the
+        # drift AE follows the version (in-distribution == what this model trained on).
+        from src.monitor.drift_detector import build_drift_baseline, save_drift_baseline
+        ae_fs = sv.get("dl_ae_feature_set", "engineered")
+        scaler, pca, baseline = build_drift_baseline(df_tr, "candidate", ae_feature_set=ae_fs)
+        save_drift_baseline(out_dir, scaler, pca, baseline)
         print(f"[Servo] 候選模型 -> {out_dir}（macro-F1={clf_eval['macro_f1']:.3f} "
-              f"R²={reg_eval['r2']:.3f}）")
+              f"R²={reg_eval['r2']:.3f}；drift P95={baseline['recon_error_p95']:.4f}）")
         return out_dir
 
     joblib.dump(clf_bundle, resolve(sv["clf_model"]), compress=3)

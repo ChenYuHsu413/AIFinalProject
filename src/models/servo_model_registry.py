@@ -259,6 +259,12 @@ def promote_candidate(candidate_dir: Path, metrics: Dict[str, Any],
     shutil.move(str(candidate_dir), str(target))
     (target / "metrics.json").write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Stamp the moved drift baseline (built at candidate time) with the real version.
+    db = target / "drift_baseline.json"
+    if db.exists():
+        d = json.loads(db.read_text(encoding="utf-8"))
+        d["model_version"] = version
+        db.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
     register_version(target, metrics, note=note, make_active=True)
     return version
 

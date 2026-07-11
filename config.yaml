@@ -342,6 +342,27 @@ servo_gate:
   dv_r2_tolerance: 0.005      # candidate holdout DV R² must be >= active - 0.005
 
 # ---------------------------------------------------------------------------
+# Module Servo — data-drift detector (S4). The drift AE is a PCA linear
+# autoencoder fit on the model version's FULL training distribution (all health
+# levels), so DEGRADATION is in-distribution (low error) and only genuine
+# distribution shift scores high — "degradation ≠ drift" by construction.
+# TRIGGER = rolling reconstruction error > the training P95 for N windows. PSI is
+# a reported DIAGNOSTIC only, NOT a trigger: over a homogeneous degradation phase a
+# window block's marginals differ from mixed training, so PSI would false-fire on
+# normal HI degradation — the very anti-pattern we must avoid (see docs §15).
+# ---------------------------------------------------------------------------
+servo_drift:
+  ae_explained_variance: 0.95  # PCA bottleneck = fewest PCs reaching this (recorded per version)
+  sustain_windows: 3           # N: consecutive windows recon error must stay > P95 to fire DRIFT
+  psi_window: 8                # K: rolling window count for error mean + PSI diagnostic
+  psi_threshold: 0.2           # PSI diagnostic: a feature above this is flagged in the event (not a trigger)
+  psi_min_features: 3          # (diagnostic aggregation only)
+  auto_retrain: false          # DRIFT triggers retrain_pipeline in --dry-run; true = full auto-promote
+  injection:                   # S4 demo: injected current-sensor gain drift (SIMULATED real-world fault)
+    gain: 1.3
+    offset: 0.0
+
+# ---------------------------------------------------------------------------
 # Live Monitor v3 — independent SYNTHETIC demo track (AI-generated Servo AI
 # Dataset v3.0). Real-time "monitoring radar" replay + early-warning model.
 # NOT the real PHM main line; see docs/MODULE_MONITOR_V3_PLAN.md.

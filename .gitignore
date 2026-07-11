@@ -88,6 +88,8 @@ data/raw/servo_v3/
 !outputs/metrics/servo_data_provenance.json
 # S1b replay-window validation (decimation bias + streaming consistency, read-only).
 !outputs/metrics/replay_window_validation.json
+# S4 drift reconstruction blind-spot finding (noisy LO on-manifold; read-only).
+!outputs/metrics/drift_blindspot.json
 
 # Module Servo FMCRD replay demo segments (Task A / S1 live stream). Small
 # (~3 MB each), committed so the streaming demo runs without the raw FMCRD zip.
