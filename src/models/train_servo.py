@@ -96,6 +96,16 @@ def run(out_dir: "Path | None" = None,
         df_tr = (df_tr.groupby("ylabel", group_keys=False)
                  .sample(frac=frac, random_state=seed).reset_index(drop=True))
         print(f"[Servo] data_config: train_frac={frac} -> 訓練縮減為 {len(df_tr)} 段")
+    if data_config and data_config.get("inject_drift"):
+        # S4 closed loop: fold the drifted operating condition into TRAIN so the new
+        # version DIGESTS it (its drift AE then treats that condition as in-distribution).
+        from src.monitor.drift_detector import inject_sensor_drift_features
+        inj = data_config["inject_drift"]
+        gain, frac = float(inj.get("gain", 1.3)), float(inj.get("frac", 1.0))
+        sample = df_tr.sample(frac=frac, random_state=rs) if frac < 1.0 else df_tr
+        df_tr = pd.concat([df_tr, inject_sensor_drift_features(sample, gain)],
+                          ignore_index=True)
+        print(f"[Servo] data_config: inject_drift gain={gain} -> 併入漂移工況，訓練 {len(df_tr)} 段")
 
     labels = [c for c in HEALTH_LABELS if c in set(df_tr["ylabel"])]
     print(f"[Servo] 特徵組 {feature_set}（{len(cols)} 維）、訓練 {len(df_tr)} 段"

@@ -39,12 +39,17 @@ def _replay_config() -> Dict:
 # Row sources — each yields plain dicts keyed by RAW_COLUMNS.
 # ---------------------------------------------------------------------------
 def iter_replay_rows(order: List[str] | None = None,
-                     loop: bool | None = None) -> Iterator[Dict]:
+                     loop: bool | None = None,
+                     inject: Dict | None = None) -> Iterator[Dict]:
     """Yield real FMCRD replay rows, segment by segment, in ``order``.
 
     Reads the manifest written by ``extract_replay_segments.py`` and streams each
     segment CSV row by row. Concatenated across segments this replays the
     LN -> LO -> HI degradation journey.
+
+    ``inject`` (S4 drift demo) = ``{"segments": [names], "gain": 1.3, "offset": 0}``
+    applies a SIMULATED current-sensor gain drift to the named segments' rows, so
+    the stream carries a genuine off-manifold distribution shift.
     """
     cfg = _replay_config()
     order = order or cfg["order"]
@@ -57,6 +62,9 @@ def iter_replay_rows(order: List[str] | None = None,
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     by_seg = {s["segment"]: s for s in manifest["segments"]}
     replay_dir = manifest_path.parent
+    inj_segs = set((inject or {}).get("segments", []))
+    inj_gain = float((inject or {}).get("gain", 1.0))
+    inj_offset = float((inject or {}).get("offset", 0.0))
 
     def one_pass() -> Iterator[Dict]:
         for seg_name in order:
@@ -65,7 +73,11 @@ def iter_replay_rows(order: List[str] | None = None,
             df = pd.read_csv(replay_dir / by_seg[seg_name]["file"])
             # Emit exactly RAW_COLUMNS in order; keep native dtypes (ylabel is str).
             df = df[RAW_COLUMNS]
+            do_inject = seg_name in inj_segs
             for rec in df.to_dict(orient="records"):
+                if do_inject:
+                    from src.monitor.drift_detector import inject_sensor_drift_raw
+                    rec = inject_sensor_drift_raw(rec, inj_gain, inj_offset)
                 yield rec
 
     while True:
@@ -114,7 +126,8 @@ def iter_fake_rows() -> Iterator[Dict]:
 # ---------------------------------------------------------------------------
 async def stream_replay(mode: str = "replay", emit_hz: float | None = None,
                         speed: float = 1.0, order: List[str] | None = None,
-                        loop: bool | None = None) -> AsyncIterator[str]:
+                        loop: bool | None = None,
+                        inject: Dict | None = None) -> AsyncIterator[str]:
     """Infinite/one-shot SSE feed of RAW_COLUMNS rows.
 
     ``emit_hz`` sets the wall-clock publish cadence (messages/sec); faster than
@@ -130,7 +143,7 @@ async def stream_replay(mode: str = "replay", emit_hz: float | None = None,
     if mode == "fake":
         rows: Iterator[Dict] = iter_fake_rows()
     elif mode == "replay":
-        rows = iter_replay_rows(order=order, loop=loop)
+        rows = iter_replay_rows(order=order, loop=loop, inject=inject)
     else:
         raise ValueError(f"未知 mode：{mode}（可用 replay / fake）")
 
