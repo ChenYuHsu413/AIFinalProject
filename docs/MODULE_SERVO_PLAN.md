@@ -496,9 +496,10 @@ recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸�
 
 ## 17. Command Center 主前端接入（S5：後端聚合端點 → Next.js 監控頁）
 
-> **狀態（2026-07-11）**：Task 0（後端自包含聚合串流端點）＋ P1（Next.js Servo 即時監控頁）完成。把 S1–S4 的
-> MLOps 閉環成果接進 Next.js Command Center 主前端，架構原則**後端算、前端只畫**——視窗聚合、推論、告警判定、
-> 漂移判定全留後端，前端僅渲染。舊「即時監控雷達」（`/monitor`，合成 v3）移入側欄「補充 / 歷史」區、續標 Legacy · 合成 demo。
+> **狀態（2026-07-11）**：Task 0（後端自包含聚合串流端點）＋ P1（Next.js Servo 即時監控頁）＋ P2（唯讀 MLOps
+> 狀態面板）完成。把 S1–S4 的 MLOps 閉環成果接進 Next.js Command Center 主前端，架構原則**後端算、前端只畫**——
+> 視窗聚合、推論、告警判定、漂移判定全留後端，前端僅渲染。舊「即時監控雷達」（`/monitor`，合成 v3）移入側欄
+> 「補充 / 歷史」區、續標 Legacy · 合成 demo。
 
 **前後端職責劃分（後端算、前端畫）**：新監控頁的一切決策（近 3 窗多數決平滑、告警遲滯狀態、漂移是否觸發）
 都在後端算好、以 enriched JSON 逐視窗發布，前端只負責顯示。這與舊「即時監控雷達」（`/monitor/stream`，合成 v3
@@ -535,6 +536,22 @@ enriched 事件——
 
 驗收（本地 FastAPI:8000 + Next.js:3000）：`normal` 劇本完整呈現 LN→LO→HI 演進、DV 升到 ~0.59、風險轉高、
 `alert-0001` 遲滯觸發並掛上 LLM 工單草稿；關閉後端後頁面優雅降級為離線態。CI web 三關（eslint 0 新警告 / tsc / build）全綠。
+
+**P2 — 唯讀 MLOps 狀態面板**（後端 [`src/monitor/mlops_status.py`](../src/monitor/mlops_status.py) + `GET /servo/mlops`；
+前端 [`web/src/app/servo/mlops/page.tsx`](../web/src/app/servo/mlops/page.tsx)，路由 `/servo/mlops`）：把 S3/S4 已記錄的
+證據攤成一頁，**全唯讀、無任何觸發按鈕**——重訓／切版 demo 仍由 [`scripts/run_drift_demo.py`](../scripts/run_drift_demo.py)
+驅動，避免線上誤觸。
+
+- **registry 版本歷史**：讀 `registry.json` + 各版 `metrics.json`，逐版列 macro-F1 / DV R² / 特徵組 / 評估模式 /
+  **model_crc32（完整性）** / active 標記 / 備註，並顯示 `outputs/models` 與 active 版本的 CRC32 是否一致。
+- **最近一次 gate_report**：掃描 registry 下所有 `gate_report.json`、取 `created` 最新者，攤出各檢查
+  （completeness / smoke_test / holdout_metrics / ae_monotonicity）的 PASS/FAIL/SKIP 明細。v1 為初始遷移（未經閘門）
+  時如實顯示「尚無 gate 紀錄」。
+- **漂移→重訓→切版因果鏈時間線**：讀同一條 `outputs/alerts/*.jsonl`，濾出 `drift_detected` / `retrain_started` /
+  `retrain_finished` / `retrain_error`，最新在上、以 `trigger` 連回觸發的 drift 事件，沿用 Streamlit 事件用語與配色。
+- 單元測試 [`tests/test_mlops_status.py`](../tests/test_mlops_status.py)：registry 歷史 schema、gate_report 依 `created`
+  取最新、因果鏈濾選與分頁、空目錄降級。本地實測 `/servo/mlops` 呈現 v1（F1 0.819 / R² 0.944 / CRC32 一致）、
+  gate 空狀態、18 筆 drift→retrain 因果鏈（含 PASS→v2 與 FAIL dry-run）。
 
 **publisher vs 進程內聚合的定位差異**：[`scripts/servo_replay_publisher.py`](../scripts/servo_replay_publisher.py)
 （發布 `GET /servo/stream` 原始列 SSE）保留為**本機開發工具**——供 CLI 消費端（`servo_replay_consumer.py`）與

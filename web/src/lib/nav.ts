@@ -8,6 +8,7 @@ import {
   FileBarChart,
   FlaskConical,
   Gauge,
+  GitBranch,
   HeartPulse,
   Info,
   LayoutDashboard,
@@ -119,6 +120,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Servo 健康儀表板", href: "/servo/dashboard", icon: Gauge },
       { label: "即時監控（FMCRD replay）", href: "/servo/monitor", icon: Activity },
+      { label: "MLOps 狀態面板", href: "/servo/mlops", icon: GitBranch },
       { label: "AI 訓練模擬器", href: "/servo/simulator", icon: FlaskConical },
       { label: "馬達欄位解釋", href: "/servo/glossary", icon: BookOpen },
       { label: "維修知識庫", href: "/servo/knowledge", icon: Library },

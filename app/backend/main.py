@@ -421,6 +421,22 @@ def servo_monitor_events(limit: int = 50, offset: int = 0):
     return read_recent_events(limit=limit, offset=offset)
 
 
+@app.get("/servo/mlops")
+def servo_mlops():
+    """唯讀 MLOps 狀態面板：registry 版本歷史（各版指標／CRC32／active）＋最近一次
+    gate_report 明細＋漂移→重訓→切版因果鏈時間線。
+
+    純唯讀——不提供任何觸發按鈕（重訓／切版 demo 仍由 scripts/run_drift_demo.py
+    驅動，避免線上誤觸）。registry 未遷移時回 503。
+    """
+    from src.monitor.mlops_status import mlops_status
+
+    try:
+        return mlops_status()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
 # --- Module Servo (project main line) ----------------------------------------
 from pydantic import BaseModel  # noqa: E402
 
