@@ -30,15 +30,22 @@ RUN pip install --upgrade pip \
  && pip install -r requirements-dev.txt
 
 # Application code + committed runtime data the backend reads at request time:
-#   - outputs/models, outputs/metrics  (models + eval JSONs)
+#   - models/registry/                 (ACTIVE servo model — S3 version registry;
+#                                        load_servo_models() reads ONLY here, with
+#                                        no outputs/models fallback, so /servo/* 500s
+#                                        without it. Only v1/ + registry.json ship;
+#                                        candidate_*/ are .gitignored.)
+#   - outputs/models, outputs/metrics  (models + eval JSONs; module A/B+/C + figures)
 #   - data/processed/servo_*           (Servo features / demo / sample predictions —
 #                                        needed by /servo/simulate, /servo/samples, /servo/fleet)
+#   - data/demo/replay/                (FMCRD replay segments for /servo/monitor/stream SSE)
 #   - data/knowledge/*.md              (knowledge base for /knowledge/*)
 # (The root .dockerignore keeps these in context; IMS/XJTU raw datasets are NOT
 #  bundled, so /ims/* and /xjtu/* degrade to available:false — the rest works.)
 COPY config.yaml ./
 COPY src/ ./src/
 COPY app/ ./app/
+COPY models/ ./models/
 COPY outputs/ ./outputs/
 COPY data/ ./data/
 
