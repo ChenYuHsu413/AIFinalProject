@@ -281,6 +281,74 @@ export interface ServoMonitorEventsResponse {
   offset: number;
 }
 
+// --- Servo MLOps status panel (S5 P2 — read-only) ---------------------------
+
+/** One registered model version (metrics + CRC32 + active marker). */
+export interface MlopsVersion {
+  version: string;
+  active: boolean;
+  created: string | null;
+  macro_f1: number | null;
+  dv_r2: number | null;
+  dv_mae: number | null;
+  feature_set: string | null;
+  placeholder: boolean | null;
+  note: string | null;
+  eval_mode: string | null;
+  clf_model: string | null;
+  reg_model: string | null;
+  crc32: Record<string, string> | null;
+  has_gate_report: boolean;
+}
+
+/** One validation-gate check line. */
+export interface MlopsGateCheck {
+  name: string;
+  status: "PASS" | "FAIL" | "SKIP" | "BLOCKED" | string;
+  detail: string;
+  numbers: Record<string, unknown>;
+}
+
+/** The latest gate_report.json (validation gate result). */
+export interface MlopsGateReport {
+  candidate_dir: string;
+  active_version: string | null;
+  passed: boolean;
+  created: string;
+  tolerances: Record<string, number>;
+  checks: MlopsGateCheck[];
+  _source?: string;
+}
+
+/** One drift → retrain → promote causal-chain event. */
+export interface MlopsEvent {
+  id: string;
+  type: string;
+  ts?: string;
+  trigger?: string;
+  mode?: string;
+  reason?: string;
+  gate_passed?: boolean;
+  old_active?: string | null;
+  new_version?: string | null;
+  rolling_recon_error?: number;
+  baseline_p95?: number;
+  error?: string;
+  stream_t?: number | null;
+}
+
+/** GET /servo/mlops → the full read-only panel payload. */
+export interface MlopsStatus {
+  registry: {
+    active_version: string | null;
+    updated: string | null;
+    versions: MlopsVersion[];
+    outputs_consistent: boolean | null;
+  };
+  gate_report: MlopsGateReport | null;
+  timeline: MlopsEvent[];
+}
+
 // --- Live Monitor v3 (synthetic demo track) ---------------------------------
 
 /** One replay frame from a monitor scenario pack (down-sampled cadence). */
