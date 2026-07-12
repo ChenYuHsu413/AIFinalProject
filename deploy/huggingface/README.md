@@ -29,6 +29,10 @@ pinned: false
   + `monitor_v3_clf.joblib` 即時推論；長連線，需持續運行的容器——HF Docker Space 可，serverless 不行）
 - 健康檢查：`/health`、Swagger：`/docs`
 
+> **狀態（2026-07-12）**：後端已改由**版本 registry**（`models/registry/`）載入 ACTIVE 伺服模型
+> （S3；`load_servo_models()` 只讀 registry、**無 `outputs/models` fallback**），故根 `Dockerfile`
+> 已加 `COPY models/`，缺了會使 `/servo/*` 全數 500。GitHub `main` → 本 Space 已可**自動同步**
+> （`.github/workflows/deploy-hf.yml`，CI 綠燈後觸發），詳見 [`docs/DEPLOYMENT.md`](https://github.com/ChenYuHsu413/AIFinalProject/blob/main/docs/DEPLOYMENT.md) §9.4。
 > **狀態（2026-07-03）**：新增 **Live Monitor v3** 端點。`.dockerignore` 已白名單
 > `data/processed/servo_v3`（回放包）；`monitor_v3_clf.joblib` 在 `outputs/models` 白名單內；
 > 產生器/串流程式在 `src/monitor/`（隨 `COPY src/` 進 image）。故 **/monitor 全端點雲端可運作**。
@@ -44,6 +48,7 @@ pinned: false
 `Dockerfile`、把這份檔放成 Space 根目錄的 `README.md`，並一併附上後端程式碼**與執行期資料**：
 
 - `src/`、`app/`、`config.yaml`、`requirements.txt`、`requirements-dev.txt`
+- **`models/registry/`（ACTIVE 伺服模型版本登記表；後端唯一載入來源，缺了 `/servo/*` 全 500）**
 - `outputs/models/`、`outputs/metrics/`、`outputs/figures/`（模型 + 評估 JSON + 圖檔；
   圖檔由後端 `GET /figures/*.png` 提供，如資料溯源圖 `servo_provenance.png`——
   **2026-06-27 將 `outputs/figures` 加入 `.dockerignore` 白名單**，缺了相關圖會 404）

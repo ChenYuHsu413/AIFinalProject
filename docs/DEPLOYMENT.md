@@ -227,6 +227,57 @@ sudo journalctl -u servo-frontend -f
 
 > 也可只用 **HF Spaces 跑既有 Streamlit app**（單一平台、免費、16GB），但就看不到 Next.js Command Center。
 
+### 9.4 後端自動部署（CD）：GitHub `main` → HF Space 自動同步
+
+> **狀態（2026-07-12）**：前端（Vercel）本就隨 `main` 自動部署；本節替**後端**補上同樣的閉環。
+> 新增 [`.github/workflows/deploy-hf.yml`](../.github/workflows/deploy-hf.yml)：push 到 `main`、
+> **CI（`ci.yml`）綠燈後**自動把後端子集推到 Space `icefeather/aifinalproject`，HF 隨即 rebuild。
+> 對齊本專案的閘門精神——**CD 一定在 CI 之後**，紅燈不進線上。
+
+**運作方式**
+
+1. **觸發與閘門**：workflow 以 `workflow_run` 綁定既有 **CI** workflow，`conclusion == success`
+   才跑；另留 `workflow_dispatch` 供手動重部署。因 `workflow_run` 無法用 `paths` 過濾，
+   「只有後端輸入變動才部署」改在 job 內用 `git diff` 判斷——只有動到
+   `app/`、`src/`、`config.yaml`、`requirements*.txt`、`.dockerignore`、`deploy/huggingface/`、
+   `models/registry/`、`outputs/{models,metrics,figures}/`、`data/demo/`、`data/knowledge/`、
+   `data/processed/{servo*,paderborn_features,xjtu_features,ims_set2_features}` 才部署；
+   純前端（`web/`）／`docs/`／`notebooks/` 變動會**跳過**。
+2. **組裝 Space 樹**：checkout `main`（`fetch-depth: 0`）後，把
+   **`deploy/huggingface/Dockerfile`→根 `Dockerfile`、`deploy/huggingface/README.md`→根 `README.md`**
+   覆蓋上去（Space 必須用 `EXPOSE 7860` 的 Dockerfile 與帶 `app_port` frontmatter 的 README；
+   專案根的 compose Dockerfile 是 `EXPOSE 8000`、根 README 無 HF metadata，直接鏡像推會壞）。
+3. **推送**：`GIT_LFS_SKIP_SMUDGE=1` clone Space（只取 pointer）→ `rsync --delete` 把後端子集
+   （不含 `web/`、`notebooks/`、`tests/`、`scripts/`、`docs/`、`deploy/`）同步進去、保留 Space 自身的
+   `.git`／`.gitattributes`（LFS 路由）→ `git add`（`*.joblib`/`*.parquet`/`*.png` 依 Space 的
+   `.gitattributes` 自動走 LFS）→ commit → `git push …@huggingface.co/spaces/…  HEAD:main`。
+   認證用 repo secret **`HF_TOKEN`**（見下）。
+
+> **為何後端唯一模型來源是 `models/registry/`**：`load_servo_models()` 自 S3 起**只**經版本
+> registry 載入 ACTIVE 模型，**沒有 `outputs/models` fallback**；故 `deploy/huggingface/Dockerfile`
+> 已加 `COPY models/`。若漏掉，`/servo/*` 會全數 500（`FileNotFoundError: 找不到 Servo 參考模型版本登記表`）。
+
+**你（人工）需要先做的事**
+
+- **在 GitHub 加 `HF_TOKEN` secret**：repo → **Settings → Secrets and variables → Actions →
+  New repository secret**，Name = `HF_TOKEN`，Value = 一組 **write 權限**的 HF access token
+  （<https://huggingface.co/settings/tokens>，需對 Space `icefeather/aifinalproject` 有寫入權）。
+- **首次歷史對齊（可能需要）**：本 CD 走 `clone Space → rsync → commit → push`（fast-forward），
+  不強推鏡像。若 Space 現有歷史與後端子集差異過大導致 push 被拒，先手動對齊一次：
+  依 §9.1 用 `hf upload …` 或手動 `git push` 把當前 `main` 的後端子集推上去，之後 CD 即可增量接手。
+
+**手動重部署 fallback**
+
+- GitHub → **Actions → “Deploy backend to HF Space” → Run workflow**（`workflow_dispatch`，
+  無視 paths 過濾、直接部署當前 `main`）。
+- 或完全繞過 CD，依 **§9.1** 手動同步（`hf upload …` 最省事，headless 也不卡 Git Credential Manager）。
+
+**驗收**
+
+改一個無害的後端註解 → push `main` → CI 綠 → 「Deploy backend to HF Space」自動觸發 →
+HF Space **Building → Running** → 線上驗證：`GET /health` 回 `{"status":"ok",...}`、
+`GET /servo/model_info` 回 `model_version: v1`（macro-F1 0.819、`placeholder:false`）。
+
 ---
 
 > 備註：repo 內既有的 `Dockerfile` / `docker-compose.yml` 為 **FastAPI + Streamlit** 舊組合的容器化；

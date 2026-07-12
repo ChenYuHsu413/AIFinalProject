@@ -1,0 +1,165 @@
+name: Deploy backend to HF Space
+
+# Continuous deployment for the FastAPI backend: GitHub main -> Hugging Face
+# Docker Space `icefeather/aifinalproject`. The frontend (Next.js) already auto-
+# deploys on Vercel; this closes the loop for the backend, which lives in the
+# Space's own git repo and previously required a manual push.
+#
+# GATE: this runs *after* the CI workflow succeeds on main (workflow_run), so a
+# red build never reaches production — same gate philosophy as our own review.
+# `workflow_dispatch` is a manual-redeploy fallback (e.g. to re-sync history).
+#
+# Because workflow_run cannot filter by path, the "only deploy when backend
+# inputs changed" filter is implemented in-job as a git diff gate (see the
+# "Detect backend-relevant changes" step).
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+# Never let two deploys race on the Space git repo.
+concurrency:
+  group: hf-space-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  HF_USER: icefeather
+  HF_SPACE: aifinalproject
+
+jobs:
+  deploy:
+    name: Sync main -> HF Space
+    runs-on: ubuntu-latest
+    # Deploy only when CI passed (workflow_run) or on a manual dispatch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Resolve target commit
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout main at target commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          fetch-depth: 0            # need the parent commit for the paths diff gate
+
+      - name: Detect backend-relevant changes
+        id: changed
+        run: |
+          set -euo pipefail
+          # A manual dispatch always deploys.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          sha="${{ steps.target.outputs.sha }}"
+          base="$(git rev-parse "${sha}^" 2>/dev/null || true)"
+          # Root commit (no parent) -> deploy to be safe.
+          if [ -z "$base" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          changed="$(git diff --name-only "$base" "$sha")"
+          echo "Changed files:"; echo "$changed"
+          # Paths whose change affects the Space image / runtime data. Front-end
+          # (web/), notebooks, tests, scripts and docs are NOT deployed here.
+          if echo "$changed" | grep -qE '^(app/|src/|config\.yaml|requirements[^/]*\.txt|\.dockerignore|deploy/huggingface/|models/registry/|outputs/(models|metrics|figures)/|data/demo/|data/knowledge/|data/processed/(servo|paderborn_features|xjtu_features|ims_set2_features))'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No backend-relevant paths changed; skipping deploy."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke check (backend packages parse)
+        if: steps.changed.outputs.deploy == 'true'
+        # Cheap guard for manual dispatches that skipped CI; redundant when CI
+        # just ran the same check. Syntax errors never reach the Space.
+        run: python -m compileall -q src app
+
+      - name: Assemble Space tree and push
+        if: steps.changed.outputs.deploy == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "::error::HF_TOKEN secret is not set. Add a write-scoped HF token"
+            echo "::error::at GitHub repo Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          REMOTE="https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/${HF_SPACE}"
+
+          # 1) Overlay the HF-specific root files. The Space must boot from
+          #    deploy/huggingface/Dockerfile (EXPOSE 7860) + README.md (app_port
+          #    metadata) — NOT the project-root compose Dockerfile (EXPOSE 8000)
+          #    or the GitHub project README (no HF frontmatter).
+          cp deploy/huggingface/Dockerfile ./Dockerfile
+          cp deploy/huggingface/README.md  ./README.md
+
+          # 2) Clone the Space OUTSIDE the checkout (into RUNNER_TEMP, so rsync
+          #    below can't recurse into it). Pointers only — GIT_LFS_SKIP_SMUDGE
+          #    avoids pulling existing LFS blobs we're about to overwrite — so we
+          #    inherit its .gitattributes / LFS config instead of rewriting history.
+          SPACE_DIR="${RUNNER_TEMP}/hfspace"
+          git lfs install
+          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 "$REMOTE" "$SPACE_DIR"
+
+          # 3) Mirror the backend subset into the Space working tree. --delete
+          #    prunes files removed from the repo; the .git and .gitattributes
+          #    excludes protect the Space's own git metadata + LFS routing.
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='.gitattributes' \
+            --exclude='.github' \
+            --exclude='web' \
+            --exclude='notebooks' \
+            --exclude='tests' \
+            --exclude='scripts' \
+            --exclude='docs' \
+            --exclude='deploy' \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
+            --exclude='**/__pycache__' \
+            --exclude='.pytest_cache' \
+            --exclude='.streamlit' \
+            --exclude='.env' \
+            --exclude='.env.example' \
+            --exclude='.gitignore' \
+            ./ "$SPACE_DIR/"
+
+          # 4) Commit + push. git-lfs routes *.parquet/*.png/*.joblib per the
+          #    Space's .gitattributes automatically on `git add`.
+          cd "$SPACE_DIR"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Space already up to date; nothing to push."
+            exit 0
+          fi
+          git commit -m "deploy: sync ${GITHUB_REPOSITORY}@${{ steps.target.outputs.sha }}"
+          git push "$REMOTE" HEAD:main
+
+      - name: Deployment summary
+        if: steps.changed.outputs.deploy == 'true'
+        run: |
+          {
+            echo "### HF Space deploy triggered"
+            echo ""
+            echo "- Space: https://${HF_USER}-${HF_SPACE}.hf.space"
+            echo "- Commit: \`${{ steps.target.outputs.sha }}\`"
+            echo "- HF will rebuild the Docker image; watch the Space's **Building -> Running** status."
+            echo "- Verify: \`GET /health\` and \`GET /servo/model_info\` (expect \`model_version: v1\`)."
+          } >> "$GITHUB_STEP_SUMMARY"
