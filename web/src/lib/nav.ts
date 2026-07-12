@@ -1,4 +1,5 @@
 import {
+  Activity,
   BarChart3,
   BellRing,
   BookOpen,
@@ -117,6 +118,7 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: "violet",
     items: [
       { label: "Servo 健康儀表板", href: "/servo/dashboard", icon: Gauge },
+      { label: "即時監控（FMCRD replay）", href: "/servo/monitor", icon: Activity },
       { label: "AI 訓練模擬器", href: "/servo/simulator", icon: FlaskConical },
       { label: "馬達欄位解釋", href: "/servo/glossary", icon: BookOpen },
       { label: "維修知識庫", href: "/servo/knowledge", icon: Library },
@@ -132,9 +134,11 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    // 獨立合成 demo 軌，不取代主線機群/告警。
-    title: "即時監控雷達（合成 demo）",
-    accent: "blue",
+    // Legacy 合成 demo 軌：主線即時監控改用 /servo/monitor（真實 FMCRD replay）。
+    // 此雷達保留為 demo fallback，移入「補充 / 歷史」區，續標「合成 demo」。
+    title: "即時監控雷達（Legacy · 合成 demo）",
+    accent: "slate",
+    supplementary: true,
     items: [{ label: "即時監控雷達", href: "/monitor", icon: Radar }],
   },
   {

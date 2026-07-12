@@ -496,8 +496,9 @@ recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸�
 
 ## 17. Command Center 主前端接入（S5：後端聚合端點 → Next.js 監控頁）
 
-> **狀態（2026-07-11）**：Task 0（後端自包含聚合串流端點）完成。把 S1–S4 的 MLOps 閉環成果接進 Next.js
-> Command Center 主前端，架構原則**後端算、前端只畫**——視窗聚合、推論、告警判定、漂移判定全留後端，前端僅渲染。
+> **狀態（2026-07-11）**：Task 0（後端自包含聚合串流端點）＋ P1（Next.js Servo 即時監控頁）完成。把 S1–S4 的
+> MLOps 閉環成果接進 Next.js Command Center 主前端，架構原則**後端算、前端只畫**——視窗聚合、推論、告警判定、
+> 漂移判定全留後端，前端僅渲染。舊「即時監控雷達」（`/monitor`，合成 v3）移入側欄「補充 / 歷史」區、續標 Legacy · 合成 demo。
 
 **前後端職責劃分（後端算、前端畫）**：新監控頁的一切決策（近 3 窗多數決平滑、告警遲滯狀態、漂移是否觸發）
 都在後端算好、以 enriched JSON 逐視窗發布，前端只負責顯示。這與舊「即時監控雷達」（`/monitor/stream`，合成 v3
@@ -519,6 +520,21 @@ recon error 5.8 » P95 0.15 → DRIFT；而 HI 退化 0.05 « P95 → 不誤觸�
 - `smoothed_state` 是**顯示層決策**（近 K 窗多數決），沿用 Streamlit 版「原始 vs 平滑」的誠實設計——前端同屏顯示
   逐窗原始預測，狀態燈用平滑值。單元測試 [`tests/test_monitor_stream.py`](../tests/test_monitor_stream.py)：enriched
   事件 schema、`drift` 段注入、未知段落拒絕、事件端點分頁。
+
+**P1 — Servo 即時監控頁**（[`web/src/app/servo/monitor/page.tsx`](../web/src/app/servo/monitor/page.tsx)，
+新路由 `/servo/monitor`）：`"use client"` 元件以原生 `EventSource` 消費 `/servo/monitor/stream`，前端**只渲染**後端算好的
+enriched 事件——
+
+- **頂部**：狀態燈（顏色由 `smoothed_state` 決定）＋同屏顯示逐窗原始預測（沿用 Streamlit「原始 vs 平滑」誠實設計）
+  ＋ `model_version` 徽章 ＋ 數據源標注（replay 段落名、模擬性質、是否注入漂移）。
+- **中部**：`degradation_score` / `model_confidence` 滾動時序圖（recharts），漂移重建誤差獨立小圖含 P95 閾值線。
+- **底部**：事件流（主告警／矛盾提示／DRIFT 分色、最新在上），`alert_triggered` 可展開工單草稿——草稿由後端 LLM
+  背景執行緒非同步生成，前端以輪詢 `/servo/monitor/events` 取回並依 `alert_id` 掛回（不阻塞串流）。
+- **側欄**：本頁列入「伺服馬達健康（主線）」；舊「即時監控雷達」移入「補充 / 歷史」collapsible 區、續標 Legacy · 合成 demo。
+- **韌性**：後端不可用 / 斷線時顯示離線橫幅並保留頁面骨架（不白屏），`EventSource` 自動重試；本輪回放結束顯示完成態。
+
+驗收（本地 FastAPI:8000 + Next.js:3000）：`normal` 劇本完整呈現 LN→LO→HI 演進、DV 升到 ~0.59、風險轉高、
+`alert-0001` 遲滯觸發並掛上 LLM 工單草稿；關閉後端後頁面優雅降級為離線態。CI web 三關（eslint 0 新警告 / tsc / build）全綠。
 
 **publisher vs 進程內聚合的定位差異**：[`scripts/servo_replay_publisher.py`](../scripts/servo_replay_publisher.py)
 （發布 `GET /servo/stream` 原始列 SSE）保留為**本機開發工具**——供 CLI 消費端（`servo_replay_consumer.py`）與
