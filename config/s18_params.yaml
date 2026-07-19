@@ -177,6 +177,32 @@ ablation:
              不改動 repo 既有模組，變體以執行期 config 覆寫實現。"
 
 # ---- NaN 的下游行為（設計書 §4.4 複合異常分數）----
+# ---- severity 分級門檻（Phase 4，2026-07-19 批准）----
+# 取 train LN 複合分數的**經驗分位數**，與既有 P95 觸發門檻同源。
+# 選分位數而非「P95 的 1×/1.5×/2×」的理由：同源分位數在答辯時只需辯護一次
+# （「相對健康基線的經驗分位數」）；倍數法要辯護兩次（分位數 + 乘數從哪來）。
+severity_thresholds:
+  watch_percentile: 90
+  warning_percentile: 95
+  critical_percentile: 99
+  # 實測值（train LN, n=200）
+  watch: 1.7701
+  warning: 1.9437
+  critical: 2.5048
+  # is_anomaly 維持綁 P95，與 Phase 2 §4.4 觸發率定義同一條線；
+  # severity 是該條線的細分：normal/watch 皆為 is_anomaly=false，
+  # warning/critical 皆為 is_anomaly=true。兩者不可各自漂移。
+  is_anomaly_bound_to: warning
+  # provenance（此註記須跟著門檻走到任何引用它的地方）：
+  provenance_note: >
+    基線分位數來自**零負載** LN（train_load0），門檻語意含負載條件；
+    其偵測力為退化與負載的混合效應，非純退化門檻。
+  # 構造性說明（預先寫明，免得看似誤報率超標）：
+  by_construction: >
+    watch 依 P90 之構造在健康件上約有 10% 觸發（test LN 實測 8.5%）；
+    critical 依 P99 構造期望 1%，test LN 實測 2.5%（門檻取自 train LN，
+    套用至 test LN 時分位數不精確重現 + 抽樣變異）。此為定義使然，如實報告。
+
 nan_policy:
   composite_score: "NaN 特徵不參與 top-3 |z| 選擇，分母改為實際可用特徵數"
   min_available_features: 3    # 可用特徵不足 3 個時該 run 的複合分數為 NaN

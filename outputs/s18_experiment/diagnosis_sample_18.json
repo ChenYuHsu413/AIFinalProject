@@ -1,0 +1,232 @@
+[
+  {
+    "type": "diagnosis",
+    "scenario_id": "18_Ball_Screw",
+    "timestamp": "2026-07-19T13:23:46.622Z",
+    "anomaly_score": 4.7224,
+    "is_anomaly": true,
+    "severity": {
+      "label": "critical",
+      "action": "reduce_speed_and_notify",
+      "hmi_color": "red"
+    },
+    "source_run": {
+      "split": "test",
+      "run_index": 708,
+      "source_file": "test_noisy_1e_m15_200x5HI.csv",
+      "ground_truth_ylabel": "HI"
+    },
+    "root_cause_ranking": [
+      {
+        "rank": 1,
+        "feature": "STIFF_TorqueSlope",
+        "z_score": -11.6,
+        "meaning": "扭矩對追隨誤差的斜率下降 — 等效剛性降低（註：與負載條件存在混合效應）"
+      },
+      {
+        "rank": 2,
+        "feature": "BL_HystArea",
+        "z_score": -1.486,
+        "meaning": "demand–actual 包絡面積（階梯激勵下無遲滯迴圈，within-noisy 無訊號）"
+      },
+      {
+        "rank": 3,
+        "feature": "FR_Coulomb",
+        "z_score": 1.081,
+        "meaning": "低速帶扭矩包絡抬升 — 摩擦增加（註：與負載條件存在混合效應）"
+      },
+      {
+        "rank": 4,
+        "feature": "BL_ReversalErr_zc",
+        "z_score": -1.079,
+        "meaning": "速度過零處的位置誤差（全類別檢定之顯著性經 within-noisy 分軌判定為負載混淆假陽性）"
+      },
+      {
+        "rank": 5,
+        "feature": "STIFF_ComplStd",
+        "z_score": -0.38,
+        "meaning": "順應性波動變化 — 剛性穩定度（within-noisy 軌無顯著趨勢，僅供排名參考）"
+      },
+      {
+        "rank": 6,
+        "feature": "BL_DirFE_Asym",
+        "z_score": 0.05,
+        "meaning": "正反向追隨誤差不對稱（within-noisy 軌無訊號）"
+      }
+    ],
+    "drive_adjustments": [
+      {
+        "param_group": "position_loop_gain",
+        "action": "advisory_review",
+        "direction": "increase",
+        "value": null,
+        "label": "Position Loop Gain（通用參數群）",
+        "note": "等效剛性下降之對應方向;實際參數編號與量值需依驅動器型號與現場整定決定,本分析不輸出可直接寫入的數值。"
+      },
+      {
+        "param_group": "torque_limit_and_friction_comp",
+        "action": "advisory_review",
+        "direction": "review",
+        "value": null,
+        "label": "Torque Limit / 摩擦補償（通用參數群）",
+        "note": "摩擦增加之對應方向;需先以機械保養排除潤滑因素再考慮參數補償。"
+      }
+    ],
+    "plc_adjustments": [],
+    "mechanical_checks": [
+      "潤滑滾珠螺桿、檢查潤滑週期與油品劣化（對應 FR_Coulomb 上升）",
+      "檢查螺帽預壓與支撐軸承預壓（對應等效剛性下降）",
+      "檢查滾珠螺桿磨損狀況"
+    ],
+    "not_estimable": [
+      {
+        "quantity": "backlash_compensation",
+        "contract_reference": "§2 範例之 P2-60 / D2000（set_from_feature_value）",
+        "reason": "本工況（階梯定位循環）無連續反轉激勵,背隙量不可估計;BL_DeadZone 於 Phase 1 證實結構上恆為 0,已標不適用。"
+      }
+    ],
+    "hmi_display": {
+      "color": "red",
+      "alarm_lines": [
+        "STIFF_TorqueSlope (z=-11.6): 扭矩對追隨誤差的斜率下降 — 等效剛性降低",
+        "BL_HystArea (z=-1.486): demand–actual 包絡面積"
+      ],
+      "action": "reduce_speed_and_notify"
+    },
+    "fallback": {
+      "level": "critical",
+      "chain": [
+        "model_output"
+      ],
+      "trigger_alert": false,
+      "note": "離線批次分析,無即時 fallback 鏈語意;此欄依 schema 出但不具線上意義。"
+    },
+    "data_provenance_warning": [
+      "健康基線取自**零負載** LN 檔案（*_load0）,而 LO/MED/HI 取自 *_noisy;本 anomaly_score 與 severity 門檻之偵測力為**退化與負載條件的混合效應**,非純退化指標。",
+      "退化推論以 within-noisy 軌（LO/MED/HI,負載條件一致）為準:FR_Coulomb ρ=0.794、STIFF_TorqueSlope ρ=−0.496（p<0.001）。",
+      "背隙（BL）族於本工況無訊號,歸因為激勵條件不支持而非訊號微弱;情境 18 的背隙路徑**未獲驗證**。",
+      "FMCRD 為高擬真物理模擬資料集,非真實工廠/產線伺服馬達遙測。"
+    ],
+    "provenance": {
+      "dataset": "PHM FMCRD (high-fidelity simulation, not factory telemetry)",
+      "baseline": "train LN only (n=200, zero-load)",
+      "threshold_semantics": "基線分位數來自**零負載** LN（train_load0），門檻語意含負載條件； 其偵測力為退化與負載的混合效應，非純退化門檻。",
+      "contract": "docs/contracts/DATA_CONTRACT_v1.0.md §2（範例即事實規範;正式 Diagnosis schema 未隨合約交付）"
+    }
+  },
+  {
+    "type": "diagnosis",
+    "scenario_id": "18_Ball_Screw",
+    "timestamp": "2026-07-19T13:23:46.622Z",
+    "anomaly_score": 2.1416,
+    "is_anomaly": true,
+    "severity": {
+      "label": "warning",
+      "action": "adjust_parameters",
+      "hmi_color": "orange"
+    },
+    "source_run": {
+      "split": "test",
+      "run_index": 429,
+      "source_file": "test_noisy_1e_m15_200x5MED.csv",
+      "ground_truth_ylabel": "MED"
+    },
+    "root_cause_ranking": [
+      {
+        "rank": 1,
+        "feature": "STIFF_TorqueSlope",
+        "z_score": -3.485,
+        "meaning": "扭矩對追隨誤差的斜率下降 — 等效剛性降低（註：與負載條件存在混合效應）"
+      },
+      {
+        "rank": 2,
+        "feature": "FR_Coulomb",
+        "z_score": 1.639,
+        "meaning": "低速帶扭矩包絡抬升 — 摩擦增加（註：與負載條件存在混合效應）"
+      },
+      {
+        "rank": 3,
+        "feature": "BL_DirFE_Asym",
+        "z_score": 1.301,
+        "meaning": "正反向追隨誤差不對稱（within-noisy 軌無訊號）"
+      },
+      {
+        "rank": 4,
+        "feature": "STIFF_ComplStd",
+        "z_score": -1.053,
+        "meaning": "順應性波動變化 — 剛性穩定度（within-noisy 軌無顯著趨勢，僅供排名參考）"
+      },
+      {
+        "rank": 5,
+        "feature": "BL_ReversalErr_zc",
+        "z_score": 0.829,
+        "meaning": "速度過零處的位置誤差（全類別檢定之顯著性經 within-noisy 分軌判定為負載混淆假陽性）"
+      },
+      {
+        "rank": 6,
+        "feature": "BL_HystArea",
+        "z_score": -0.263,
+        "meaning": "demand–actual 包絡面積（階梯激勵下無遲滯迴圈，within-noisy 無訊號）"
+      }
+    ],
+    "drive_adjustments": [
+      {
+        "param_group": "position_loop_gain",
+        "action": "advisory_review",
+        "direction": "increase",
+        "value": null,
+        "label": "Position Loop Gain（通用參數群）",
+        "note": "等效剛性下降之對應方向;實際參數編號與量值需依驅動器型號與現場整定決定,本分析不輸出可直接寫入的數值。"
+      },
+      {
+        "param_group": "torque_limit_and_friction_comp",
+        "action": "advisory_review",
+        "direction": "review",
+        "value": null,
+        "label": "Torque Limit / 摩擦補償（通用參數群）",
+        "note": "摩擦增加之對應方向;需先以機械保養排除潤滑因素再考慮參數補償。"
+      }
+    ],
+    "plc_adjustments": [],
+    "mechanical_checks": [
+      "潤滑滾珠螺桿、檢查潤滑週期與油品劣化（對應 FR_Coulomb 上升）",
+      "檢查螺帽預壓與支撐軸承預壓（對應等效剛性下降）",
+      "檢查滾珠螺桿磨損狀況"
+    ],
+    "not_estimable": [
+      {
+        "quantity": "backlash_compensation",
+        "contract_reference": "§2 範例之 P2-60 / D2000（set_from_feature_value）",
+        "reason": "本工況（階梯定位循環）無連續反轉激勵,背隙量不可估計;BL_DeadZone 於 Phase 1 證實結構上恆為 0,已標不適用。"
+      }
+    ],
+    "hmi_display": {
+      "color": "orange",
+      "alarm_lines": [
+        "STIFF_TorqueSlope (z=-3.485): 扭矩對追隨誤差的斜率下降 — 等效剛性降低",
+        "FR_Coulomb (z=1.639): 低速帶扭矩包絡抬升 — 摩擦增加"
+      ],
+      "action": "adjust_parameters"
+    },
+    "fallback": {
+      "level": "warning",
+      "chain": [
+        "model_output"
+      ],
+      "trigger_alert": false,
+      "note": "離線批次分析,無即時 fallback 鏈語意;此欄依 schema 出但不具線上意義。"
+    },
+    "data_provenance_warning": [
+      "健康基線取自**零負載** LN 檔案（*_load0）,而 LO/MED/HI 取自 *_noisy;本 anomaly_score 與 severity 門檻之偵測力為**退化與負載條件的混合效應**,非純退化指標。",
+      "退化推論以 within-noisy 軌（LO/MED/HI,負載條件一致）為準:FR_Coulomb ρ=0.794、STIFF_TorqueSlope ρ=−0.496（p<0.001）。",
+      "背隙（BL）族於本工況無訊號,歸因為激勵條件不支持而非訊號微弱;情境 18 的背隙路徑**未獲驗證**。",
+      "FMCRD 為高擬真物理模擬資料集,非真實工廠/產線伺服馬達遙測。"
+    ],
+    "provenance": {
+      "dataset": "PHM FMCRD (high-fidelity simulation, not factory telemetry)",
+      "baseline": "train LN only (n=200, zero-load)",
+      "threshold_semantics": "基線分位數來自**零負載** LN（train_load0），門檻語意含負載條件； 其偵測力為退化與負載的混合效應，非純退化門檻。",
+      "contract": "docs/contracts/DATA_CONTRACT_v1.0.md §2（範例即事實規範;正式 Diagnosis schema 未隨合約交付）"
+    }
+  }
+]
