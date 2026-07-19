@@ -1,0 +1,47 @@
+{
+  "candidate_dir": "outputs\\s18_experiment\\ablation\\candidate_B",
+  "active_version": "v1",
+  "passed": false,
+  "created": "2026-07-19T12:52:14+00:00",
+  "tolerances": {
+    "macro_f1": 0.005,
+    "dv_r2": 0.005
+  },
+  "checks": [
+    {
+      "name": "completeness",
+      "status": "FAIL",
+      "detail": "feature_set=s18_B 與 config.reference_feature_set=full 不符",
+      "numbers": {
+        "crc_actual": {
+          "servo_clf.joblib": "9de12fc1",
+          "servo_reg.joblib": "8c519189"
+        },
+        "crc_recorded": {
+          "servo_clf.joblib": "9de12fc1",
+          "servo_reg.joblib": "8c519189"
+        },
+        "feature_set": "s18_B",
+        "n_columns": 23
+      }
+    },
+    {
+      "name": "smoke_test",
+      "status": "BLOCKED",
+      "detail": "completeness 未過，無法執行此檢查",
+      "numbers": {}
+    },
+    {
+      "name": "holdout_metrics",
+      "status": "BLOCKED",
+      "detail": "completeness 未過，無法執行此檢查",
+      "numbers": {}
+    },
+    {
+      "name": "ae_monotonicity",
+      "status": "BLOCKED",
+      "detail": "completeness 未過，無法執行此檢查",
+      "numbers": {}
+    }
+  ]
+}

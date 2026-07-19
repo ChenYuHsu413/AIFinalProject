@@ -1,0 +1,975 @@
+{
+  "split": "test",
+  "n_runs": 800,
+  "n_by_level": {
+    "LN": 200,
+    "LO": 200,
+    "MED": 200,
+    "HI": 200
+  },
+  "primary_variant": "cmd",
+  "monotonicity": {
+    "BL_ReversalErr_cmd": {
+      "rho": -0.02249250270218877,
+      "p_perm": 0.5632183908045977,
+      "n": 677,
+      "direction": "down",
+      "coverage": 0.84625,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "BL_ReversalErr_zc": {
+      "rho": 0.2167419998418861,
+      "p_perm": 0.0004997501249375312,
+      "n": 800,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": true,
+      "low_coverage_flag": false
+    },
+    "BL_HystArea": {
+      "rho": -0.02163547012046882,
+      "p_perm": 0.5412293853073463,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "BL_DirFE_Asym": {
+      "rho": -0.07415316532450679,
+      "p_perm": 0.041979010494752625,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "STIFF_TorqueSlope": {
+      "rho": -0.49898104046690545,
+      "p_perm": 0.0004997501249375312,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "down",
+      "direction_ok": true,
+      "pass": true,
+      "low_coverage_flag": false
+    },
+    "STIFF_ComplStd": {
+      "rho": 0.062054924145036765,
+      "p_perm": 0.079960019990005,
+      "n": 800,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FR_Coulomb": {
+      "rho": 0.7678824842734213,
+      "p_perm": 0.0004997501249375312,
+      "n": 800,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": true,
+      "low_coverage_flag": false
+    },
+    "PosFE_Slope": {
+      "rho": -0.009948733743021574,
+      "p_perm": 0.7816091954022989,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FR_Viscous": {
+      "rho": -0.40896315471617883,
+      "p_perm": 0.0004997501249375312,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "n_zero_crossings": {
+      "rho": -0.08057614324623356,
+      "p_perm": 0.026986506746626688,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FE_RMS": {
+      "rho": 0.009309690991645006,
+      "p_perm": 0.8055972013993004,
+      "n": 800,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FE_Max": {
+      "rho": -0.006463046008240293,
+      "p_perm": 0.8690654672663668,
+      "n": 800,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    }
+  },
+  "n_primary_passing": 3,
+  "criterion_4_1": "3/7 主力特徵 p<0.01 且方向符合（門檻 ≥4）",
+  "within_noisy": {
+    "BL_ReversalErr_cmd": {
+      "trend": {
+        "rho": -0.03528273503292557,
+        "p_perm": 0.4272863568215892,
+        "n": 508
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.48231243204059443,
+          "ci_low": 0.41916183399782525,
+          "ci_high": 0.5457149329467197,
+          "n_pos": 178,
+          "n_neg": 155
+        },
+        "LO_vs_HI": {
+          "auc": 0.47347465437788017,
+          "ci_low": 0.41157327188940096,
+          "ci_high": 0.534584331797235,
+          "n_pos": 175,
+          "n_neg": 155
+        },
+        "MED_vs_HI": {
+          "auc": 0.4936115569823435,
+          "ci_low": 0.4352776886035313,
+          "ci_high": 0.5568571428571428,
+          "n_pos": 175,
+          "n_neg": 178
+        }
+      },
+      "n_by_level": {
+        "LO": 155,
+        "MED": 178,
+        "HI": 175
+      }
+    },
+    "BL_ReversalErr_zc": {
+      "trend": {
+        "rho": 0.07489449726088247,
+        "p_perm": 0.06646676661669165,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.51175,
+          "ci_low": 0.45652375,
+          "ci_high": 0.568985,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.552675,
+          "ci_low": 0.49669749999999996,
+          "ci_high": 0.6103525,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.541775,
+          "ci_low": 0.483421875,
+          "ci_high": 0.598650625,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "BL_HystArea": {
+      "trend": {
+        "rho": 0.009310252216537711,
+        "p_perm": 0.8160919540229885,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.46665,
+          "ci_low": 0.411795625,
+          "ci_high": 0.5218775,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.5068,
+          "ci_low": 0.45267375,
+          "ci_high": 0.564325,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.5395,
+          "ci_low": 0.48167312500000004,
+          "ci_high": 0.5977868749999998,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "BL_DirFE_Asym": {
+      "trend": {
+        "rho": -0.10142282351332095,
+        "p_perm": 0.017991004497751123,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.43665,
+          "ci_low": 0.38232125,
+          "ci_high": 0.49733374999999996,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.43075,
+          "ci_low": 0.37342875000000003,
+          "ci_high": 0.48697874999999996,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.4867,
+          "ci_low": 0.43081562500000004,
+          "ci_high": 0.5413875,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "STIFF_TorqueSlope": {
+      "trend": {
+        "rho": -0.4962717985296241,
+        "p_perm": 0.0004997501249375312,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.3388,
+          "ci_low": 0.290020625,
+          "ci_high": 0.39165625,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.161225,
+          "ci_low": 0.126320625,
+          "ci_high": 0.20232624999999999,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.286,
+          "ci_low": 0.24059375,
+          "ci_high": 0.33848374999999997,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "STIFF_ComplStd": {
+      "trend": {
+        "rho": 0.0447834916744852,
+        "p_perm": 0.2653673163418291,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.535725,
+          "ci_low": 0.478264375,
+          "ci_high": 0.591830625,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.5313,
+          "ci_low": 0.47516562500000004,
+          "ci_high": 0.586851875,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.496675,
+          "ci_low": 0.44337375,
+          "ci_high": 0.5548012499999999,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "FR_Coulomb": {
+      "trend": {
+        "rho": 0.7937991750596382,
+        "p_perm": 0.0004997501249375312,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.833,
+          "ci_low": 0.7931,
+          "ci_high": 0.870554375,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.98295,
+          "ci_low": 0.971624375,
+          "ci_high": 0.9914012499999999,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.885,
+          "ci_low": 0.850224375,
+          "ci_high": 0.9151275,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "PosFE_Slope": {
+      "trend": {
+        "rho": 0.015061395357892653,
+        "p_perm": 0.7171414292853573,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.470675,
+          "ci_low": 0.414346875,
+          "ci_high": 0.53131,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.51,
+          "ci_low": 0.45456875,
+          "ci_high": 0.564951875,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.541275,
+          "ci_low": 0.483423125,
+          "ci_high": 0.59841625,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "FR_Viscous": {
+      "trend": {
+        "rho": -0.4074237080733231,
+        "p_perm": 0.0004997501249375312,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.37115,
+          "ci_low": 0.31786125000000004,
+          "ci_high": 0.42435687499999997,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.223775,
+          "ci_low": 0.18165875,
+          "ci_high": 0.27107625,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.317025,
+          "ci_low": 0.266174375,
+          "ci_high": 0.37025375,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "n_zero_crossings": {
+      "trend": {
+        "rho": -0.07511527902381662,
+        "p_perm": 0.0704647676161919,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.4551625,
+          "ci_low": 0.402685625,
+          "ci_high": 0.5098262499999999,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.44835,
+          "ci_low": 0.3927790625,
+          "ci_high": 0.5038771875,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.4904625,
+          "ci_low": 0.434173125,
+          "ci_high": 0.549609375,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "FE_RMS": {
+      "trend": {
+        "rho": 0.019622240431057328,
+        "p_perm": 0.6326836581709145,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.50535,
+          "ci_low": 0.44929624999999995,
+          "ci_high": 0.561278125,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.51445,
+          "ci_low": 0.457149375,
+          "ci_high": 0.5706118749999999,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.507375,
+          "ci_low": 0.45130875,
+          "ci_high": 0.56675625,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    },
+    "FE_Max": {
+      "trend": {
+        "rho": -0.01763055356448154,
+        "p_perm": 0.665167416291854,
+        "n": 600
+      },
+      "pairwise_auc": {
+        "LO_vs_MED": {
+          "auc": 0.4895,
+          "ci_low": 0.43325,
+          "ci_high": 0.5444512499999999,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "LO_vs_HI": {
+          "auc": 0.48885,
+          "ci_low": 0.4353975,
+          "ci_high": 0.545250625,
+          "n_pos": 200,
+          "n_neg": 200
+        },
+        "MED_vs_HI": {
+          "auc": 0.4954,
+          "ci_low": 0.440866875,
+          "ci_high": 0.55297875,
+          "n_pos": 200,
+          "n_neg": 200
+        }
+      },
+      "n_by_level": {
+        "LO": 200,
+        "MED": 200,
+        "HI": 200
+      }
+    }
+  },
+  "inference_note": "主要推論為 within-noisy（LO/MED/HI，負載條件一致）；LN 錨定的 AUC 與觸發率為操作性偵測指標，含退化與負載的混合效應。",
+  "dv_spearman": {
+    "BL_ReversalErr_cmd": {
+      "rho": -0.03516874010774041,
+      "p_perm": 0.3568215892053973,
+      "n": 677
+    },
+    "BL_ReversalErr_zc": {
+      "rho": 0.2191320845813822,
+      "p_perm": 0.0004997501249375312,
+      "n": 800
+    },
+    "BL_HystArea": {
+      "rho": -0.0242807254386335,
+      "p_perm": 0.4867566216891554,
+      "n": 800
+    },
+    "BL_DirFE_Asym": {
+      "rho": -0.06581743096473588,
+      "p_perm": 0.06296851574212893,
+      "n": 800
+    },
+    "STIFF_TorqueSlope": {
+      "rho": -0.5084874351366174,
+      "p_perm": 0.0004997501249375312,
+      "n": 800
+    },
+    "STIFF_ComplStd": {
+      "rho": 0.0638002559378999,
+      "p_perm": 0.07196401799100449,
+      "n": 800
+    },
+    "FR_Coulomb": {
+      "rho": 0.7777915512367989,
+      "p_perm": 0.0004997501249375312,
+      "n": 800
+    },
+    "PosFE_Slope": {
+      "rho": -0.0038860138843966946,
+      "p_perm": 0.9165417291354323,
+      "n": 800
+    },
+    "FR_Viscous": {
+      "rho": -0.4140744516788308,
+      "p_perm": 0.0004997501249375312,
+      "n": 800
+    },
+    "n_zero_crossings": {
+      "rho": -0.0806894445201292,
+      "p_perm": 0.022488755622188907,
+      "n": 800
+    },
+    "FE_RMS": {
+      "rho": 0.011077751683987006,
+      "p_perm": 0.7511244377811095,
+      "n": 800
+    },
+    "FE_Max": {
+      "rho": -0.00667587761855878,
+      "p_perm": 0.8545727136431784,
+      "n": 800
+    }
+  },
+  "separability": {
+    "BL_ReversalErr_cmd": {
+      "LO": {
+        "auc": 0.5112426035502958,
+        "ci_low": 0.448221034548578,
+        "ci_high": 0.5736590952471846,
+        "n_pos": 155,
+        "n_neg": 169
+      },
+      "MED": {
+        "auc": 0.4937836580014627,
+        "ci_low": 0.4312454291602952,
+        "ci_high": 0.5557218602486537,
+        "n_pos": 178,
+        "n_neg": 169
+      },
+      "HI": {
+        "auc": 0.48754015215553675,
+        "ci_low": 0.4264327979712595,
+        "ci_high": 0.5476948436179205,
+        "n_pos": 175,
+        "n_neg": 169
+      }
+    },
+    "BL_ReversalErr_zc": {
+      "LO": {
+        "auc": 0.632,
+        "ci_low": 0.57780125,
+        "ci_high": 0.68518125,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.643325,
+        "ci_low": 0.5906368750000001,
+        "ci_high": 0.69557625,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.680575,
+        "ci_low": 0.628175,
+        "ci_high": 0.732750625,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "BL_HystArea": {
+      "LO": {
+        "auc": 0.486675,
+        "ci_low": 0.428348125,
+        "ci_high": 0.5434368749999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.453525,
+        "ci_low": 0.40049062500000004,
+        "ci_high": 0.5096018750000001,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4916,
+        "ci_low": 0.43321875000000004,
+        "ci_high": 0.548875625,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "BL_DirFE_Asym": {
+      "LO": {
+        "auc": 0.525075,
+        "ci_low": 0.468148125,
+        "ci_high": 0.579453125,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.465525,
+        "ci_low": 0.4098475,
+        "ci_high": 0.5234637499999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4587,
+        "ci_low": 0.402421875,
+        "ci_high": 0.513,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "STIFF_TorqueSlope": {
+      "LO": {
+        "auc": 0.45235,
+        "ci_low": 0.39779875,
+        "ci_high": 0.5107899999999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.299775,
+        "ci_low": 0.25179375000000004,
+        "ci_high": 0.349479375,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.141375,
+        "ci_low": 0.10679875000000001,
+        "ci_high": 0.17655874999999996,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "STIFF_ComplStd": {
+      "LO": {
+        "auc": 0.51175,
+        "ci_low": 0.45719875,
+        "ci_high": 0.56903375,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.544825,
+        "ci_low": 0.48759749999999996,
+        "ci_high": 0.6008806250000001,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.54135,
+        "ci_low": 0.484688125,
+        "ci_high": 0.595833125,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FR_Coulomb": {
+      "LO": {
+        "auc": 0.5556,
+        "ci_low": 0.499446875,
+        "ci_high": 0.609276875,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.876375,
+        "ci_low": 0.8416731249999999,
+        "ci_high": 0.910005,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.991025,
+        "ci_low": 0.98195,
+        "ci_high": 0.99715,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "PosFE_Slope": {
+      "LO": {
+        "auc": 0.491475,
+        "ci_low": 0.43544375,
+        "ci_high": 0.547075625,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.460125,
+        "ci_low": 0.404215625,
+        "ci_high": 0.5162025,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.50165,
+        "ci_low": 0.443096875,
+        "ci_high": 0.5564256249999999,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FR_Viscous": {
+      "LO": {
+        "auc": 0.465825,
+        "ci_low": 0.407415625,
+        "ci_high": 0.5204275,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.34025,
+        "ci_low": 0.288101875,
+        "ci_high": 0.39077625,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.202025,
+        "ci_low": 0.15972125,
+        "ci_high": 0.24603062499999998,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "n_zero_crossings": {
+      "LO": {
+        "auc": 0.479425,
+        "ci_low": 0.42374999999999996,
+        "ci_high": 0.5339496874999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.45205,
+        "ci_low": 0.39712312499999997,
+        "ci_high": 0.5128515625,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4539875,
+        "ci_low": 0.397306875,
+        "ci_high": 0.5118253125,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FE_RMS": {
+      "LO": {
+        "auc": 0.4922,
+        "ci_low": 0.437514375,
+        "ci_high": 0.54867625,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.497675,
+        "ci_low": 0.441765625,
+        "ci_high": 0.5535137499999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.5063,
+        "ci_low": 0.45015375,
+        "ci_high": 0.56467625,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FE_Max": {
+      "LO": {
+        "auc": 0.5096,
+        "ci_low": 0.4553975,
+        "ci_high": 0.5685381249999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.501525,
+        "ci_low": 0.44587875000000005,
+        "ci_high": 0.55805125,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.497125,
+        "ci_low": 0.44214375,
+        "ci_high": 0.5548025,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    }
+  },
+  "zc_partial_correlation": {
+    "BL_ReversalErr_zc": {
+      "rho_partial": 0.23715011937832392,
+      "p_perm": 0.0004997501249375312,
+      "n": 800
+    },
+    "BL_ReversalErr_cmd": {
+      "rho_partial": -0.02168598886588966,
+      "p_perm": 0.5792103948025987,
+      "n": 677
+    }
+  },
+  "baseline": {
+    "source": "train LN only",
+    "threshold_p95": 1.9436537587423877,
+    "stats": {
+      "mean": {
+        "BL_ReversalErr_cmd": 12.052007325439803,
+        "BL_ReversalErr_zc": 4.5631967234421005,
+        "BL_HystArea": 0.011924894548966414,
+        "BL_DirFE_Asym": 2.2159248938482206,
+        "STIFF_TorqueSlope": -0.7252292129940443,
+        "STIFF_ComplStd": 0.00960069282115526,
+        "FR_Coulomb": 2.414441298617447
+      },
+      "std": {
+        "BL_ReversalErr_cmd": 3.7735697515424147,
+        "BL_ReversalErr_zc": 1.5598269274249168,
+        "BL_HystArea": 0.0067932153130193336,
+        "BL_DirFE_Asym": 1.695775889535248,
+        "STIFF_TorqueSlope": 0.12179712375352479,
+        "STIFF_ComplStd": 0.005026672734851959,
+        "FR_Coulomb": 0.17505263791443712
+      },
+      "n": {
+        "BL_ReversalErr_cmd": 180,
+        "BL_ReversalErr_zc": 200,
+        "BL_HystArea": 200,
+        "BL_DirFE_Asym": 200,
+        "STIFF_TorqueSlope": 200,
+        "STIFF_ComplStd": 200,
+        "FR_Coulomb": 200
+      }
+    }
+  },
+  "trigger_rates": {
+    "n": {
+      "LN": 200,
+      "LO": 200,
+      "MED": 200,
+      "HI": 200
+    },
+    "n_triggered": {
+      "LN": 25,
+      "LO": 24,
+      "MED": 66,
+      "HI": 180
+    },
+    "trigger_rate": {
+      "LN": 0.125,
+      "LO": 0.12,
+      "MED": 0.33,
+      "HI": 0.9
+    }
+  }
+}

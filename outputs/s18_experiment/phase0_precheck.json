@@ -1,0 +1,199 @@
+{
+  "seed": 42,
+  "source_file": "train_load0_1e_m15_200x5.csv",
+  "label_source": "filename (train_load0 == LN); DV/ylabel not read",
+  "runs": {
+    "1": {
+      "sampling": {
+        "n_samples": 299951,
+        "dt_median_s": 2.0000000000131024e-05,
+        "fs_hz": 49999.99999967244,
+        "duration_s": 5.999,
+        "dt_is_uniform": true
+      },
+      "reversal": {
+        "raw_sign_changes": 7,
+        "significant_reversals": 7,
+        "speed_threshold_used": 9.145089240462601,
+        "rotor_speed_min": -182.901784809252,
+        "rotor_speed_max": 143.544035158471,
+        "demand_monotonic": false,
+        "demand_step_count": 4,
+        "demand_min": 236.045216657039,
+        "demand_max": 258.416532626967,
+        "transitions_unique": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "units": {
+        "rod_demand_pos": {
+          "min": 236.045216657039,
+          "max": 258.416532626967,
+          "mean": 247.10101324939805,
+          "std": 7.68263675477843
+        },
+        "rod_actual_pos": {
+          "min": 234.788347793434,
+          "max": 259.144675521884,
+          "mean": 247.68201681768284,
+          "std": 7.328222127848812
+        },
+        "del_pos": {
+          "min": -17.954783342961008,
+          "max": 4.416532626967012,
+          "mean": -6.898986750601988,
+          "std": 7.6826367547784296
+        },
+        "torque": {
+          "min": -17.9955680665414,
+          "max": 20.6942029482544,
+          "mean": 0.006446103402050787,
+          "std": 5.143918271374848
+        },
+        "rotor_speed": {
+          "min": -182.901784809252,
+          "max": 143.544035158471,
+          "mean": -8.98161509981754,
+          "std": 57.10092073171628
+        }
+      },
+      "dead_zone_window": {
+        "builtin_search_samples": 20,
+        "builtin_move_threshold": 0.05,
+        "window_duration_ms": 0.40000000000262054
+      }
+    },
+    "2": {
+      "sampling": {
+        "n_samples": 299951,
+        "dt_median_s": 2.0000000000131024e-05,
+        "fs_hz": 49999.99999967244,
+        "duration_s": 5.999,
+        "dt_is_uniform": true
+      },
+      "reversal": {
+        "raw_sign_changes": 8,
+        "significant_reversals": 7,
+        "speed_threshold_used": 9.14630859562955,
+        "rotor_speed_min": -149.784689511798,
+        "rotor_speed_max": 182.926171912591,
+        "demand_monotonic": false,
+        "demand_step_count": 4,
+        "demand_min": 267.107812851171,
+        "demand_max": 283.658712588693,
+        "transitions_unique": [
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      "units": {
+        "rod_demand_pos": {
+          "min": 267.107812851171,
+          "max": 283.658712588693,
+          "mean": 277.3190418911595,
+          "std": 6.111914271785477
+        },
+        "rod_actual_pos": {
+          "min": 260.999996903703,
+          "max": 284.888300864778,
+          "mean": 276.4731216300511,
+          "std": 6.4091262927549675
+        },
+        "del_pos": {
+          "min": 6.107812851170991,
+          "max": 22.658712588692996,
+          "mean": 16.3190418911595,
+          "std": 6.111914271785479
+        },
+        "torque": {
+          "min": -17.1844134591422,
+          "max": 19.9938700381021,
+          "mean": 0.0006903417994823997,
+          "std": 5.08303196124489
+        },
+        "rotor_speed": {
+          "min": -149.784689511798,
+          "max": 182.926171912591,
+          "mean": 11.334185622377559,
+          "std": 59.64976875502755
+        }
+      },
+      "dead_zone_window": {
+        "builtin_search_samples": 20,
+        "builtin_move_threshold": 0.05,
+        "window_duration_ms": 0.40000000000262054
+      }
+    },
+    "3": {
+      "sampling": {
+        "n_samples": 299951,
+        "dt_median_s": 2.0000000000131024e-05,
+        "fs_hz": 49999.99999967244,
+        "duration_s": 5.999,
+        "dt_is_uniform": true
+      },
+      "reversal": {
+        "raw_sign_changes": 8,
+        "significant_reversals": 7,
+        "speed_threshold_used": 9.1511161126047,
+        "rotor_speed_min": -146.236783795422,
+        "rotor_speed_max": 183.022322252094,
+        "demand_monotonic": false,
+        "demand_step_count": 4,
+        "demand_min": 646.925853521312,
+        "demand_max": 675.161546039712,
+        "transitions_unique": [
+          14,
+          15,
+          16,
+          17,
+          18
+        ]
+      },
+      "units": {
+        "rod_demand_pos": {
+          "min": 646.925853521312,
+          "max": 675.161546039712,
+          "mean": 663.527671313238,
+          "std": 11.03918374662742
+        },
+        "rod_actual_pos": {
+          "min": 630.999996903703,
+          "max": 675.952661712021,
+          "mean": 661.9830318159607,
+          "std": 11.968367033983208
+        },
+        "del_pos": {
+          "min": 15.92585352131198,
+          "max": 44.16154603971199,
+          "mean": 32.527671313238,
+          "std": 11.039183746627423
+        },
+        "torque": {
+          "min": -20.1793917559531,
+          "max": 20.0543934417475,
+          "mean": 0.004994325241509729,
+          "std": 5.221540979108282
+        },
+        "rotor_speed": {
+          "min": -146.236783795422,
+          "max": 183.022322252094,
+          "mean": 22.08772536833899,
+          "std": 61.70140048809026
+        }
+      },
+      "dead_zone_window": {
+        "builtin_search_samples": 20,
+        "builtin_move_threshold": 0.05,
+        "window_duration_ms": 0.40000000000262054
+      }
+    }
+  }
+}

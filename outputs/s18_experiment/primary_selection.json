@@ -1,0 +1,21 @@
+{
+  "auc": {
+    "BL_ReversalErr_cmd": {
+      "auc": 0.4814176245210728,
+      "ci_low": 0.4297545498084291,
+      "ci_high": 0.5355435823754788,
+      "n_pos": 348,
+      "n_neg": 180
+    },
+    "BL_ReversalErr_zc": {
+      "auc": 0.4723875,
+      "ci_low": 0.42416,
+      "ci_high": 0.5205521874999999,
+      "n_pos": 400,
+      "n_neg": 200
+    }
+  },
+  "delta": 0.009030124521072769,
+  "primary_variant": "cmd",
+  "rationale": "視為等價,取 tie_breaker"
+}

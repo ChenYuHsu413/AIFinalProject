@@ -1,0 +1,552 @@
+{
+  "split": "train",
+  "n_runs": 665,
+  "n_by_level": {
+    "LN": 200,
+    "LO": 65,
+    "MED": 200,
+    "HI": 200
+  },
+  "primary_variant": "cmd",
+  "monotonicity": {
+    "BL_ReversalErr_cmd": {
+      "rho": -0.046309633122544026,
+      "p_perm": 0.25987006496751625,
+      "n": 585,
+      "direction": "down",
+      "coverage": 0.8796992481203008,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "BL_ReversalErr_zc": {
+      "rho": -0.01202883590198967,
+      "p_perm": 0.7561219390304847,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "BL_HystArea": {
+      "rho": 0.060014138616432774,
+      "p_perm": 0.13393303348325838,
+      "n": 665,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "BL_DirFE_Asym": {
+      "rho": 0.040939450665781134,
+      "p_perm": 0.30684657671164417,
+      "n": 665,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "STIFF_TorqueSlope": {
+      "rho": -0.5621629485382845,
+      "p_perm": 0.0004997501249375312,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "down",
+      "direction_ok": true,
+      "pass": true,
+      "low_coverage_flag": false
+    },
+    "STIFF_ComplStd": {
+      "rho": -0.053927883988389415,
+      "p_perm": 0.15892053973013492,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": false,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FR_Coulomb": {
+      "rho": 0.7840217656817073,
+      "p_perm": 0.0004997501249375312,
+      "n": 665,
+      "direction": "up",
+      "coverage": 1.0,
+      "expected": "up",
+      "direction_ok": true,
+      "pass": true,
+      "low_coverage_flag": false
+    },
+    "PosFE_Slope": {
+      "rho": -0.011925633915243896,
+      "p_perm": 0.7606196901549226,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FR_Viscous": {
+      "rho": -0.3809007469777382,
+      "p_perm": 0.0004997501249375312,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "n_zero_crossings": {
+      "rho": -0.05230925012002238,
+      "p_perm": 0.1584207896051974,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FE_RMS": {
+      "rho": -0.02786336488177785,
+      "p_perm": 0.463768115942029,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    },
+    "FE_Max": {
+      "rho": -0.043159305164999065,
+      "p_perm": 0.24987506246876562,
+      "n": 665,
+      "direction": "down",
+      "coverage": 1.0,
+      "expected": null,
+      "direction_ok": true,
+      "pass": false,
+      "low_coverage_flag": false
+    }
+  },
+  "n_primary_passing": 2,
+  "criterion_4_1": "2/7 主力特徵 p<0.01 且方向符合（門檻 ≥4）",
+  "dv_spearman": {
+    "BL_ReversalErr_cmd": {
+      "rho": -0.018451672378924706,
+      "p_perm": 0.664167916041979,
+      "n": 585
+    },
+    "BL_ReversalErr_zc": {
+      "rho": 0.007772402350715604,
+      "p_perm": 0.8350824587706147,
+      "n": 665
+    },
+    "BL_HystArea": {
+      "rho": 0.050900166404288155,
+      "p_perm": 0.2063968015992004,
+      "n": 665
+    },
+    "BL_DirFE_Asym": {
+      "rho": 0.054997474147759504,
+      "p_perm": 0.16141929035482258,
+      "n": 665
+    },
+    "STIFF_TorqueSlope": {
+      "rho": -0.5594570927481517,
+      "p_perm": 0.0004997501249375312,
+      "n": 665
+    },
+    "STIFF_ComplStd": {
+      "rho": -0.037141412632852075,
+      "p_perm": 0.34332833583208394,
+      "n": 665
+    },
+    "FR_Coulomb": {
+      "rho": 0.7999576848340323,
+      "p_perm": 0.0004997501249375312,
+      "n": 665
+    },
+    "PosFE_Slope": {
+      "rho": -0.023038547198344285,
+      "p_perm": 0.545727136431784,
+      "n": 665
+    },
+    "FR_Viscous": {
+      "rho": -0.3846105821375321,
+      "p_perm": 0.0004997501249375312,
+      "n": 665
+    },
+    "n_zero_crossings": {
+      "rho": -0.03207219974092397,
+      "p_perm": 0.4052973513243378,
+      "n": 665
+    },
+    "FE_RMS": {
+      "rho": -0.01311892561099917,
+      "p_perm": 0.728135932033983,
+      "n": 665
+    },
+    "FE_Max": {
+      "rho": -0.03758566066746156,
+      "p_perm": 0.3183408295852074,
+      "n": 665
+    }
+  },
+  "separability": {
+    "BL_ReversalErr_cmd": {
+      "LO": {
+        "auc": 0.4932748538011696,
+        "ci_low": 0.4000950292397661,
+        "ci_high": 0.5853825536062378,
+        "n_pos": 57,
+        "n_neg": 180
+      },
+      "MED": {
+        "auc": 0.49892063492063493,
+        "ci_low": 0.43765,
+        "ci_high": 0.5584357142857141,
+        "n_pos": 175,
+        "n_neg": 180
+      },
+      "HI": {
+        "auc": 0.46371226718047526,
+        "ci_low": 0.40702312138728325,
+        "ci_high": 0.5265631021194604,
+        "n_pos": 173,
+        "n_neg": 180
+      }
+    },
+    "BL_ReversalErr_zc": {
+      "LO": {
+        "auc": 0.4423846153846154,
+        "ci_low": 0.361075,
+        "ci_high": 0.526925,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.456475,
+        "ci_low": 0.40354500000000004,
+        "ci_high": 0.510653125,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4883,
+        "ci_low": 0.431305625,
+        "ci_high": 0.546075,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "BL_HystArea": {
+      "LO": {
+        "auc": 0.46392307692307694,
+        "ci_low": 0.3802269230769231,
+        "ci_high": 0.5480846153846154,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.4849,
+        "ci_low": 0.428399375,
+        "ci_high": 0.54215875,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.544725,
+        "ci_low": 0.48801625,
+        "ci_high": 0.6006331249999999,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "BL_DirFE_Asym": {
+      "LO": {
+        "auc": 0.5203076923076924,
+        "ci_low": 0.43953846153846154,
+        "ci_high": 0.6015480769230769,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.543925,
+        "ci_low": 0.489348125,
+        "ci_high": 0.5991099999999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.526925,
+        "ci_low": 0.47129187499999997,
+        "ci_high": 0.5829,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "STIFF_TorqueSlope": {
+      "LO": {
+        "auc": 0.4337692307692308,
+        "ci_low": 0.3539211538461538,
+        "ci_high": 0.5117692307692308,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.260125,
+        "ci_low": 0.21344625,
+        "ci_high": 0.30795,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.113525,
+        "ci_low": 0.082545,
+        "ci_high": 0.14730749999999995,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "STIFF_ComplStd": {
+      "LO": {
+        "auc": 0.4899230769230769,
+        "ci_low": 0.40745192307692313,
+        "ci_high": 0.5691673076923076,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.4929,
+        "ci_low": 0.43486125000000003,
+        "ci_high": 0.54985,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.45755,
+        "ci_low": 0.398149375,
+        "ci_high": 0.519235,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FR_Coulomb": {
+      "LO": {
+        "auc": 0.5528461538461539,
+        "ci_low": 0.4636903846153846,
+        "ci_high": 0.6396173076923076,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.864,
+        "ci_low": 0.8282225,
+        "ci_high": 0.8973525,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.985225,
+        "ci_low": 0.97452375,
+        "ci_high": 0.994025,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "PosFE_Slope": {
+      "LO": {
+        "auc": 0.5174615384615384,
+        "ci_low": 0.43776730769230765,
+        "ci_high": 0.5980230769230768,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.45545,
+        "ci_low": 0.399314375,
+        "ci_high": 0.512476875,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4998,
+        "ci_low": 0.441795625,
+        "ci_high": 0.55621625,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FR_Viscous": {
+      "LO": {
+        "auc": 0.5371538461538462,
+        "ci_low": 0.45698269230769234,
+        "ci_high": 0.6184634615384615,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.37005,
+        "ci_low": 0.32102375,
+        "ci_high": 0.42578062499999997,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.2375,
+        "ci_low": 0.19016875,
+        "ci_high": 0.28552625,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "n_zero_crossings": {
+      "LO": {
+        "auc": 0.5032692307692308,
+        "ci_low": 0.42176250000000004,
+        "ci_high": 0.5906163461538462,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.5017375,
+        "ci_low": 0.44537468750000003,
+        "ci_high": 0.55625375,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.4601625,
+        "ci_low": 0.40423593750000003,
+        "ci_high": 0.5159140624999999,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FE_RMS": {
+      "LO": {
+        "auc": 0.47,
+        "ci_low": 0.3864596153846154,
+        "ci_high": 0.5528519230769231,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.480775,
+        "ci_low": 0.422846875,
+        "ci_high": 0.5391,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.476725,
+        "ci_low": 0.418734375,
+        "ci_high": 0.533775,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    },
+    "FE_Max": {
+      "LO": {
+        "auc": 0.44653846153846155,
+        "ci_low": 0.36699423076923077,
+        "ci_high": 0.5270057692307692,
+        "n_pos": 65,
+        "n_neg": 200
+      },
+      "MED": {
+        "auc": 0.46775,
+        "ci_low": 0.409770625,
+        "ci_high": 0.5231262499999999,
+        "n_pos": 200,
+        "n_neg": 200
+      },
+      "HI": {
+        "auc": 0.463,
+        "ci_low": 0.405619375,
+        "ci_high": 0.5207449999999999,
+        "n_pos": 200,
+        "n_neg": 200
+      }
+    }
+  },
+  "zc_partial_correlation": {
+    "BL_ReversalErr_zc": {
+      "rho_partial": 0.050723084829594325,
+      "p_perm": 0.1839080459770115,
+      "n": 665
+    },
+    "BL_ReversalErr_cmd": {
+      "rho_partial": -0.052460522434719256,
+      "p_perm": 0.2128935532233883,
+      "n": 585
+    }
+  },
+  "baseline": {
+    "source": "train LN only",
+    "threshold_p95": 1.9436537587423877,
+    "stats": {
+      "mean": {
+        "BL_ReversalErr_cmd": 12.052007325439803,
+        "BL_ReversalErr_zc": 4.5631967234421005,
+        "BL_HystArea": 0.011924894548966414,
+        "BL_DirFE_Asym": 2.2159248938482206,
+        "STIFF_TorqueSlope": -0.7252292129940443,
+        "STIFF_ComplStd": 0.00960069282115526,
+        "FR_Coulomb": 2.414441298617447
+      },
+      "std": {
+        "BL_ReversalErr_cmd": 3.7735697515424147,
+        "BL_ReversalErr_zc": 1.5598269274249168,
+        "BL_HystArea": 0.0067932153130193336,
+        "BL_DirFE_Asym": 1.695775889535248,
+        "STIFF_TorqueSlope": 0.12179712375352479,
+        "STIFF_ComplStd": 0.005026672734851959,
+        "FR_Coulomb": 0.17505263791443712
+      },
+      "n": {
+        "BL_ReversalErr_cmd": 180,
+        "BL_ReversalErr_zc": 200,
+        "BL_HystArea": 200,
+        "BL_DirFE_Asym": 200,
+        "STIFF_TorqueSlope": 200,
+        "STIFF_ComplStd": 200,
+        "FR_Coulomb": 200
+      }
+    }
+  },
+  "trigger_rates": {
+    "n": {
+      "LN": 200,
+      "LO": 65,
+      "MED": 200,
+      "HI": 200
+    },
+    "n_triggered": {
+      "LN": 10,
+      "LO": 8,
+      "MED": 69,
+      "HI": 176
+    },
+    "trigger_rate": {
+      "LN": 0.05,
+      "LO": 0.12307692307692308,
+      "MED": 0.345,
+      "HI": 0.88
+    }
+  }
+}

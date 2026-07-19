@@ -1,0 +1,616 @@
+{
+  "base": {
+    "feature_set": "full",
+    "metrics": {
+      "version": "candidate",
+      "created": "2026-07-19T12:52:09+00:00",
+      "feature_set": "full",
+      "feature_columns": [
+        "rotor_speed_mean",
+        "rotor_speed_std",
+        "rotor_speed_rms",
+        "torque_mean",
+        "torque_std",
+        "torque_rms",
+        "del_pos_mean",
+        "del_pos_std",
+        "del_pos_rms",
+        "i_3p_a_rms",
+        "i_3p_b_rms",
+        "i_3p_c_rms",
+        "direct_rms",
+        "direct_std",
+        "quadrature_rms",
+        "quadrature_std",
+        "rod_demand_pos_mean",
+        "rod_actual_pos_mean",
+        "position_error_mean",
+        "position_error_max",
+        "position_error_std"
+      ],
+      "clf_model": "logistic_regression",
+      "reg_model": "random_forest",
+      "macro_f1": 0.8186615654141182,
+      "dv_r2": 0.9444281506026837,
+      "dv_mae": 0.04427318538449679,
+      "eval_mode": "holdout_test",
+      "placeholder": false,
+      "training_data": {
+        "n_eval_clf": 800,
+        "n_eval_reg": 800,
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "confusion_matrix": [
+          [
+            156,
+            44,
+            0,
+            0
+          ],
+          [
+            75,
+            119,
+            6,
+            0
+          ],
+          [
+            0,
+            7,
+            188,
+            5
+          ],
+          [
+            0,
+            0,
+            7,
+            193
+          ]
+        ],
+        "per_model_macro_f1": {
+          "logistic_regression": 0.7404544175352925
+        }
+      },
+      "model_crc32": {
+        "servo_clf.joblib": "d77ea498",
+        "servo_reg.joblib": "e2ec45ae"
+      },
+      "config_snapshot": {
+        "augment_metrics": "outputs/metrics/servo_cnn_augment.json",
+        "clf_metrics": "outputs/metrics/servo_clf_eval.json",
+        "clf_model": "outputs/models/servo_clf.joblib",
+        "cnn_metrics": "outputs/metrics/servo_cnn_results.json",
+        "cv_folds": 5,
+        "dl_ae_feature_set": "engineered",
+        "dl_classifier_feature_set": "full",
+        "dl_metrics": "outputs/metrics/servo_dl_results.json",
+        "dv_raw_max": 5012.414,
+        "dv_risk": {
+          "low_max": 0.2,
+          "medium_max": 0.48
+        },
+        "enabled_models": [
+          "logistic_regression",
+          "decision_tree",
+          "random_forest",
+          "gradient_boosting",
+          "mlp"
+        ],
+        "feature_config": "outputs/models/servo_feature_config.json",
+        "feature_demo": "data/processed/servo_feature_demo.csv",
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "placeholder": false,
+        "placeholder_runs_per_class": 1500,
+        "processed_features": "outputs\\s18_experiment\\servo_features_s18_augmented.parquet",
+        "random_state": 42,
+        "raw_dir": "data/raw/servo",
+        "reference_feature_set": "full",
+        "reg_metrics": "outputs/metrics/servo_reg_eval.json",
+        "reg_model": "outputs/models/servo_reg.joblib",
+        "sample_predictions": "data/processed/servo_sample_predictions.csv",
+        "windows_path": "data/processed/servo_windows.npz",
+        "ylabel_map": null
+      },
+      "data_provenance": {
+        "archive": "FMCRD_Data.zip",
+        "n_files": 8,
+        "files": [
+          {
+            "name": "test_load0_1e_m15_200x5.csv",
+            "size_bytes": 13277516585,
+            "crc32": "471906ac"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13331431055,
+            "crc32": "b13257c8"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13334793732,
+            "crc32": "38253cc3"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13392275348,
+            "crc32": "c9db6874"
+          },
+          {
+            "name": "train_load0_1e_m15_200x5.csv",
+            "size_bytes": 13266812132,
+            "crc32": "cc50f5e5"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13334080644,
+            "crc32": "cb9b40b4"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13331093243,
+            "crc32": "e199567a"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13393899757,
+            "crc32": "bf6b6807"
+          }
+        ],
+        "total_uncompressed_bytes": 106661902496,
+        "total_uncompressed_gb": 106.66
+      },
+      "n_train": 665,
+      "data_config": {
+        "fixed_clf_model": "logistic_regression"
+      }
+    },
+    "gate_production": {
+      "passed": true,
+      "checks": {
+        "completeness": "PASS",
+        "smoke_test": "PASS",
+        "holdout_metrics": "PASS",
+        "ae_monotonicity": "SKIP"
+      },
+      "detail": {
+        "completeness": "檔案齊全、特徵欄位一致、CRC32 可驗",
+        "smoke_test": "5 筆 demo 預測 schema 與值域皆合法",
+        "holdout_metrics": "候選 macro-F1=0.8187（active 0.8187）、DV R²=0.9444（active 0.9444），均在容忍帶內",
+        "ae_monotonicity": "候選未含 DL/AE 組件（略過）"
+      }
+    },
+    "gate_contract_matched": {
+      "passed": true,
+      "checks": {
+        "completeness": "PASS",
+        "smoke_test": "PASS",
+        "holdout_metrics": "PASS",
+        "ae_monotonicity": "SKIP"
+      },
+      "detail": {
+        "completeness": "檔案齊全、特徵欄位一致、CRC32 可驗",
+        "smoke_test": "5 筆 demo 預測 schema 與值域皆合法",
+        "holdout_metrics": "候選 macro-F1=0.8187（active 0.8187）、DV R²=0.9444（active 0.9444），均在容忍帶內",
+        "ae_monotonicity": "候選未含 DL/AE 組件（略過）"
+      },
+      "error": null
+    },
+    "candidate_dir": "outputs\\s18_experiment\\ablation\\candidate_base",
+    "dims": 21
+  },
+  "A": {
+    "feature_set": "s18_A",
+    "metrics": {
+      "version": "candidate",
+      "created": "2026-07-19T12:52:12+00:00",
+      "feature_set": "s18_A",
+      "feature_columns": [
+        "rotor_speed_mean",
+        "rotor_speed_std",
+        "rotor_speed_rms",
+        "torque_mean",
+        "torque_std",
+        "torque_rms",
+        "del_pos_mean",
+        "del_pos_std",
+        "del_pos_rms",
+        "i_3p_a_rms",
+        "i_3p_b_rms",
+        "i_3p_c_rms",
+        "direct_rms",
+        "direct_std",
+        "quadrature_rms",
+        "quadrature_std",
+        "rod_demand_pos_mean",
+        "rod_actual_pos_mean",
+        "position_error_mean",
+        "position_error_max",
+        "position_error_std",
+        "BL_ReversalErr_cmd",
+        "BL_ReversalErr_cmd_isna",
+        "BL_ReversalErr_zc",
+        "BL_HystArea",
+        "BL_DirFE_Asym",
+        "STIFF_TorqueSlope",
+        "STIFF_ComplStd",
+        "FR_Coulomb",
+        "PosFE_Slope",
+        "FR_Viscous",
+        "n_zero_crossings"
+      ],
+      "clf_model": "logistic_regression",
+      "reg_model": "random_forest",
+      "macro_f1": 0.758066438176666,
+      "dv_r2": 0.9297595356824251,
+      "dv_mae": 0.05102357872268884,
+      "eval_mode": "holdout_test",
+      "placeholder": false,
+      "training_data": {
+        "n_eval_clf": 800,
+        "n_eval_reg": 800,
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "confusion_matrix": [
+          [
+            117,
+            83,
+            0,
+            0
+          ],
+          [
+            75,
+            116,
+            9,
+            0
+          ],
+          [
+            0,
+            15,
+            183,
+            2
+          ],
+          [
+            0,
+            0,
+            11,
+            189
+          ]
+        ],
+        "per_model_macro_f1": {
+          "logistic_regression": 0.7278034275161414
+        }
+      },
+      "model_crc32": {
+        "servo_clf.joblib": "c2186905",
+        "servo_reg.joblib": "eeb6f2af"
+      },
+      "config_snapshot": {
+        "augment_metrics": "outputs/metrics/servo_cnn_augment.json",
+        "clf_metrics": "outputs/metrics/servo_clf_eval.json",
+        "clf_model": "outputs/models/servo_clf.joblib",
+        "cnn_metrics": "outputs/metrics/servo_cnn_results.json",
+        "cv_folds": 5,
+        "dl_ae_feature_set": "engineered",
+        "dl_classifier_feature_set": "full",
+        "dl_metrics": "outputs/metrics/servo_dl_results.json",
+        "dv_raw_max": 5012.414,
+        "dv_risk": {
+          "low_max": 0.2,
+          "medium_max": 0.48
+        },
+        "enabled_models": [
+          "logistic_regression",
+          "decision_tree",
+          "random_forest",
+          "gradient_boosting",
+          "mlp"
+        ],
+        "feature_config": "outputs/models/servo_feature_config.json",
+        "feature_demo": "data/processed/servo_feature_demo.csv",
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "placeholder": false,
+        "placeholder_runs_per_class": 1500,
+        "processed_features": "outputs\\s18_experiment\\servo_features_s18_augmented.parquet",
+        "random_state": 42,
+        "raw_dir": "data/raw/servo",
+        "reference_feature_set": "s18_A",
+        "reg_metrics": "outputs/metrics/servo_reg_eval.json",
+        "reg_model": "outputs/models/servo_reg.joblib",
+        "sample_predictions": "data/processed/servo_sample_predictions.csv",
+        "windows_path": "data/processed/servo_windows.npz",
+        "ylabel_map": null
+      },
+      "data_provenance": {
+        "archive": "FMCRD_Data.zip",
+        "n_files": 8,
+        "files": [
+          {
+            "name": "test_load0_1e_m15_200x5.csv",
+            "size_bytes": 13277516585,
+            "crc32": "471906ac"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13331431055,
+            "crc32": "b13257c8"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13334793732,
+            "crc32": "38253cc3"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13392275348,
+            "crc32": "c9db6874"
+          },
+          {
+            "name": "train_load0_1e_m15_200x5.csv",
+            "size_bytes": 13266812132,
+            "crc32": "cc50f5e5"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13334080644,
+            "crc32": "cb9b40b4"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13331093243,
+            "crc32": "e199567a"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13393899757,
+            "crc32": "bf6b6807"
+          }
+        ],
+        "total_uncompressed_bytes": 106661902496,
+        "total_uncompressed_gb": 106.66
+      },
+      "n_train": 665,
+      "data_config": {
+        "fixed_clf_model": "logistic_regression"
+      }
+    },
+    "gate_production": {
+      "passed": false,
+      "checks": {
+        "completeness": "FAIL",
+        "smoke_test": "BLOCKED",
+        "holdout_metrics": "BLOCKED",
+        "ae_monotonicity": "BLOCKED"
+      },
+      "detail": {
+        "completeness": "feature_set=s18_A 與 config.reference_feature_set=full 不符",
+        "smoke_test": "completeness 未過，無法執行此檢查",
+        "holdout_metrics": "completeness 未過，無法執行此檢查",
+        "ae_monotonicity": "completeness 未過，無法執行此檢查"
+      }
+    },
+    "gate_contract_matched": {
+      "passed": false,
+      "checks": {},
+      "detail": {},
+      "error": "KeyError: 'BL_ReversalErr_cmd'"
+    },
+    "candidate_dir": "outputs\\s18_experiment\\ablation\\candidate_A",
+    "dims": 32
+  },
+  "B": {
+    "feature_set": "s18_B",
+    "metrics": {
+      "version": "candidate",
+      "created": "2026-07-19T12:52:14+00:00",
+      "feature_set": "s18_B",
+      "feature_columns": [
+        "rotor_speed_mean",
+        "rotor_speed_std",
+        "rotor_speed_rms",
+        "torque_mean",
+        "torque_std",
+        "torque_rms",
+        "del_pos_mean",
+        "del_pos_std",
+        "del_pos_rms",
+        "i_3p_a_rms",
+        "i_3p_b_rms",
+        "i_3p_c_rms",
+        "direct_rms",
+        "direct_std",
+        "quadrature_rms",
+        "quadrature_std",
+        "rod_demand_pos_mean",
+        "rod_actual_pos_mean",
+        "position_error_mean",
+        "position_error_max",
+        "position_error_std",
+        "FR_Coulomb",
+        "STIFF_TorqueSlope"
+      ],
+      "clf_model": "logistic_regression",
+      "reg_model": "random_forest",
+      "macro_f1": 0.8123536522024695,
+      "dv_r2": 0.9414697193744049,
+      "dv_mae": 0.04588695870032783,
+      "eval_mode": "holdout_test",
+      "placeholder": false,
+      "training_data": {
+        "n_eval_clf": 800,
+        "n_eval_reg": 800,
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "confusion_matrix": [
+          [
+            151,
+            49,
+            0,
+            0
+          ],
+          [
+            79,
+            116,
+            5,
+            0
+          ],
+          [
+            0,
+            5,
+            190,
+            5
+          ],
+          [
+            0,
+            0,
+            6,
+            194
+          ]
+        ],
+        "per_model_macro_f1": {
+          "logistic_regression": 0.7502133359422132
+        }
+      },
+      "model_crc32": {
+        "servo_clf.joblib": "9de12fc1",
+        "servo_reg.joblib": "8c519189"
+      },
+      "config_snapshot": {
+        "augment_metrics": "outputs/metrics/servo_cnn_augment.json",
+        "clf_metrics": "outputs/metrics/servo_clf_eval.json",
+        "clf_model": "outputs/models/servo_clf.joblib",
+        "cnn_metrics": "outputs/metrics/servo_cnn_results.json",
+        "cv_folds": 5,
+        "dl_ae_feature_set": "engineered",
+        "dl_classifier_feature_set": "full",
+        "dl_metrics": "outputs/metrics/servo_dl_results.json",
+        "dv_raw_max": 5012.414,
+        "dv_risk": {
+          "low_max": 0.2,
+          "medium_max": 0.48
+        },
+        "enabled_models": [
+          "logistic_regression",
+          "decision_tree",
+          "random_forest",
+          "gradient_boosting",
+          "mlp"
+        ],
+        "feature_config": "outputs/models/servo_feature_config.json",
+        "feature_demo": "data/processed/servo_feature_demo.csv",
+        "labels": [
+          "LN",
+          "LO",
+          "MED",
+          "HI"
+        ],
+        "placeholder": false,
+        "placeholder_runs_per_class": 1500,
+        "processed_features": "outputs\\s18_experiment\\servo_features_s18_augmented.parquet",
+        "random_state": 42,
+        "raw_dir": "data/raw/servo",
+        "reference_feature_set": "s18_B",
+        "reg_metrics": "outputs/metrics/servo_reg_eval.json",
+        "reg_model": "outputs/models/servo_reg.joblib",
+        "sample_predictions": "data/processed/servo_sample_predictions.csv",
+        "windows_path": "data/processed/servo_windows.npz",
+        "ylabel_map": null
+      },
+      "data_provenance": {
+        "archive": "FMCRD_Data.zip",
+        "n_files": 8,
+        "files": [
+          {
+            "name": "test_load0_1e_m15_200x5.csv",
+            "size_bytes": 13277516585,
+            "crc32": "471906ac"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13331431055,
+            "crc32": "b13257c8"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13334793732,
+            "crc32": "38253cc3"
+          },
+          {
+            "name": "test_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13392275348,
+            "crc32": "c9db6874"
+          },
+          {
+            "name": "train_load0_1e_m15_200x5.csv",
+            "size_bytes": 13266812132,
+            "crc32": "cc50f5e5"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5HI.csv",
+            "size_bytes": 13334080644,
+            "crc32": "cb9b40b4"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5LO.csv",
+            "size_bytes": 13331093243,
+            "crc32": "e199567a"
+          },
+          {
+            "name": "train_noisy_1e_m15_200x5MED.csv",
+            "size_bytes": 13393899757,
+            "crc32": "bf6b6807"
+          }
+        ],
+        "total_uncompressed_bytes": 106661902496,
+        "total_uncompressed_gb": 106.66
+      },
+      "n_train": 665,
+      "data_config": {
+        "fixed_clf_model": "logistic_regression"
+      }
+    },
+    "gate_production": {
+      "passed": false,
+      "checks": {
+        "completeness": "FAIL",
+        "smoke_test": "BLOCKED",
+        "holdout_metrics": "BLOCKED",
+        "ae_monotonicity": "BLOCKED"
+      },
+      "detail": {
+        "completeness": "feature_set=s18_B 與 config.reference_feature_set=full 不符",
+        "smoke_test": "completeness 未過，無法執行此檢查",
+        "holdout_metrics": "completeness 未過，無法執行此檢查",
+        "ae_monotonicity": "completeness 未過，無法執行此檢查"
+      }
+    },
+    "gate_contract_matched": {
+      "passed": false,
+      "checks": {},
+      "detail": {},
+      "error": "KeyError: 'FR_Coulomb'"
+    },
+    "candidate_dir": "outputs\\s18_experiment\\ablation\\candidate_B",
+    "dims": 23
+  }
+}
