@@ -143,3 +143,11 @@ models/registry/candidate_*/
 
 # Local Claude Code / agent config & runtime (machine-specific)
 .claude/
+
+# 情境 18 實驗:可重生的大型中間產物
+# 測試用 LN run 快取（55MB，缺檔時自動重建；zip 不在則測試跳過）
+tests/_s18_ln_runs.pkl
+# 消融候選模型（可由 src.s18.run_ablation 重生）
+outputs/s18_experiment/ablation/candidate_*/*.joblib
+# repo 特徵表 ⨝ s18 特徵表的中間產物
+outputs/s18_experiment/servo_features_s18_augmented.parquet
