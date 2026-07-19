@@ -1,0 +1,198 @@
+# 情境 18 — 特徵參數與預註冊條文
+#
+# 狀態（2026-07-19）：Phase 1 建表前鎖定。本檔一經 test 評估即凍結，不得再改。
+# 依據見 outputs/s18_experiment/PHASE0_FINDINGS.md。
+
+seed: 42
+sampling_rate_hz: 50000        # Phase 0 實測，dt = 20 µs，均勻
+
+dead_zone:
+  # dsp_analytics 的 DSP 類別預設 sampling_rate_hz=1000，故原始碼寫死的
+  # 「20 samples」其物理意圖是 20 ms 搜尋窗。在 50 kHz 下還原同一物理窗長
+  # = 1000 samples。這是取樣率單位換算，不是為了讓特徵有值而調參。
+  search_window_ms: 20.0
+  search_samples: 1000         # = search_window_ms * sampling_rate_hz / 1000
+  move_threshold: 0.05         # 保持 dsp_analytics 原值，不動
+  sensitivity_windows_ms: [10.0, 20.0, 40.0]   # train LN 上的敏感度檢查
+
+  # ---- 裁決 1 的預註冊出口已觸發：標「不適用」----
+  status: not_applicable
+  # 理由（結構性，非參數問題）：dead_zone_width 量的是「反轉後**指令**繼續
+  # 移動、而實際位置尚未響應」的指令位移窗寬，其前提是指令連續移動（斜坡/
+  # 軌跡型命令）。FMCRD 的 rod_demand_pos 是**分段常數階梯**——每 run
+  # 299,950 個差分中只有 4 個非零——死區期間指令位移恆為 0，故 |d[j]-d[i]|
+  # 結構上必為 0，與搜尋窗長無關。10/20/40 ms 三檔敏感度全部給出同一結果，
+  # 即為「非調參問題」的證據。
+  # 處置：仍計算並存欄（供稽核），但排除於單調性檢定與複合分數之外。
+
+friction:
+  # 庫倫項沿用 dsp_analytics 原門檻 |v| < 100；黏滯項取其補集，
+  # 兩個 regime 由同一條既有邊界切分，零新增自由參數。
+  coulomb_speed_max: 100.0
+  viscous_speed_min: 100.0
+  # 穩定性判準（在 train LN 上評估）：不滿足即標 N/A，不進單調性檢定。
+  viscous_stability:
+    require_same_sign: true
+    max_cv: 1.0                # CV = |std/mean|
+  # ---- 判準已在 train LN (n=200) 評估：標 N/A ----
+  # CV = 0.262（通過 <1.0）；但 require_same_sign 未通過：199 負 / 1 正。
+  # 依預註冊條文嚴格套用 -> not_applicable。
+  # 註記待裁示：唯一的正值為 +0.0022（數值上與 0 無異），此規則是否過嚴，
+  # 由使用者決定；在裁示前不放寬，維持 N/A。
+  viscous_status: not_applicable
+  # 裁示（2026-07-19）：維持 N/A，不放寬判準。在看到結果後修改判準，
+  # 無論多合理都會使預註冊失效（「允許 ≤1% 例外」恰好放過 1/200，
+  # 即為量身訂做規則）。且有比同號規則更硬的實質理由：擬合係數整體為負
+  # （mean −0.108，199/200 為負），而黏滯摩擦係數物理上必須非負
+  # （阻力隨速度增大），故此擬合抓到的並非黏滯摩擦。
+  # 處置：降為探索性描述統計，與 PosFE_Slope 同級。
+  # 方法章節記載：同號判準對近零值過脆，未來版本應改為「信賴區間含 0」
+  # 的容忍設計 —— 但本次不追溯適用。
+
+reversal_events:
+  # 雙軌：兩版都算，主從由下方預註冊判準在 train 上選定。
+  variants: [cmd, zc]
+  # cmd = 指令換向（demand 階梯 delta 變號處；transitions 欄已驗證對齊階梯）
+  # zc  = 全速度過零（dsp_analytics 原始定義 v[i]*v[i-1] < 0）
+  min_events_required: 1       # 事件數為 0 -> 該特徵輸出 NaN，禁止落回預設常數
+
+# ---- 預註冊：主從選擇（必須在看 train 結果之前生效）----
+primary_variant_preregistration:
+  decision_metric: "AUC(LN vs MED+HI)"
+  computed_on: "train only（train 665 段含四類，test 不參與）"
+  rule: "AUC 較高者為 primary"
+  tie_threshold: 0.03          # 兩版差距 < 0.03 視為等價
+  tie_breaker: "cmd"           # 等價時取 _cmd（事件數恆定，語意較乾淨）
+  locked_after_selection: true # 選定後寫回本檔 primary_variant，test 評估不再更動
+  reporting: "test 評估時兩版都報告，但預先聲明 primary 為準"
+  # ---- 已於 train 選定並鎖定（2026-07-19），test 評估前 ----
+  # AUC(LN vs MED+HI) on train：
+  #   BL_ReversalErr_cmd = 0.4814 [95% CI 0.4298, 0.5355]  n_pos=348 n_neg=180
+  #   BL_ReversalErr_zc  = 0.4724 [95% CI 0.4242, 0.5206]  n_pos=400 n_neg=200
+  # 差距 0.0090 < tie_threshold 0.03 -> 視為等價 -> 取 tie_breaker
+  # 註：兩版 CI 皆涵蓋 0.5，即在 train 上皆無判別力；此事實須併同報告，
+  #     不得只呈現「已依判準選定 primary」而隱去兩版都不顯著。
+  primary_variant: cmd
+
+  # ---- 若 primary 選中 _zc，強制附加下列分析（新增約束，不放寬既有判準）----
+  # 依據：Phase 1 實測 n_zero_crossings 在 LO 異常偏高且變異巨大
+  # （9.82±9.10、max 52，相對 LN 的 7.78±1.47），而 _zc 的每事件均值 4.44
+  # 遠低於 _cmd 的 11.90 —— 顯示 _zc 是「小幅振鈴事件」與「大幅指令換向」
+  # 的混合平均，LO 的振鈴暴增會直接稀釋均值。因此 _zc 的判別力可能來自
+  # **混合比例**而非背隙本身。
+  zc_confound_controls:
+    covariate_sensitivity: true    # 以 n_zero_crossings 為共變量的敏感度分析
+    partial_correlation: true      # 控制 n_zero_crossings 後，特徵與等級的關聯是否存活
+
+# ---- 統計呈現要求（因 train LO 僅 65 段）----
+statistics:
+  auc_bootstrap_n: 2000          # 所有 AUC 附 bootstrap 95% CI
+  permutation_n: 2000            # 單調性檢定用 permutation p 值
+  report_n_in_all_tables: true   # 所有表格強制標 n
+  ln_lo_wording: "在 n=65 的檢定力下"   # LN vs LO 結論措辭預先降級
+
+# ---- 最終特徵陣容（Phase 2 分析用）----
+feature_roster:
+  primary:                       # 主力 7
+    - BL_ReversalErr_cmd
+    - BL_ReversalErr_zc
+    - BL_HystArea
+    - BL_DirFE_Asym
+    - STIFF_TorqueSlope
+    - STIFF_ComplStd
+    - FR_Coulomb
+  exploratory:                   # 探索 3（不做物理宣稱）
+    - PosFE_Slope                # dsp 原函數輸出，名實不符，僅描述統計
+    - FR_Viscous                 # 穩定性判準未過 + 係數為負，非黏滯摩擦
+    - n_zero_crossings           # LO 振鈴異常偏高，可能是臨界穩定性訊號
+  control:                       # 對照 2
+    - FE_RMS
+    - FE_Max
+  excluded:
+    - BL_DeadZone_cmd            # 結構性不適用（階梯激勵下死區位移恆為 0）
+    - BL_DeadZone_zc
+
+# ---- 負載混淆與推論框架重排（2026-07-19，test 未碰前定案）----
+# FMCRD 的健康資料只存在於零負載條件：LN 來自 train/test_load0，
+# LO/MED/HI 來自 *_noisy。故 LN 與其餘三類在「健康等級」之外還差一個
+# 負載條件。這是資料集的結構性質，非實驗設計失誤，但所有 torque 基特徵
+# （FR_Coulomb、STIFF_TorqueSlope）與以 LN 為基線的複合分數觸發率
+# 全部受影響，推論框架據此重排：
+load_confound:
+  affected_features: [FR_Coulomb, STIFF_TorqueSlope, FR_Viscous, PosFE_Slope]
+  affects_composite_baseline: true
+  primary_inference: within_noisy
+  # 主要推論 = within-noisy：LO/MED/HI 三類內的 Spearman 與兩兩 AUC，
+  # 無負載混淆，是乾淨的退化證據。
+  ln_anchored_status: operational_detection_metric
+  # LN 錨定的 AUC 與觸發率降為「操作性偵測指標」：回答「能否把異常 run
+  # 從健康基線裡挑出來」，須附註偵測力為退化與負載的混合效應。
+  ln_vs_lo_interpretation: >
+    LN vs LO 全部貼近 0.5（連對照組 FE_RMS 亦僅 0.47）須正面解讀：
+    在負載混淆存在的情況下 LO 仍與 LN 難分，說明 LO 是真正的早期微弱退化。
+    這與 repo E1–E5 記錄的 macro-F1 卡點完全一致，為跨工作互相印證之處。
+
+# ---- test 預期之預註冊（test 未碰前寫下）----
+test_expectations:
+  registered_on: "2026-07-19，test 特徵表尚未建立"
+  expected:
+    - "FR_Coulomb 與 STIFF_TorqueSlope 於 test 複現：within-noisy 單調 + LN 錨定 AUC 同量級"
+    - "BL 族（ReversalErr 雙版、HystArea、DirFE_Asym）預期持平於無訊號"
+    - "LN vs LO 預期維持接近 0.5"
+  falsification: >
+    若 train 的兩個贏家（FR_Coulomb、STIFF_TorqueSlope）在 test 消失，
+    結論降級為過擬合警示並如實報告，不得改採其他特徵重述故事。
+
+# ---- Phase 3 消融實驗（設計書 §4.5）之預註冊 ----
+# 防洩漏紅線：消融的特徵集合**不得由 test 結果決定**。test 已揭示誰是贏家，
+# 「只加兩個贏家」若以 test 結果為依據即為 test-informed selection。
+# 故兩變體都跑、都預先定義，結果無論好壞照實報，不得因結果棄置任一變體。
+ablation:
+  baseline: "repo 現有 LR + balanced + full（21 維），基準 macro-F1 0.819"
+  variants:
+    A:
+      name: "預註冊原案：全部候選特徵入列"
+      extra_features: [BL_ReversalErr_cmd, BL_ReversalErr_zc, BL_HystArea,
+                       BL_DirFE_Asym, STIFF_TorqueSlope, STIFF_ComplStd,
+                       FR_Coulomb, PosFE_Slope, FR_Viscous, n_zero_crossings]
+      dims: 31
+      note: "對應設計書 §4.5 的『full + BL/STIFF/FR 特徵』原案；
+             BL_DeadZone 雙版排除（結構性 N/A，恆為 0，無資訊）。"
+    B:
+      name: "train 診斷通過者"
+      extra_features: [FR_Coulomb, STIFF_TorqueSlope]
+      dims: 23
+      selection_basis: "train Phase 2 診斷（2026-07-19，test 未碰前），非 test 結果"
+      note: "train 診斷在 test 之前即獨立選出同樣兩個特徵，故合規。"
+  nan_handling:
+    method: "train 中位數填補 + 缺失指示欄"
+    rationale: >
+      sklearn 估計器不接受 NaN。填補統計量**只從 train 計算**（同鐵律 2）；
+      NaN 在此資料代表「事件未發生」而非「量測失敗」，故額外加一個
+      `<feature>_isna` 指示欄保留該資訊，不讓填補值假裝成觀測值。
+  expectation: >
+    兩個贏家與 DV 高相關（|ρ| 0.51–0.78），而分類目標 ylabel 正是 DV 的離散化，
+    故合理預期有提升。若無提升，結論為「其資訊已被既有 21 維涵蓋」，同樣可寫。
+  protocol: "沿用 repo 的 train_servo.run(out_dir=...) 與 validation_gate.run_gate；
+             不改動 repo 既有模組，變體以執行期 config 覆寫實現。"
+
+# ---- NaN 的下游行為（設計書 §4.4 複合異常分數）----
+nan_policy:
+  composite_score: "NaN 特徵不參與 top-3 |z| 選擇，分母改為實際可用特徵數"
+  min_available_features: 3    # 可用特徵不足 3 個時該 run 的複合分數為 NaN
+  coverage_flag_threshold: 0.80  # 覆蓋率 < 80% 的特徵，單調性檢定結果旁強制標註
+
+data:
+  zip_path: "C:/Users/alung/Downloads/FMCRD_Data.zip"
+  train_files:
+    train_load0_1e_m15_200x5.csv: LN
+    train_noisy_1e_m15_200x5LO.csv: LO
+    train_noisy_1e_m15_200x5MED.csv: MED
+    train_noisy_1e_m15_200x5HI.csv: HI
+  test_files:
+    test_load0_1e_m15_200x5.csv: LN
+    test_noisy_1e_m15_200x5LO.csv: LO
+    test_noisy_1e_m15_200x5MED.csv: MED
+    test_noisy_1e_m15_200x5HI.csv: HI
+  # 標籤由檔名決定，特徵管線不讀 ylabel/DV（防洩漏鐵律 1）。
+  # 上表僅供評估腳本使用。
